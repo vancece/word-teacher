@@ -353,7 +353,7 @@ pm2 start agent/dist/index.js --name agent
 | `DASHSCOPE_API_KEY` | 阿里云 AI API Key |
 
 3. 在 **Variables** 中添加 `DOCKER_USERNAME`（你的 Docker Hub 用户名）
-4. 推送代码到 `main` 分支即可自动部署
+4. 推送代码到 `main` 分支即可自动部署 🚀
 
 👉 **完整配置指南**：[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md#-github-actions-自动部署cicd)
 
