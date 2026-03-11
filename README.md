@@ -2,6 +2,20 @@
 
 AI 驱动的英语口语对话练习应用。通过**场景化 AI 对话 + 英语跟读 + 实时语音识别 + 智能评分反馈**，帮助学生在轻松的环境中高频开口练习英语。
 
+## 📸 产品截图
+
+<!-- 请将截图放到 docs/images/ 目录下，然后取消下面的注释 -->
+
+| 学生登录 | 场景选择 | AI 对话 |
+|:---:|:---:|:---:|
+| ![登录](docs/images/login.png) | ![场景](docs/images/scenes.png) | ![对话](docs/images/dialogue.png) |
+
+| 跟读练习 | 评分反馈 | 管理后台 |
+|:---:|:---:|:---:|
+| ![跟读](docs/images/read-aloud.png) | ![评分](docs/images/scoring.png) | ![后台](docs/images/admin.png) |
+
+---
+
 **线上地址**：
 - 学生端: `http://YOUR_SERVER_IP/teacher-test`
 - 管理后台: `http://YOUR_SERVER_IP/teacher-admin`
