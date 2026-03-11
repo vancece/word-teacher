@@ -1,0 +1,74 @@
+# Word Teacher - 本地开发 Docker Compose
+# 只启动基础服务，前后端使用热重载本地运行
+#
+# 使用方法:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# 然后分别启动:
+#   cd backend && npm run dev     # 后端 :3001
+#   cd frontend && npm run dev    # 学生端 :5173
+#   cd admin && npm run dev       # 管理端 :5174
+#   cd agent && npm run dev       # Agent :3002
+
+version: '3.8'
+
+services:
+  # ============ MySQL 数据库 ============
+  mysql:
+    image: mysql:8.0
+    container_name: word-teacher-mysql-dev
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: word_teacher
+      MYSQL_USER: wordteacher
+      MYSQL_PASSWORD: dev123456
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - word-teacher-dev
+
+  # ============ MinIO 对象存储 ============
+  minio:
+    image: minio/minio:latest
+    container_name: word-teacher-minio-dev
+    restart: unless-stopped
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console (访问 http://localhost:9001)
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_dev_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - word-teacher-dev
+
+# ============ 数据卷 ============
+volumes:
+  mysql_dev_data:
+    driver: local
+  minio_dev_data:
+    driver: local
+
+# ============ 网络 ============
+networks:
+  word-teacher-dev:
+    driver: bridge
+

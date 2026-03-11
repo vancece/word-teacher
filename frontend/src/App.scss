@@ -1,0 +1,78 @@
+@use './styles/variables' as *;
+
+#root {
+  width: 100%;
+}
+
+.app-shell {
+  min-height: 100vh;
+  width: min(1400px, 100% - 3rem);
+  margin: 0 auto;
+  padding: calc(64px + 1.5rem) 0 3rem; // 64px for header height
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.primary-btn,
+.ghost-btn {
+  border: none;
+  border-radius: $radius-md;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.875rem 1.5rem;
+  cursor: pointer;
+  transition: all $transition-normal;
+  position: relative;
+  overflow: hidden;
+}
+
+.primary-btn {
+  background: $gradient-primary;
+  color: #ffffff;
+  box-shadow: $shadow-md, 0 4px 12px rgba(102, 126, 234, 0.4);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: $shadow-lg, 0 8px 24px rgba(102, 126, 234, 0.5);
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px) scale(0.98);
+  }
+}
+
+.ghost-btn {
+  background: rgba(255, 255, 255, 0.8);
+  color: #475569;
+  border: 2px solid rgba(99, 102, 241, 0.2);
+  backdrop-filter: blur(8px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: $primary;
+    color: $primary;
+    transform: translateY(-2px);
+    box-shadow: $shadow-sm;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: calc(100% - 1.5rem);
+    padding: calc(64px + 1rem) 0 2rem;
+  }
+}

@@ -1,0 +1,153 @@
+# Word Teacher - 生产部署配置（使用预构建镜像）
+# 在 CVM 上使用此文件，无需构建镜像
+# 
+# 使用方法:
+#   1. 复制此文件和 .env 到服务器
+#   2. 配置 .env 中的环境变量
+#   3. docker compose -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # ============ MySQL 数据库 ============
+  mysql:
+    image: mysql:8.0
+    container_name: word-teacher-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: word_teacher
+      MYSQL_USER: wordteacher
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/mysql-optimize.cnf:/etc/mysql/conf.d/optimize.cnf:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - word-teacher-network
+
+  # ============ Backend API 服务 ============
+  backend:
+    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-backend:${IMAGE_TAG:-latest}
+    container_name: word-teacher-backend
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: mysql://wordteacher:${MYSQL_PASSWORD}@mysql:3306/word_teacher
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      AGENT_URL: http://agent:3002/api/agent
+      AGENT_API_KEY: ${AGENT_API_KEY}
+      # MinIO 配置 - 使用相对路径，不依赖域名
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-admin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio123456}
+      MINIO_BUCKET: ${MINIO_BUCKET:-covers}
+      MINIO_PUBLIC_PATH: ${MINIO_PUBLIC_PATH:-/minio}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - word-teacher-network
+
+  # ============ AI Agent 服务 ============
+  agent:
+    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-agent:${IMAGE_TAG:-latest}
+    container_name: word-teacher-agent
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      # LangChain ChatOpenAI 需要这个环境变量
+      OPENAI_API_KEY: ${DASHSCOPE_API_KEY}
+      AGENT_API_KEY: ${AGENT_API_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      # 阿里云智能语音交互 - 一句话识别 (STT)
+      ALIYUN_STT_APPKEY: ${ALIYUN_STT_APPKEY:-}
+      ALIYUN_STT_TOKEN: ${ALIYUN_STT_TOKEN:-}
+      ALIYUN_AK_ID: ${ALIYUN_AK_ID:-}
+      ALIYUN_AK_SECRET: ${ALIYUN_AK_SECRET:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/api/agent/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - word-teacher-network
+
+  # ============ MinIO 对象存储 ============
+  minio:
+    image: minio/minio:latest
+    container_name: word-teacher-minio
+    restart: always
+    ports:
+      - "9000:9000"    # API 端口
+      - "9001:9001"    # 控制台端口
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio123456}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - word-teacher-network
+
+  # ============ Nginx 前端 + 反向代理 ============
+  nginx:
+    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-nginx:${IMAGE_TAG:-latest}
+    container_name: word-teacher-nginx
+    restart: always
+    ports:
+      - "80:8080"     # HTTP
+      - "443:443"     # HTTPS
+    depends_on:
+      - backend
+      - agent
+      - minio
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro  # SSL 证书
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - word-teacher-network
+
+# ============ 数据卷 ============
+volumes:
+  mysql_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# ============ 网络 ============
+networks:
+  word-teacher-network:
+    driver: bridge
+

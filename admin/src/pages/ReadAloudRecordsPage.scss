@@ -1,0 +1,204 @@
+.records-page {
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+
+      svg { color: #64748b; }
+
+      select {
+        border: none;
+        background: none;
+        font-size: 14px;
+        color: #475569;
+        cursor: pointer;
+        outline: none;
+      }
+    }
+  }
+
+  .table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td { padding: 14px 16px; text-align: left; }
+
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 13px;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    td {
+      border-top: 1px solid #f1f5f9;
+      font-size: 14px;
+    }
+
+    tr:hover td { background: #fafafa; }
+
+    .loading-cell, .empty-cell {
+      text-align: center;
+      padding: 48px;
+      color: #94a3b8;
+    }
+  }
+
+  .student-info {
+    display: flex;
+    flex-direction: column;
+
+    .name {
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    .class {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+  }
+
+  .score-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+
+    &.good {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    &.medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    &.low {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    &.no-score {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+  }
+
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    position: relative;
+    width: 100px;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      border-radius: 4px;
+    }
+
+    span {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+      color: #64748b;
+      margin-left: 110px;
+    }
+  }
+
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.completed {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    &.progress {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    &.abandoned {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+
+    button {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #475569;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        background: #f8fafc;
+        border-color: #10b981;
+        color: #10b981;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    span {
+      font-size: 14px;
+      color: #64748b;
+    }
+  }
+}
+

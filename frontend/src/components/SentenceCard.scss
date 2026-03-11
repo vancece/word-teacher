@@ -1,0 +1,122 @@
+.sentence-card {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+
+  &.active {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #10b981;
+  }
+
+  &.completed {
+    .index-badge {
+      color: #22c55e;
+    }
+  }
+
+  &.active.completed {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+}
+
+// 左侧：序号 + 句子
+.card-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.index-badge {
+  color: #cbd5e1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sentence-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.english-section {
+  .sentence-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+
+    &.evaluated {
+      .word {
+        transition: color 0.3s ease;
+
+        &.correct {
+          color: #22c55e;
+        }
+
+        &.incorrect {
+          color: #ef4444;
+          text-decoration: underline wavy #ef4444;
+        }
+
+        &.missing {
+          color: #f59e0b;
+          opacity: 0.6;
+        }
+      }
+    }
+  }
+}
+
+.chinese-section {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+// 右侧：评分
+.card-right {
+  flex-shrink: 0;
+  text-align: right;
+
+  .waiting {
+    font-size: 0.75rem;
+    color: #059669;
+    padding: 0.25rem 0.5rem;
+    background: #ecfdf5;
+    border-radius: 0.25rem;
+  }
+}
+
+.result-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+
+  .score {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+
+    &.high { color: #22c55e; }
+    &.medium { color: #f59e0b; }
+    &.low { color: #ef4444; }
+  }
+
+  .feedback {
+    font-size: 0.75rem;
+    color: #64748b;
+    white-space: nowrap;
+  }
+}
+
+
+

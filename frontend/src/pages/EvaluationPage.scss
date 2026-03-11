@@ -1,0 +1,335 @@
+@use '../styles/variables' as *;
+
+.evaluation-shell {
+  min-height: 100vh;
+  padding-top: calc(64px + 1.5rem) !important;
+  padding-bottom: 1.5rem !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+// 无数据状态
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 50vh;
+  text-align: center;
+
+  h2 { color: $text-primary; margin: 0; }
+  p { color: $text-secondary; margin: 0; }
+}
+
+// 主卡片 - 左右布局
+.evaluation-card {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: $radius-xl;
+  padding: 1.5rem;
+  box-shadow: $shadow-lg;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+// 左侧：星级和分项
+.eval-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// 星级英雄区
+.star-hero {
+  text-align: center;
+  padding: 1.25rem;
+  border-radius: $radius-lg;
+  background: var(--hero-bg, linear-gradient(135deg, #8b5cf6, #6366f1));
+
+  .hero-emoji {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    animation: bounce 1s ease-in-out infinite;
+  }
+
+  .star-rating {
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+  }
+
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+// 场景信息
+.scene-info {
+  padding: 0.875rem;
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: $radius-md;
+  border: 1px solid rgba(99, 102, 241, 0.15);
+
+  h4 {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $primary;
+  }
+
+  .scene-desc {
+    margin: 0;
+    font-size: 0.8rem;
+    color: $text-secondary;
+    line-height: 1.4;
+  }
+}
+
+// 星星样式
+.star-rating {
+  display: flex;
+  gap: 3px;
+
+  .star {
+    transition: all 0.2s ease;
+
+    &.filled {
+      fill: #fbbf24;
+      color: #fbbf24;
+      filter: drop-shadow(0 1px 2px rgba(251, 191, 36, 0.4));
+    }
+
+    &.empty {
+      fill: transparent;
+      color: rgba(255, 255, 255, 0.4);
+    }
+  }
+}
+
+// 分项评分
+.score-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: $radius-md;
+
+  .item-icon {
+    display: flex;
+    color: $text-light;
+  }
+
+  .item-label {
+    flex: 1;
+    font-size: 0.85rem;
+    color: $text-secondary;
+  }
+
+  .star-rating .star {
+    &.filled { color: #fbbf24; fill: #fbbf24; }
+    &.empty { color: #e2e8f0; fill: transparent; }
+  }
+}
+
+// 右侧：反馈内容
+.eval-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// 老师评语
+.feedback-main {
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+  border-radius: $radius-md;
+  border-left: 4px solid $primary;
+
+  h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    color: $primary;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: $text-primary;
+    line-height: 1.6;
+  }
+}
+
+// 反馈区块
+.feedback-section {
+  padding: 0.875rem;
+  border-radius: $radius-md;
+
+  h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+
+    li {
+      font-size: 0.875rem;
+      line-height: 1.5;
+      margin-bottom: 0.25rem;
+
+      &:last-child { margin-bottom: 0; }
+    }
+  }
+
+  &.strengths {
+    background: linear-gradient(135deg, #fef3c7, #fef9c3);
+    border: 1px solid #fcd34d;
+
+    h4 { color: #92400e; }
+    li { color: #78350f; }
+  }
+
+  &.improvements {
+    background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+    border: 1px solid #93c5fd;
+
+    h4 { color: #1e40af; }
+    li { color: #1e3a8a; }
+  }
+}
+
+// 底部按钮
+.eval-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: $radius-pill;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &.primary {
+      background: $gradient-primary;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+      }
+    }
+
+    &.secondary {
+      background: white;
+      color: $text-primary;
+      border: 2px solid $border-color;
+
+      &:hover {
+        border-color: $primary;
+        color: $primary;
+      }
+    }
+  }
+}
+
+// 主题色变体
+.evaluation-shell {
+  &.theme-gold {
+    .star-hero {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    .star-rating .star.filled {
+      animation: star-twinkle 0.6s ease-in-out infinite alternate;
+    }
+  }
+
+  &.theme-purple {
+    .star-hero {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+  }
+
+  &.theme-blue {
+    .star-hero {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+  }
+
+  &.theme-green {
+    .star-hero {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+  }
+
+  &.theme-orange {
+    .star-hero {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+    }
+  }
+}
+
+@keyframes star-twinkle {
+  from { transform: scale(1); }
+  to { transform: scale(1.15); }
+}
+
+// 响应式
+@media (max-width: 768px) {
+  .evaluation-card {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+
+  .eval-left {
+    order: 1;
+  }
+
+  .eval-right {
+    order: 2;
+  }
+
+  .eval-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+}
+

@@ -1,0 +1,57 @@
+# Word Teacher Nginx - 前端静态文件 + 反向代理
+# 构建 Frontend 和 Admin，然后使用 Nginx 提供服务
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 安装 pnpm
+RUN npm install -g pnpm
+
+# ============ 构建 Frontend ============
+COPY frontend/package.json ./frontend/
+WORKDIR /app/frontend
+RUN pnpm install
+
+# 复制所有前端文件（包括 .env.production）
+COPY frontend/ ./
+# 构建时会自动读取 .env.production 中的环境变量
+RUN pnpm build
+
+# ============ 构建 Admin ============
+WORKDIR /app
+COPY admin/package.json ./admin/
+WORKDIR /app/admin
+RUN pnpm install
+
+COPY admin/ ./
+ENV VITE_API_BASE_URL=/api
+RUN pnpm build
+
+# ============ Nginx 生产镜像 ============
+FROM nginx:alpine
+
+# 删除默认配置
+RUN rm -rf /etc/nginx/conf.d/*
+
+# 复制构建产物
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html/frontend
+COPY --from=builder /app/admin/dist /usr/share/nginx/html/admin
+
+# 复制首页（个人博客）
+COPY homepage /usr/share/nginx/html/homepage
+
+# 复制 nginx 配置
+COPY deploy/nginx-docker.conf /etc/nginx/nginx.conf
+
+# 创建 SSL 证书目录（证书通过 volume 挂载）
+RUN mkdir -p /etc/nginx/ssl
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+
+EXPOSE 80 443
+
+CMD ["nginx", "-g", "daemon off;"]
+

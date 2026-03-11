@@ -1,0 +1,168 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 32px;
+  position: relative;
+
+  .close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px;
+    border-radius: 8px;
+    color: #64748b;
+    transition: all 0.2s;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+  }
+
+  .loading, .error {
+    text-align: center;
+    padding: 48px;
+    color: #64748b;
+  }
+
+  .student-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .info {
+      h2 {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 4px;
+      }
+
+      p {
+        font-size: 14px;
+        color: #64748b;
+        margin: 0;
+      }
+    }
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+
+    .stat-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+
+      svg {
+        color: #64748b;
+      }
+
+      .value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+
+      .label {
+        font-size: 12px;
+        color: #94a3b8;
+      }
+
+      &.positive {
+        svg, .value { color: #10b981; }
+      }
+
+      &.negative {
+        svg, .value { color: #ef4444; }
+      }
+    }
+  }
+
+  .records-section {
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0 0 16px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 24px;
+      color: #94a3b8;
+    }
+
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .record-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+
+      .scene {
+        flex: 1;
+        font-weight: 500;
+        color: #1e293b;
+      }
+
+      .score {
+        padding: 4px 10px;
+        background: #10b981;
+        color: white;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-right: 12px;
+      }
+
+      .date {
+        font-size: 13px;
+        color: #94a3b8;
+      }
+    }
+  }
+}
+

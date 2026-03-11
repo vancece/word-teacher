@@ -1,0 +1,43 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment variables (IMPORTANT: contains sensitive data)
+.env
+.env.local
+.env.*.local
+.env.development
+**/.env
+!.env.example
+!.env.development.example
+!**/.env.example
+
+# SSL certificates and SSH keys (sensitive!)
+deploy/ssl/*.pem
+deploy/ssl/*.key
+deploy/ssl/*.crt
+*.pem
+*.key
+julian.pem
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+agent/.env

@@ -1,0 +1,57 @@
+# Word Teacher Backend - Docker 镜像
+# 多阶段构建，减小最终镜像体积
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# 安装 pnpm
+RUN npm install -g pnpm
+
+# 复制依赖文件
+COPY backend/package.json backend/pnpm-lock.yaml* ./
+COPY backend/prisma ./prisma/
+
+# 安装依赖
+RUN pnpm install --frozen-lockfile || pnpm install
+
+# 复制源码
+COPY backend/src ./src/
+COPY backend/tsconfig.json ./
+
+# 生成 Prisma Client
+RUN pnpm db:generate
+
+# 构建 TypeScript
+RUN pnpm build
+
+# ============ 生产镜像 ============
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# 安装 pnpm（用于运行 start 命令）
+RUN npm install -g pnpm
+
+# 只复制必要的文件
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./
+
+# 创建非 root 用户
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 backend
+USER backend
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
+
+EXPOSE 3001
+
+ENV NODE_ENV=production
+ENV PORT=3001
+
+CMD ["node", "dist/index.js"]
+

@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 学生表 ====================
+model Student {
+  id        Int      @id @default(autoincrement())
+  studentNo String   @unique @db.VarChar(50)  // 学号
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(50)
+  classId   Int      @map("class_id")
+  seatNo    Int?     @map("seat_no")          // 座位号/序号
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 关联 - 删除班级时级联删除学生
+  class            Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  practiceRecords  PracticeRecord[]
+  readAloudRecords ReadAloudRecord[]
+
+  @@map("students")
+}
+
+// ==================== 教师表 ====================
+model Teacher {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(50)
+  isAdmin   Boolean  @default(false) @map("is_admin")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  classes                ClassTeacher[]
+  createdScenes          Scene[]          @relation("SceneCreator")
+  createdReadAloudScenes ReadAloudScene[] @relation("ReadAloudSceneCreator")
+
+  @@map("teachers")
+}
+
+// 班级表
+model Class {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)           // 班级名称，如 "三年级1班"
+  grade       String   @db.VarChar(20)           // 年级，如 "三年级"
+  description String?  @db.VarChar(200)          // 班级描述
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  students Student[]      // 班级的学生
+  teachers ClassTeacher[] // 班级的教师们
+
+  @@map("classes")
+}
+
+// 班级-教师关联表（多对多）
+model ClassTeacher {
+  id        Int      @id @default(autoincrement())
+  classId   Int      @map("class_id")
+  teacherId Int      @map("teacher_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, teacherId])
+  @@map("class_teachers")
+}
+
+// 场景表（对话场景）
+model Scene {
+  id             String   @id @db.VarChar(20)
+  name           String   @db.VarChar(50)
+  description    String?  @db.Text
+  coverImage     String?  @db.MediumText    // 封面图片 (base64)
+  prompt         String?  @db.Text          // AI 对话提示词，用于引导 AI 的对话风格和内容
+  rounds         Int      @default(5)       // 固定5轮对话
+  icon           String   @default("/images/scenes/default.png") @db.VarChar(200)
+  grade          String   @default("通用") @db.VarChar(20)
+  visible        Boolean  @default(true)    // 是否对学生可见
+  vocabulary     Json
+  dialogueConfig Json     @map("dialogue_config")
+  creatorId      Int?     @map("creator_id")  // 创建者教师ID
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // 关联
+  practiceRecords PracticeRecord[]
+  creator         Teacher? @relation("SceneCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@map("scenes")
+}
+
+// 练习记录表
+model PracticeRecord {
+  id                 Int      @id @default(autoincrement())
+  studentId          Int      @map("student_id")
+  sceneId            String   @map("scene_id") @db.VarChar(20)
+  totalScore         Int?     @map("total_score")
+  pronunciationScore Int?     @map("pronunciation_score")
+  fluencyScore       Int?     @map("fluency_score")
+  grammarScore       Int?     @map("grammar_score")
+  durationSeconds    Int?     @map("duration_seconds")
+  roundsCompleted    Int?     @map("rounds_completed")
+  feedbackText       String?  @map("feedback_text") @db.Text
+  dialogueHistory    Json?    @map("dialogue_history")
+  status             PracticeStatus @default(IN_PROGRESS)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // 关联 - 删除学生时级联删除练习记录
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  scene   Scene   @relation(fields: [sceneId], references: [id])
+
+  // 索引优化查询性能
+  @@index([studentId])
+  @@index([sceneId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
+  @@map("practice_records")
+}
+
+enum PracticeStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// 作业表（暂未使用，预留扩展）
+// model Assignment {
+//   id          Int      @id @default(autoincrement())
+//   teacherId   Int      @map("teacher_id")
+//   classId     Int      @map("class_id")
+//   sceneIds    Json     @map("scene_ids")
+//   title       String   @db.VarChar(100)
+//   description String?  @db.Text
+//   dueDate     DateTime @map("due_date")
+//   createdAt   DateTime @default(now()) @map("created_at")
+//   @@map("assignments")
+// }
+
+// ==================== 跟读功能 ====================
+
+// 跟读场景表
+model ReadAloudScene {
+  id          String   @id @db.VarChar(20)
+  name        String   @db.VarChar(50)           // 场景名称
+  description String?  @db.Text                   // 场景描述
+  coverImage  String?  @db.MediumText            // 封面图片 (base64)
+  grade       String   @default("基础") @db.VarChar(20)  // 难度等级
+  visible     Boolean  @default(true)            // 是否对学生可见
+  sentences   Json                                // 句子数组 [{id, english, chinese, audio}]
+  creatorId   Int?     @map("creator_id")         // 创建者教师ID
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // 关联
+  practiceRecords ReadAloudRecord[]
+  creator         Teacher? @relation("ReadAloudSceneCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@map("read_aloud_scenes")
+}
+
+// 跟读练习记录表
+model ReadAloudRecord {
+  id              Int            @id @default(autoincrement())
+  studentId       Int            @map("student_id")
+  sceneId         String         @map("scene_id") @db.VarChar(20)
+
+  // 基础信息
+  completedCount  Int            @default(0) @map("completed_count")  // 已完成句子数
+  totalCount      Int            @map("total_count")         // 总句子数
+  durationSeconds Int?           @map("duration_seconds")    // 练习时长
+  status          PracticeStatus @default(IN_PROGRESS)
+
+  // 每句评分详情 [{english, chinese, spokenText, accuracy, feedback}]
+  sentenceResults Json?          @map("sentence_results")
+
+  // AI 整体评分 (1-5星制，4个维度)
+  totalScore       Int?        @map("total_score")        // 总分 1-5
+  intonationScore  Int?        @map("intonation_score")   // 语音语调 1-5
+  fluencyScore     Int?        @map("fluency_score")      // 流利连贯 1-5
+  accuracyScore    Int?        @map("accuracy_score")     // 准确完整 1-5
+  expressionScore  Int?        @map("expression_score")   // 情感表现力 1-5
+
+  // AI 反馈
+  feedback     String?  @db.Text                    // 老师评语
+  strengths    Json?                                // 亮点 ["...", "..."]
+  improvements Json?                                // 建议 ["...", "..."]
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 关联 - 删除学生时级联删除跟读记录
+  student Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  scene   ReadAloudScene @relation(fields: [sceneId], references: [id])
+
+  // 索引优化查询性能
+  @@index([studentId])
+  @@index([sceneId])
+  @@index([createdAt])
+  @@index([studentId, createdAt])
+  @@map("read_aloud_records")
+}
+

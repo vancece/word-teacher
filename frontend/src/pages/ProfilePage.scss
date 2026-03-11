@@ -1,0 +1,461 @@
+@use '../styles/variables' as *;
+
+.profile-page {
+  min-height: 100vh;
+  padding: calc(64px + 24px) 24px 24px;  // 64px for header height
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+
+  &.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: $text-secondary;
+
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: white;
+  border-radius: $radius-lg;
+  padding: 24px;
+  box-shadow: $shadow-sm;
+  margin-bottom: 20px;
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: $gradient-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .user-info {
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $text-primary;
+      margin: 0 0 4px;
+    }
+
+    .class-name {
+      font-size: 1rem;
+      color: $primary;
+      font-weight: 500;
+      margin: 0 0 8px;
+    }
+
+    .join-date {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: $text-light;
+      margin: 0;
+    }
+  }
+}
+
+.stats-section {
+  background: white;
+  border-radius: $radius-lg;
+  padding: 20px;
+  box-shadow: $shadow-sm;
+  margin-bottom: 20px;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 16px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .stat-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border-radius: $radius-md;
+
+    &.dialogue {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+      color: $primary;
+    }
+
+    &.readAloud {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+      color: $success;
+    }
+
+    .stat-info {
+      flex: 1;
+
+      .label {
+        display: block;
+        font-size: 0.85rem;
+        color: $text-secondary;
+        margin-bottom: 4px;
+      }
+
+      .value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: $text-primary;
+        margin-bottom: 8px;
+      }
+
+      .score-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        color: $text-light;
+      }
+    }
+  }
+
+  .best-scores {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.1));
+    border-radius: $radius-md;
+    font-size: 0.9rem;
+    color: $text-primary;
+
+    .best-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+}
+
+.star-rating {
+  display: flex;
+  gap: 2px;
+
+  .filled {
+    color: #fbbf24;
+  }
+
+  .empty {
+    color: #e5e7eb;
+  }
+}
+
+// AI 学习总结
+.summary-section {
+  background: white;
+  border-radius: $radius-lg;
+  padding: 20px;
+  box-shadow: $shadow-sm;
+  margin-bottom: 20px;
+
+  .summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: $text-primary;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      svg {
+        color: #f59e0b;
+      }
+    }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: $radius-md;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #92400e;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: $shadow-sm;
+      }
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+
+  .summary-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px;
+    color: $text-secondary;
+
+    .spin {
+      color: #f59e0b;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .summary-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px;
+    color: $text-light;
+
+    svg {
+      color: #fcd34d;
+    }
+
+    p {
+      margin: 0;
+      text-align: center;
+    }
+  }
+
+  .summary-content {
+    .summary-comment {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: $text-primary;
+      padding: 16px;
+      background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+      border-radius: $radius-md;
+      margin-bottom: 16px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .summary-item {
+      margin-bottom: 12px;
+
+      h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 0 8px;
+        color: $text-secondary;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+
+        li {
+          font-size: 0.9rem;
+          color: $text-primary;
+          line-height: 1.6;
+          margin-bottom: 4px;
+        }
+      }
+
+      &.strengths h4 { color: #059669; }
+      &.weaknesses h4 { color: #dc2626; }
+      &.suggestions h4 { color: #2563eb; }
+    }
+  }
+}
+
+.history-section {
+  background: white;
+  border-radius: $radius-lg;
+  padding: 20px;
+  box-shadow: $shadow-sm;
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $text-primary;
+    margin: 0 0 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 4px;
+    background: $bg-light;
+    border-radius: $radius-md;
+
+    button {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: $radius-sm;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: $text-secondary;
+      background: transparent;
+      cursor: pointer;
+      transition: all $transition-fast;
+
+      &.active {
+        background: white;
+        color: $primary;
+        box-shadow: $shadow-sm;
+      }
+    }
+  }
+
+  .records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: $text-light;
+
+    button {
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: $gradient-primary;
+      color: white;
+      border: none;
+      border-radius: $radius-pill;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+
+  .record-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: $bg-light;
+    border-radius: $radius-md;
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      transform: translateX(4px);
+      box-shadow: $shadow-sm;
+    }
+
+    .record-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &.dialogue .record-icon {
+      background: rgba($primary, 0.1);
+      color: $primary;
+    }
+
+    &.readAloud .record-icon {
+      background: rgba($success, 0.1);
+      color: $success;
+    }
+
+    .record-info {
+      flex: 1;
+
+      h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: $text-primary;
+        margin: 0 0 6px;
+      }
+
+      .record-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+
+        .type-badge {
+          padding: 2px 8px;
+          border-radius: $radius-pill;
+          font-weight: 500;
+        }
+
+        .date {
+          color: $text-light;
+        }
+
+        .status {
+          &.completed {
+            color: $success;
+          }
+          &.in_progress {
+            color: $warning;
+          }
+        }
+      }
+    }
+
+    &.dialogue .type-badge {
+      background: rgba($primary, 0.1);
+      color: $primary;
+    }
+
+    &.readAloud .type-badge {
+      background: rgba($success, 0.1);
+      color: $success;
+    }
+
+    .record-score {
+      .no-score {
+        color: $text-light;
+      }
+    }
+
+    .arrow {
+      color: $text-light;
+    }
+  }
+}
+

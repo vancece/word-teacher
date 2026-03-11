@@ -1,0 +1,61 @@
+# Word Teacher - Docker 忽略文件
+# 构建镜像时忽略这些文件
+
+# 依赖目录
+node_modules
+**/node_modules
+
+# 构建产物
+dist
+**/dist
+.next
+.nuxt
+
+# 开发配置
+.env
+.env.local
+.env.development
+.env.test
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# 日志
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# 测试
+coverage
+.nyc_output
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# Docker 相关
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# 部署相关（保留 nginx 配置）
+deploy/ssl
+deploy/certbot
+
+# 文档
+*.md
+!README.md
+
+# 其他
+.prettierrc
+.eslintrc*
+tsconfig*.tsbuildinfo
+

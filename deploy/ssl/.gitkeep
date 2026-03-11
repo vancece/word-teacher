@@ -1,0 +1,11 @@
+# SSL 证书目录
+# 将 fullchain.pem 和 privkey.pem 放在此目录
+# 
+# 方式一：使用 Let's Encrypt（免费）
+# ./scripts/deploy.sh ssl
+#
+# 方式二：手动上传证书
+# 将购买的证书文件重命名为：
+# - fullchain.pem (证书链)
+# - privkey.pem (私钥)
+

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文字极客 - 探索文字与代码的世界</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨️</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.7;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    .card {
+      background: rgba(255,255,255,0.98);
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+      margin-bottom: 24px;
+    }
+    .header { text-align: center; margin-bottom: 40px; }
+    .avatar {
+      width: 120px; height: 120px;
+      background: linear-gradient(135deg, #e94560, #533483);
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 56px;
+      margin: 0 auto 24px;
+      box-shadow: 0 10px 40px rgba(233, 69, 96, 0.3);
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 12px; color: #1a1a2e; font-weight: 800; }
+    .subtitle { color: #666; font-size: 1.15rem; }
+    .section { margin-top: 40px; }
+    .section h2 {
+      font-size: 1.3rem; color: #e94560; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px; font-weight: 700;
+    }
+    .section p, .section li { color: #555; font-size: 1.05rem; }
+    .about-content { display: grid; gap: 20px; }
+    .about-content p { padding-left: 8px; border-left: 3px solid #e94560; }
+    .skills {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px;
+    }
+    .skills span {
+      background: linear-gradient(135deg, #e94560, #533483);
+      color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.9rem;
+    }
+    .post-card {
+      background: linear-gradient(135deg, #f8f9fa, #fff);
+      border-radius: 16px; padding: 24px;
+      border: 1px solid #eee; transition: all 0.3s;
+      text-decoration: none; display: block;
+    }
+    .post-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(233, 69, 96, 0.15);
+      border-color: #e94560;
+    }
+    .post-card h3 { color: #1a1a2e; font-size: 1.2rem; margin-bottom: 12px; }
+    .post-card p { color: #666; font-size: 0.95rem; margin-bottom: 12px; }
+    .post-card .meta { color: #999; font-size: 0.85rem; }
+    .links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    .links a {
+      color: #e94560; text-decoration: none; padding: 10px 20px;
+      border: 2px solid #e94560; border-radius: 25px;
+      transition: all 0.2s; font-weight: 500;
+    }
+    .links a:hover { background: #e94560; color: white; }
+    .quote {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: white; padding: 24px 32px; border-radius: 16px;
+      font-style: italic; text-align: center; margin-top: 40px;
+    }
+    .quote p { font-size: 1.1rem; opacity: 0.9; }
+    .footer {
+      text-align: center; color: rgba(255,255,255,0.7);
+      font-size: 0.9rem; padding: 24px;
+    }
+    .footer a { color: rgba(255,255,255,0.85); }
+    @media (max-width: 600px) {
+      .card { padding: 28px; }
+      h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <div class="avatar">⌨️</div>
+        <h1>文字极客</h1>
+        <p class="subtitle">探索文字与代码的无限可能</p>
+      </div>
+
+      <div class="section">
+        <h2>👨‍💻 关于我</h2>
+        <div class="about-content">
+          <p>热爱技术的全栈开发者，专注于构建优雅且实用的数字产品。相信代码可以改变世界，文字可以传递思想。</p>
+          <p>日常沉迷于 Web 开发、云原生架构和人工智能领域。喜欢把复杂的技术用简单的方式表达出来，让更多人能够理解和应用。</p>
+          <p>工作之余，喜欢阅读、写作和探索新技术。这里是我记录学习心得、分享技术见解的小天地。</p>
+        </div>
+        <div class="skills">
+          <span>TypeScript</span>
+          <span>React</span>
+          <span>Node.js</span>
+          <span>Docker</span>
+          <span>云计算</span>
+          <span>AI</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>📝 最新文章</h2>
+        <a href="/post/hello-world.html" class="post-card">
+          <h3>你好，世界！我的技术博客正式上线</h3>
+          <p>欢迎来到文字极客！这是我的第一篇文章，在这里我将分享我的技术学习之旅、编程心得以及对行业的思考...</p>
+          <div class="meta">📅 2026-03-04 · ☕ 3 分钟阅读</div>
+        </a>
+      </div>
+
+      <div class="section">
+        <h2>🔗 找到我</h2>
+        <div class="links">
+          <a href="https://github.com" target="_blank">GitHub</a>
+          <a href="mailto:hi@workly.cloud">发邮件</a>
+        </div>
+      </div>
+
+      <div class="quote">
+        <p>"代码是写给人看的，只是顺便能在机器上运行。" — Harold Abelson</p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>© 2026 文字极客 | <a href="https://beian.miit.gov.cn" target="_blank">粤ICP备XXXXXXXX号</a></p>
+    </footer>
+  </div>
+</body>
+</html>
+

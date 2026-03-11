@@ -1,0 +1,73 @@
+// 圆角
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 20px;
+$radius-pill: 999px;
+
+// 颜色
+$primary: #6366f1;
+$primary-light: #818cf8;
+$secondary: #f472b6;
+$success: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+
+// 文字颜色
+$text-primary: #1e293b;
+$text-secondary: #64748b;
+$text-light: #94a3b8;
+
+// 背景和边框
+$bg-light: #f1f5f9;
+$border-color: #e2e8f0;
+
+// 渐变
+$gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$gradient-fun: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+$gradient-ocean: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+$gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+$gradient-mint: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+$gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+
+// 阴影
+$shadow-sm: 0 2px 8px rgba(99, 102, 241, 0.08);
+$shadow-md: 0 8px 24px rgba(99, 102, 241, 0.12);
+$shadow-lg: 0 16px 48px rgba(99, 102, 241, 0.16);
+$shadow-xl: 0 24px 64px rgba(99, 102, 241, 0.2);
+$shadow-glow: 0 0 32px rgba(99, 102, 241, 0.25);
+
+// 动画
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+$transition-slow: 0.4s ease;
+
+// 滚动条样式 Mixin
+@mixin custom-scrollbar($thumb-color: rgba(139, 92, 246, 0.3), $track-color: rgba(0, 0, 0, 0.03)) {
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: $thumb-color transparent;
+
+  // Webkit (Chrome, Safari, Edge)
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $track-color;
+    border-radius: $radius-pill;
+    margin: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a78bfa, #8b5cf6);  // lighter purple to purple
+    border-radius: $radius-pill;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+
+    &:hover {
+      background: linear-gradient(180deg, #8b5cf6, #7c3aed);  // purple to darker purple
+    }
+  }
+}

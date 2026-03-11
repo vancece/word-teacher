@@ -1,0 +1,22 @@
+{
+  "name": "word-teacher-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "dev-docker": "./scripts/dev-start.sh",
+    "dev-web": "pnpm -r --parallel run dev",
+    "stop": "docker compose -f docker-compose.dev.yml down",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "db:studio": "pnpm --filter backend db:studio",
+    "db:seed": "pnpm --filter backend db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

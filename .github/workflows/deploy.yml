@@ -1,0 +1,290 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:  # 允许手动触发
+
+env:
+  # 修改为你的 Docker Hub 用户名
+  DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}
+  IMAGE_PREFIX: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}/word-teacher
+
+jobs:
+  # 检测哪些服务需要重新构建
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      agent: ${{ steps.changes.outputs.agent }}
+      config: ${{ steps.changes.outputs.config }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changes
+        id: changes
+        run: |
+          # 获取变更的文件
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
+          echo "Changed files: $CHANGED"
+
+          # 检测各服务是否有变更
+          if echo "$CHANGED" | grep -qE "^backend/|^Dockerfile.backend|^prisma/"; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED" | grep -qE "^frontend/|^admin/|^homepage/|^Dockerfile.nginx|^deploy/nginx"; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED" | grep -qE "^agent/|^Dockerfile.agent"; then
+            echo "agent=true" >> $GITHUB_OUTPUT
+          else
+            echo "agent=false" >> $GITHUB_OUTPUT
+          fi
+
+          # 检测配置文件是否有变更（docker-compose.prod.yml）
+          if echo "$CHANGED" | grep -qE "^docker-compose.prod.yml"; then
+            echo "config=true" >> $GITHUB_OUTPUT
+          else
+            echo "config=false" >> $GITHUB_OUTPUT
+          fi
+
+  # 构建并推送 Backend
+  build-backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 构建并推送 Nginx (Frontend + Admin)
+  build-frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Nginx
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.nginx
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-nginx:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 构建并推送 Agent
+  build-agent:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.agent == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Agent
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.agent
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}-agent:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 部署到服务器
+  deploy:
+    needs: [detect-changes, build-backend, build-frontend, build-agent]
+    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-agent.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 同步 docker-compose.prod.yml 到服务器（始终同步，确保配置一致）
+      - name: Sync docker-compose.prod.yml
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/root/word-teacher/"
+          overwrite: true
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          ALIYUN_STT_APPKEY: ${{ secrets.ALIYUN_STT_APPKEY }}
+          ALIYUN_AK_ID: ${{ secrets.ALIYUN_AK_ID }}
+          ALIYUN_AK_SECRET: ${{ secrets.ALIYUN_AK_SECRET }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          SSL_FULLCHAIN: ${{ secrets.SSL_FULLCHAIN }}
+          SSL_PRIVKEY: ${{ secrets.SSL_PRIVKEY }}
+          # 直接传递构建结果，更可靠
+          BUILD_BACKEND: ${{ needs.build-backend.result }}
+          BUILD_FRONTEND: ${{ needs.build-frontend.result }}
+          BUILD_AGENT: ${{ needs.build-agent.result }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
+          script: |
+            cd /root/word-teacher
+
+            echo "🚀 开始部署..."
+            echo "BUILD_BACKEND=$BUILD_BACKEND"
+            echo "BUILD_FRONTEND=$BUILD_FRONTEND"
+            echo "BUILD_AGENT=$BUILD_AGENT"
+
+            # ============================================================
+            # 0. 从 GitHub Secrets 生成 .env 文件
+            # ============================================================
+            echo "🔑 生成 .env 配置文件..."
+
+            escape_dollar() {
+              printf '%s' "$1" | sed 's/\$/\$\$/g'
+            }
+
+            get_value() {
+              if [ -z "$1" ]; then
+                printf '%s' "$2"
+              else
+                printf '%s' "$1"
+              fi
+            }
+
+            {
+              printf 'IMAGE_TAG=latest\n'
+              printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_ROOT_PASSWORD" "WordTeacher2024!")")"
+              printf 'MYSQL_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_PASSWORD" "change_this_app_password_456")")"
+              printf 'JWT_SECRET=%s\n' "$(escape_dollar "$(get_value "$JWT_SECRET" "word-teacher-jwt-secret-key-2024-production")")"
+              printf 'CORS_ORIGINS=*\n'
+              printf 'AGENT_API_KEY=%s\n' "$(escape_dollar "$(get_value "$AGENT_API_KEY" "word-teacher-agent-api-key-2024")")"
+              printf 'MINIO_ROOT_USER=admin\n'
+              printf 'MINIO_ROOT_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MINIO_ROOT_PASSWORD" "minio123456")")"
+              printf 'MINIO_BUCKET=covers\n'
+              printf 'MINIO_PUBLIC_PATH=/minio\n'
+              printf 'DASHSCOPE_API_KEY=%s\n' "$(escape_dollar "$DASHSCOPE_API_KEY")"
+              printf 'ALIYUN_STT_APPKEY=%s\n' "$(escape_dollar "$ALIYUN_STT_APPKEY")"
+              printf 'ALIYUN_AK_ID=%s\n' "$(escape_dollar "$ALIYUN_AK_ID")"
+              printf 'ALIYUN_AK_SECRET=%s\n' "$(escape_dollar "$ALIYUN_AK_SECRET")"
+            } > .env
+
+            echo "✅ .env 配置文件已生成"
+
+            # ============================================================
+            # 0.5 从 GitHub Secrets 写入 SSL 证书
+            # ============================================================
+            if [ -n "$SSL_FULLCHAIN" ] && [ -n "$SSL_PRIVKEY" ]; then
+              echo "🔐 写入 SSL 证书..."
+              mkdir -p ssl
+              printf '%s\n' "$SSL_FULLCHAIN" > ssl/fullchain.pem
+              printf '%s\n' "$SSL_PRIVKEY" > ssl/privkey.pem
+              chmod 600 ssl/privkey.pem
+              echo "✅ SSL 证书已写入"
+            fi
+
+            # ============================================================
+            # 1. 拉取最新镜像
+            # ============================================================
+            echo "📥 拉取最新镜像..."
+            docker compose -f docker-compose.prod.yml pull
+
+            # ============================================================
+            # 2. 更新服务（根据构建结果判断）
+            # ============================================================
+
+            if [ "$BUILD_BACKEND" = "success" ]; then
+              echo "📦 更新 Backend 服务..."
+              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
+              echo "✅ Backend 更新完成"
+            fi
+
+            if [ "$BUILD_AGENT" = "success" ]; then
+              echo "🤖 更新 Agent 服务..."
+              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate agent
+              echo "✅ Agent 更新完成"
+            fi
+
+            if [ "$BUILD_FRONTEND" = "success" ]; then
+              echo "🌐 更新 Nginx 服务..."
+              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
+              echo "✅ Nginx 更新完成"
+            fi
+
+            # ============================================================
+            # 3. 清理旧镜像
+            # ============================================================
+            echo "🧹 清理旧镜像..."
+            docker image prune -f
+
+            echo "✅ 部署完成!"
+            docker compose -f docker-compose.prod.yml ps
+
+  # 部署后通知（可选）
+  notify:
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ 部署成功!"
+          else
+            echo "❌ 部署失败!"
+            exit 1
+          fi
+

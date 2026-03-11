@@ -1,0 +1,26 @@
+@use '../styles/variables' as *;
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: $text-secondary;
+  background: $bg-light;
+  border: none;
+  border-radius: $radius-pill;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: #e2e8f0;
+    color: $text-primary;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+

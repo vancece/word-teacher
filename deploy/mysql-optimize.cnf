@@ -1,0 +1,37 @@
+# MySQL 优化配置 - 适合 2GB 内存服务器
+# 放置于: /etc/mysql/conf.d/optimize.cnf
+
+[mysqld]
+# ============ 内存优化 ============
+# InnoDB 缓冲池 - 主要内存消耗，128MB 适合小服务器
+innodb_buffer_pool_size = 128M
+innodb_log_buffer_size = 8M
+
+# 事务日志刷新策略 (2=每秒刷新，性能更好但可能丢失1秒数据)
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# ============ 连接数优化 ============
+max_connections = 50
+thread_cache_size = 8
+
+# ============ 临时表 ============
+tmp_table_size = 16M
+max_heap_table_size = 16M
+
+# ============ 缓冲区 ============
+sort_buffer_size = 256K
+read_buffer_size = 256K
+read_rnd_buffer_size = 512K
+join_buffer_size = 256K
+
+# ============ 表缓存 ============
+table_open_cache = 200
+table_definition_cache = 200
+
+# ============ 日志 ============
+slow_query_log = 0
+
+# ============ 性能模式（关闭以节省内存）============
+performance_schema = OFF
+

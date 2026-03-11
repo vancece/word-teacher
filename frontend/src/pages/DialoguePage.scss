@@ -1,0 +1,1407 @@
+@use '../styles/variables' as *;
+
+.dialogue-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100vh;
+  max-height: 100vh;
+  padding-top: calc(64px + 1rem) !important;
+  padding-bottom: 1rem !important;
+  position: relative;
+  overflow: hidden;
+}
+
+// ========== 童趣背景装饰 ==========
+.dialogue-shell::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    // 小星星
+    radial-gradient(circle at 10% 20%, rgba(251, 191, 36, 0.15) 0%, transparent 8px),
+    radial-gradient(circle at 85% 15%, rgba(251, 191, 36, 0.12) 0%, transparent 6px),
+    radial-gradient(circle at 70% 80%, rgba(251, 191, 36, 0.1) 0%, transparent 10px),
+    radial-gradient(circle at 25% 75%, rgba(251, 191, 36, 0.12) 0%, transparent 7px),
+    // 小圆点
+    radial-gradient(circle at 90% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 12px),
+    radial-gradient(circle at 5% 60%, rgba(244, 114, 182, 0.08) 0%, transparent 15px),
+    radial-gradient(circle at 50% 5%, rgba(96, 165, 250, 0.1) 0%, transparent 10px);
+}
+
+// 浮动装饰元素
+.dialogue-content {
+  position: relative;
+  z-index: 1;
+}
+
+// 主内容区域（左右两栏）
+.dialogue-content {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 0;
+}
+
+// 左侧对话区域
+.dialogue-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+// 合并后的对话卡片
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+  backdrop-filter: blur(16px);
+  border: 2px solid transparent;
+  box-shadow:
+    $shadow-sm,
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  position: relative;
+
+  // 彩色顶部边框
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f472b6, #8b5cf6, #3b82f6, #10b981, #fbbf24);
+    z-index: 10;
+  }
+}
+
+// 卡片头部
+.chat-card-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+
+// 对话消息区域（可滚动）
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @include custom-scrollbar;
+}
+
+// 卡片底部（输入区域）
+.chat-card-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.98) 100%);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+
+  .tips {
+    font-size: 0.8rem;
+    color: $text-light;
+    margin: 0;
+  }
+}
+
+// 右侧面板
+.dialogue-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// 进度面板（与对话卡片风格一致）
+.progress-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border-radius: $radius-lg;
+  padding: 1.25rem;
+  box-shadow: $shadow-sm;
+  border: 2px solid rgba(139, 92, 246, 0.15);
+  position: relative;
+  overflow: hidden;
+
+  // 顶部彩色装饰条
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #f472b6, #fbbf24);
+    z-index: 10;
+  }
+
+  // 童趣装饰
+  &::after {
+    content: '✨';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1rem;
+    animation: sparkle 2s ease-in-out infinite;
+  }
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+    color: $text-primary;
+    font-weight: 800;
+    text-align: center;
+  }
+}
+
+// 星星进度
+.progress-stars {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  position: relative;
+
+  // 连接线
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 4px;
+    background: linear-gradient(90deg, #8b5cf6 0%, #e5e7eb 50%);
+    border-radius: 2px;
+    z-index: 0;
+    transform: translateY(-50%);
+  }
+}
+
+.star-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 1;
+  position: relative;
+
+  .star-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    transition: all 0.3s ease;
+  }
+
+  .star-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #78716c;
+    background: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  // 已完成
+  &.completed {
+    .star-icon {
+      animation: star-shine 1.5s ease-in-out infinite;
+    }
+    .star-num {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: white;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+    }
+  }
+
+  // 当前轮次
+  &.current {
+    .star-icon {
+      font-size: 2.2rem;
+      animation: star-bounce 0.6s ease-in-out infinite;
+    }
+    .star-num {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      color: white;
+      transform: scale(1.2);
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+    }
+  }
+
+  // 待完成 - 更可爱的样式
+  &.pending {
+    .star-icon {
+      opacity: 1;
+      filter: none;
+      position: relative;
+
+      // 添加柔和的光晕效果
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 70%);
+        border-radius: 50%;
+        animation: pending-glow 2s ease-in-out infinite;
+      }
+    }
+    .star-num {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #b45309;
+      border: 2px dashed #fbbf24;
+      box-shadow: 0 1px 4px rgba(251, 191, 36, 0.2);
+    }
+  }
+}
+
+// 待完成星星的呼吸动画
+@keyframes pending-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+// 进度消息
+.progress-message {
+  text-align: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  color: $text-secondary;
+  font-weight: 600;
+
+  strong {
+    color: #7c3aed;
+    font-size: 1.1rem;
+  }
+
+  .complete {
+    color: #059669;
+    animation: celebrate-text 0.5s ease-in-out infinite alternate;
+  }
+}
+
+// 星星动画
+@keyframes star-shine {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.9));
+  }
+}
+
+@keyframes star-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.1);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2) rotate(15deg);
+  }
+}
+
+@keyframes celebrate-text {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+
+
+// ========== 可爱动物角色 ==========
+.mascot-container {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border-radius: $radius-lg;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: $shadow-sm;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(139, 92, 246, 0.15);
+
+  // 顶部彩色装饰条（与对话卡片风格一致）
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #fbbf24, #f472b6, #8b5cf6, #3b82f6, #10b981);
+    z-index: 10;
+  }
+
+  // 童趣装饰性背景图案
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.08) 0%, transparent 25px),
+      radial-gradient(circle at 85% 20%, rgba(244, 114, 182, 0.08) 0%, transparent 20px),
+      radial-gradient(circle at 70% 75%, rgba(96, 165, 250, 0.08) 0%, transparent 22px),
+      radial-gradient(circle at 10% 80%, rgba(52, 211, 153, 0.06) 0%, transparent 18px),
+      radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.05) 0%, transparent 30px);
+    pointer-events: none;
+  }
+
+  // 场景信息（在 mascot 内部）
+  .scene-info {
+    text-align: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+    width: 100%;
+    position: relative;
+    z-index: 1;
+
+    h4 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      color: $text-primary;
+      font-weight: 700;
+    }
+
+    .scene-desc {
+      margin: 0;
+      font-size: 0.85rem;
+      color: $text-secondary;
+      line-height: 1.5;
+    }
+  }
+}
+
+// 动物区域（在剩余空间垂直居中）
+.mascot-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.mascot {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+}
+
+.mascot-body {
+  position: relative;
+  width: 75px;
+  height: 75px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 50% 50% 45% 45%;
+  margin: 8px auto 0;
+  animation: mascot-bounce 2s ease-in-out infinite;
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.3);
+}
+
+.mascot-face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+}
+
+.mascot-eyes {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 6px;
+}
+
+.mascot-eyes .eye {
+  width: 10px;
+  height: 10px;
+  background: #1f2937;
+  border-radius: 50%;
+  position: relative;
+  animation: mascot-blink 4s ease-in-out infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 4px;
+    height: 4px;
+    background: white;
+    border-radius: 50%;
+  }
+}
+
+.mascot-mouth {
+  width: 16px;
+  height: 8px;
+  border: 2px solid #1f2937;
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  margin: 0 auto;
+}
+
+.mascot-cheeks .cheek {
+  position: absolute;
+  width: 14px;
+  height: 8px;
+  background: rgba(251, 146, 60, 0.5);
+  border-radius: 50%;
+  top: 55%;
+
+  &.left { left: 6px; }
+  &.right { right: 6px; }
+}
+
+.mascot-ears .ear {
+  position: absolute;
+  top: -12px;
+  width: 22px;
+  height: 30px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border-radius: 50% 50% 0 0;
+
+  &.left {
+    left: 8px;
+    transform: rotate(-15deg);
+  }
+  &.right {
+    right: 8px;
+    transform: rotate(15deg);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 20px;
+    background: #fcd34d;
+    border-radius: 50% 50% 0 0;
+  }
+}
+
+.mascot-message {
+  background: white;
+  border-radius: $radius-md;
+  padding: 0.75rem 1rem;
+  box-shadow: $shadow-sm;
+  position: relative;
+  max-width: 100%;
+  text-align: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-bottom-color: white;
+    border-top: none;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: $text-primary;
+    font-weight: 500;
+  }
+}
+
+// 动物状态动画
+@keyframes mascot-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes mascot-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+// 思考状态
+.mascot-container.thinking {
+  .mascot-body {
+    animation: mascot-bounce 1s ease-in-out infinite;
+  }
+  .mascot-eyes .eye {
+    animation: mascot-look-around 2s ease-in-out infinite;
+  }
+}
+
+@keyframes mascot-look-around {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+// 听音频状态
+.mascot-container.listening {
+  .mascot-body {
+    animation: mascot-sway 0.6s ease-in-out infinite;
+  }
+  .mascot-ears .ear {
+    animation: mascot-ear-wiggle 0.4s ease-in-out infinite;
+  }
+}
+
+@keyframes mascot-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes mascot-ear-wiggle {
+  0%, 100% { transform: rotate(-15deg) scale(1); }
+  50% { transform: rotate(-15deg) scale(1.1); }
+}
+
+.mascot-container.listening .mascot-ears .ear.right {
+  animation: mascot-ear-wiggle-right 0.4s ease-in-out infinite;
+}
+
+@keyframes mascot-ear-wiggle-right {
+  0%, 100% { transform: rotate(15deg) scale(1); }
+  50% { transform: rotate(15deg) scale(1.1); }
+}
+
+// 等待状态
+.mascot-container.waiting {
+  .mascot-eyes .eye {
+    animation: mascot-blink 2s ease-in-out infinite;
+  }
+}
+
+// 庆祝状态
+.mascot-container.celebrate {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 253, 244, 0.95) 100%);
+  border-color: rgba(52, 211, 153, 0.3);
+
+  .mascot-body {
+    animation: mascot-celebrate 0.5s ease-in-out infinite;
+  }
+  .mascot-mouth {
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    background: #1f2937;
+    border: none;
+  }
+}
+
+@keyframes mascot-celebrate {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(-5deg); }
+  75% { transform: translateY(-10px) rotate(5deg); }
+}
+
+// 对话框顶部（返回按钮，在对话面板内部）
+.chat-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+
+
+// 注意: .chat-panel 已被 .chat-card / .chat-messages 结构替代
+
+.chat-row {
+  display: flex;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.chat-row.ai {
+  justify-content: flex-start;
+}
+
+.chat-row.student {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: min(85%, 480px);
+  border-radius: $radius-lg;
+  padding: 1rem 1.25rem;
+  position: relative;
+}
+
+.chat-row.ai .bubble {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  color: #1e293b;
+  border: 2px solid #e0f2fe;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  position: relative;
+
+  // 可爱的小装饰点
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 12px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    border-radius: 50%;
+    box-shadow: 12px 2px 0 #f472b6, 24px 0 0 #fbbf24;
+  }
+
+  .role {
+    color: $primary;
+  }
+}
+
+.chat-row.student .bubble {
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 50%, #7c3aed 100%);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+  position: relative;
+
+  // 可爱的小装饰点
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #f472b6, #ec4899);
+    border-radius: 50%;
+    box-shadow: -12px 2px 0 #60a5fa, -24px 0 0 #34d399;
+  }
+
+  .role {
+    color: rgba(255,255,255,0.85);
+  }
+}
+
+.role {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.bubble p {
+  margin: 0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+// AI 消息的英文文本
+.bubble .message-english {
+  margin-bottom: 0.25rem;
+}
+
+// AI 消息的中文翻译
+.bubble .message-translation {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+
+  // 翻译 loading 状态
+  &.translation-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    font-style: italic;
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+  }
+}
+
+// 注意: .action-panel 已被 .chat-card-footer 结构替代
+
+.record-btn {
+  width: 100%;
+  border: none;
+  border-radius: $radius-md;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  transition: all $transition-normal;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: '🎙️';
+    font-size: 1.1rem;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+.record-btn.recording {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+  animation: pulse 1s ease-in-out infinite;
+
+  &::before {
+    content: '⏺️';
+  }
+}
+
+.record-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  box-shadow: none;
+  animation: none;
+
+  &::before {
+    content: '✅';
+  }
+}
+
+// 加载和错误状态
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+
+  p {
+    color: $text-secondary;
+    font-size: 1.1rem;
+  }
+
+  .ghost-btn {
+    margin-top: 0.5rem;
+  }
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid $border-color;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// 输入面板
+.input-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+// 模式切换按钮
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid $border-color;
+  border-radius: $radius-md;
+  background: white;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all $transition-fast;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+    background: rgba($primary, 0.05);
+  }
+}
+
+// 语音输入
+.voice-input {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.voice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 200px;
+  height: 56px;
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: $radius-pill;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $transition-normal;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.45);
+  }
+
+  &.recording {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+    animation: pulse-recording 1.5s ease-in-out infinite;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .recording-time {
+    font-variant-numeric: tabular-nums;
+    min-width: 2em;
+  }
+
+  // 旋转动画
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  // 声波动画（播放音频时）
+  .sound-wave {
+    animation: sound-pulse 0.8s ease-in-out infinite;
+  }
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  .pulse {
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// 声波动画（音频播放时）
+@keyframes sound-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(0.9);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.1);
+    opacity: 0.85;
+  }
+}
+
+// 文字输入包装器
+.text-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: visible;
+}
+
+.text-input {
+  flex: 1 1 auto !important;
+  min-width: 100px;
+  width: 100%;
+  height: 40px;
+  padding: 0 1rem;
+  border: 2px solid $border-color;
+  border-radius: $radius-md;
+  font-size: 0.95rem;
+  transition: all $transition-fast;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+
+  &::placeholder {
+    color: $text-light;
+  }
+
+  &:disabled {
+    background: $bg-light;
+    cursor: not-allowed;
+  }
+}
+
+.text-input-wrapper .submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  height: 40px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none;
+  border-radius: $radius-md;
+  background: $gradient-primary;
+  color: white;
+  cursor: pointer;
+  transition: all $transition-normal;
+  flex: 0 0 40px !important;
+  box-sizing: border-box;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+}
+
+// 完成面板
+.finished-panel {
+  width: 100%;
+}
+
+// 评分面板
+.evaluation-panel {
+  width: 100%;
+  text-align: left;
+}
+
+// 顶部：星级 + 标题
+.eval-header {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+
+  .star-display {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+
+    .star {
+      transition: all 0.3s ease;
+
+      &.filled {
+        fill: #fbbf24;
+        color: #fbbf24;
+        filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.4));
+      }
+
+      &.empty {
+        color: #e2e8f0;
+        fill: transparent;
+      }
+    }
+  }
+
+  .rating-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: $text-primary;
+  }
+}
+
+// 中间内容：分项 + 反馈
+.eval-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+// 分项评分
+.score-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.score-category {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: $radius-sm;
+
+  .cat-icon {
+    display: flex;
+    color: $text-light;
+  }
+
+  .cat-name {
+    font-size: 0.8rem;
+    color: $text-secondary;
+    min-width: 2rem;
+  }
+
+  .cat-stars {
+    display: flex;
+    gap: 2px;
+
+    .filled {
+      fill: #fbbf24;
+      color: #fbbf24;
+    }
+
+    .empty {
+      color: #e2e8f0;
+      fill: transparent;
+    }
+  }
+}
+
+// 优点和建议
+.eval-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.highlights,
+.improvements {
+  h4 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1rem;
+
+    li {
+      font-size: 0.78rem;
+      color: $text-secondary;
+      line-height: 1.4;
+      margin-bottom: 0.1rem;
+    }
+  }
+}
+
+.highlights h4 { color: #10b981; }
+.improvements h4 { color: #3b82f6; }
+
+// 底部：反馈 + 按钮
+.eval-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+
+  .feedback-text {
+    flex: 1;
+    margin: 0;
+    padding: 0.4rem 0.6rem;
+    background: rgba(99, 102, 241, 0.05);
+    border-radius: $radius-sm;
+    border-left: 3px solid $primary;
+    color: $text-secondary;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+
+  .primary-btn {
+    flex-shrink: 0;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+  }
+}
+
+// 不同星级的主题色
+.finished-panel {
+  // 5星 - 金色庆祝
+  &.rating-5 {
+    .eval-header {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border-radius: $radius-md;
+      padding: 0.75rem;
+      margin: -0.5rem -0.5rem 1rem;
+    }
+    .rating-title { color: #b45309; }
+    .star-display .star.filled {
+      animation: star-pulse 0.6s ease-in-out infinite alternate;
+    }
+  }
+
+  // 4星 - 紫色优秀
+  &.rating-4 {
+    .rating-title { color: #7c3aed; }
+    .eval-footer .feedback-text {
+      border-left-color: #7c3aed;
+      background: rgba(124, 58, 237, 0.05);
+    }
+  }
+
+  // 3星 - 蓝色不错
+  &.rating-3 {
+    .rating-title { color: #2563eb; }
+    .eval-footer .feedback-text {
+      border-left-color: #2563eb;
+      background: rgba(37, 99, 235, 0.05);
+    }
+  }
+
+  // 2星 - 绿色鼓励
+  &.rating-2 {
+    .rating-title { color: #059669; }
+    .eval-footer .feedback-text {
+      border-left-color: #059669;
+      background: rgba(5, 150, 105, 0.05);
+    }
+  }
+
+  // 1星 - 温暖橙色
+  &.rating-1 {
+    .rating-title { color: #ea580c; }
+    .eval-footer .feedback-text {
+      border-left-color: #ea580c;
+      background: rgba(234, 88, 12, 0.05);
+    }
+  }
+}
+
+@keyframes star-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+// 无评分
+.no-evaluation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  color: #f59e0b;
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: $text-primary;
+  }
+
+  .primary-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+// 错误提示
+.error-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba($danger, 0.95);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: $radius-md;
+  font-size: 0.9rem;
+  box-shadow: $shadow-md;
+  animation: fadeInUp 0.3s ease-out;
+  z-index: 100;
+}
+
+
+
+// 正在输入动画（仅在无文本时显示）
+.bubble.typing p {
+  display: flex;
+  gap: 4px;
+
+  &::after {
+    content: '';
+    animation: dots 1.5s infinite;
+  }
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+.tips {
+  margin: 1rem 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+
+  &::before {
+    content: '💡 ';
+  }
+}
+
+// 中等屏幕：隐藏右侧面板
+@media (max-width: 1024px) {
+  .dialogue-content {
+    grid-template-columns: 1fr;
+  }
+
+  .dialogue-right {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-card-header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .chat-messages {
+    padding: 0.75rem 1rem;
+  }
+
+  .chat-card-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .bubble {
+    max-width: 90%;
+    padding: 0.875rem 1rem;
+  }
+}
