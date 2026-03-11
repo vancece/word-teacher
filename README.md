@@ -1,4 +1,4 @@
-# Word Teacher
+# Word Teacher AI 英语口语训练
 
 **AI 英语口语训练 | AI English Speaking Practice**
 
