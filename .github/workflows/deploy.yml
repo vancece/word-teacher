@@ -276,7 +276,7 @@ jobs:
   # 部署后通知（可选）
   notify:
     needs: deploy
-    if: always()
+    if: always() && needs.deploy.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
       - name: Deployment Status
@@ -287,4 +287,3 @@ jobs:
             echo "❌ 部署失败!"
             exit 1
           fi
-
