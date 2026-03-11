@@ -1,10 +1,12 @@
-# Word Teacher - AI English Speaking Practice System
+# Word Teacher
+
+**AI 英语口语训练 | AI English Speaking Practice**
 
 [English](README_EN.md) | 中文
 
-AI-powered English speaking practice application. Through **scenario-based AI conversations + read-aloud practice + real-time speech recognition + intelligent scoring feedback**, it helps students practice speaking English frequently in a relaxed environment.
+通过 **AI 对话 + 跟读练习 + 语音识别 + 智能评分**，让英语口语练习更轻松高效。
 
-AI 驱动的英语口语对话练习应用。通过**场景化 AI 对话 + 英语跟读 + 实时语音识别 + 智能评分反馈**，帮助学生在轻松的环境中高频开口练习英语。
+Practice English speaking with **AI conversations + read-aloud + speech recognition + smart scoring**.
 
 ## 📸 产品截图
 
