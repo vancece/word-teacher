@@ -4,10 +4,10 @@
  */
 import crypto from 'crypto'
 
-// 钉钉机器人配置
+// 钉钉机器人配置（从环境变量读取）
 const DINGTALK_WEBHOOK = 'https://oapi.dingtalk.com/robot/send'
-const ACCESS_TOKEN = 'c0a83ce8bdef5758d94f6841d8022103e343333ba9976fc66d4ec46a7db58db5'
-const SECRET = 'SECfbbd403fb4521dd00d96535b9d02e47aaccd7d4770d83e361f321ec597149ee4'
+const ACCESS_TOKEN = process.env.DINGTALK_ACCESS_TOKEN || ''
+const SECRET = process.env.DINGTALK_SECRET || ''
 
 /**
  * 生成钉钉签名
@@ -25,6 +25,12 @@ function generateSign(): { timestamp: string; sign: string } {
  * 发送钉钉消息
  */
 async function sendMessage(content: object): Promise<boolean> {
+  // 如果没配置钉钉，跳过通知
+  if (!ACCESS_TOKEN || !SECRET) {
+    console.log('[DingTalk] Skipped: DINGTALK_ACCESS_TOKEN or DINGTALK_SECRET not configured')
+    return true
+  }
+
   try {
     const { timestamp, sign } = generateSign()
     const url = `${DINGTALK_WEBHOOK}?access_token=${ACCESS_TOKEN}&timestamp=${timestamp}&sign=${sign}`
@@ -36,7 +42,7 @@ async function sendMessage(content: object): Promise<boolean> {
     })
 
     const result = await response.json() as { errcode: number; errmsg: string }
-    
+
     if (result.errcode !== 0) {
       console.error('[DingTalk] Send failed:', result.errmsg)
       return false
