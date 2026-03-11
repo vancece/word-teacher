@@ -1,6 +1,6 @@
-# Echo Kid - 小学生 AI 英语口语训练系统
+# Word Teacher - AI 英语口语训练系统
 
-面向小学生的 AI 英语口语对话练习应用。通过**场景化 AI 对话 + 英语跟读 + 实时语音识别 + 智能评分反馈**，帮助学生在轻松的环境中高频开口练习英语。
+AI 驱动的英语口语对话练习应用。通过**场景化 AI 对话 + 英语跟读 + 实时语音识别 + 智能评分反馈**，帮助学生在轻松的环境中高频开口练习英语。
 
 **线上地址**：
 - 学生端: `http://YOUR_SERVER_IP/teacher-test`
@@ -15,7 +15,7 @@
 
 ## 🎯 产品定位
 
-- **目标用户**：小学 1-6 年级学生
+- **目标用户**：英语学习者（学生、成人均适用）
 - **核心场景**：课后口语练习、假期自主学习
 - **教学理念**：沉浸式对话 + 即时反馈 + 鼓励式评价
 
@@ -353,7 +353,7 @@ pm2 start agent/dist/index.js --name agent
 | `DASHSCOPE_API_KEY` | 阿里云 AI API Key |
 
 3. 在 **Variables** 中添加 `DOCKER_USERNAME`（你的 Docker Hub 用户名）
-4. 推送代码到 `main` 分支即可自动部署 🚀
+4. 推送代码到 `master` 分支即可自动部署 🚀
 
 👉 **完整配置指南**：[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md#-github-actions-自动部署cicd)
 

@@ -2,7 +2,7 @@ name: Deploy to Server
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:  # 允许手动触发
 
 env:

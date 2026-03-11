@@ -74,7 +74,7 @@ export default function SceneListPage() {
             <h1 className="brand-title">Echo Kid</h1>
             <p className="brand-slogan">
               <Target size={14} />
-              小学生英语口语训练
+              AI 英语口语训练
             </p>
             <p className="header-description">
               AI 陪你练口语，轻松开口说英语！

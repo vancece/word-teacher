@@ -34,7 +34,7 @@ export default function Header() {
         </div>
         <div className="brand">
           <h1 className="app-title">Echo Kid</h1>
-          <span className="app-slogan">小学英语口语训练</span>
+          <span className="app-slogan">AI 英语口语训练</span>
         </div>
       </div>
 
