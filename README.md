@@ -320,7 +320,7 @@ cd agent && pnpm dev      # Agent http://localhost:8000
             └───────────┘   └───────────┘
 ```
 
-### 快速部署
+### 快速部署（手动）
 ```bash
 # 1. 生成密钥
 openssl rand -base64 48  # JWT_SECRET
@@ -333,6 +333,29 @@ pnpm build
 pm2 start backend/dist/index.js --name backend
 pm2 start agent/dist/index.js --name agent
 ```
+
+### 🔄 GitHub Actions 自动部署（CI/CD）
+
+本项目支持通过 GitHub Actions 实现**推送即部署**：
+
+1. Fork 本仓库
+2. 在 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
+
+| Secret | 说明 |
+|--------|------|
+| `SERVER_HOST` | 服务器 IP |
+| `SERVER_SSH_KEY` | SSH 私钥 |
+| `DOCKER_PASSWORD` | Docker Hub Token |
+| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 |
+| `MYSQL_PASSWORD` | MySQL 应用密码 |
+| `JWT_SECRET` | JWT 签名密钥 |
+| `AGENT_API_KEY` | Agent API 密钥 |
+| `DASHSCOPE_API_KEY` | 阿里云 AI API Key |
+
+3. 在 **Variables** 中添加 `DOCKER_USERNAME`（你的 Docker Hub 用户名）
+4. 推送代码到 `main` 分支即可自动部署
+
+👉 **完整配置指南**：[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md#-github-actions-自动部署cicd)
 
 ## 📖 文档
 
