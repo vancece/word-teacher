@@ -58,6 +58,9 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio123456}
       MINIO_BUCKET: ${MINIO_BUCKET:-covers}
       MINIO_PUBLIC_PATH: ${MINIO_PUBLIC_PATH:-/minio}
+      # 钉钉通知（可选）
+      DINGTALK_ACCESS_TOKEN: ${DINGTALK_ACCESS_TOKEN:-}
+      DINGTALK_SECRET: ${DINGTALK_SECRET:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/api/health"]
       interval: 30s
