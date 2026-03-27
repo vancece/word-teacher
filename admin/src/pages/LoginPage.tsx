@@ -117,6 +117,16 @@ export default function LoginPage() {
                 <Input
                   prefix={<UserOutlined />}
                   placeholder="请输入教师账号"
+                  styles={{
+                    affixWrapper: {
+                      height: 48,
+                      borderRadius: 12,
+                      border: '2px solid #e2e8f0',
+                      background: '#f8fafc',
+                      fontSize: 14,
+                      padding: '0 14px',
+                    },
+                  }}
                 />
               </Form.Item>
 
@@ -127,6 +137,16 @@ export default function LoginPage() {
                 <Input.Password
                   prefix={<LockOutlined />}
                   placeholder="请输入密码"
+                  styles={{
+                    affixWrapper: {
+                      height: 48,
+                      borderRadius: 12,
+                      border: '2px solid #e2e8f0',
+                      background: '#f8fafc',
+                      fontSize: 14,
+                      padding: '0 14px',
+                    },
+                  }}
                 />
               </Form.Item>
 
@@ -136,6 +156,15 @@ export default function LoginPage() {
                   htmlType="submit"
                   loading={isLoading}
                   block
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    border: 'none',
+                    height: 46,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    borderRadius: 12,
+                    boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+                  }}
                 >
                   登录后台
                 </Button>
