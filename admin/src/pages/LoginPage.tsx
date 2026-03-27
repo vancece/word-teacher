@@ -118,7 +118,7 @@ export default function LoginPage() {
                   prefix={<UserOutlined />}
                   placeholder="请输入教师账号"
                   styles={{
-                    affixWrapper: {
+                    root: {
                       height: 48,
                       borderRadius: 12,
                       border: '2px solid #e2e8f0',
@@ -138,7 +138,7 @@ export default function LoginPage() {
                   prefix={<LockOutlined />}
                   placeholder="请输入密码"
                   styles={{
-                    affixWrapper: {
+                    root: {
                       height: 48,
                       borderRadius: 12,
                       border: '2px solid #e2e8f0',
