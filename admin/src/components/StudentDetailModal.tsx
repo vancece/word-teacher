@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, Mic2, MessageSquare, TrendingUp } from 'lucide-react'
+import { X, Mic2, MessageSquare, TrendingUp, Eye } from 'lucide-react'
 import { adminApi } from '../api'
+import DialogueDetailModal from './DialogueDetailModal'
 import './StudentDetailModal.scss'
 
 interface Props {
@@ -36,6 +37,7 @@ interface StudentDetail {
 export default function StudentDetailModal({ studentId, onClose }: Props) {
   const [data, setData] = useState<StudentDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedRecord, setSelectedRecord] = useState<number | null>(null)
 
   useEffect(() => {
     loadStudent()
@@ -112,12 +114,19 @@ export default function StudentDetailModal({ studentId, onClose }: Props) {
               ) : (
                 <div className="record-list">
                   {data.practiceRecords.slice(0, 10).map((record) => (
-                    <div key={record.id} className="record-item">
+                    <div
+                      key={record.id}
+                      className="record-item clickable"
+                      onClick={() => setSelectedRecord(record.id)}
+                    >
                       <span className="scene">{record.scene?.name || '未知场景'}</span>
                       <span className="score">{record.totalScore ?? '-'}分</span>
                       <span className="date">
                         {new Date(record.createdAt).toLocaleDateString()}
                       </span>
+                      <button className="view-btn" title="查看对话详情">
+                        <Eye size={14} />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -147,6 +156,16 @@ export default function StudentDetailModal({ studentId, onClose }: Props) {
           <div className="error">加载失败</div>
         )}
       </div>
+
+      {/* 对话详情弹窗 */}
+      {selectedRecord && data && (
+        <DialogueDetailModal
+          studentId={studentId}
+          recordId={selectedRecord}
+          studentName={data.student.name}
+          onClose={() => setSelectedRecord(null)}
+        />
+      )}
     </div>
   )
 }

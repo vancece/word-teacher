@@ -129,6 +129,39 @@ router.get('/:id', asyncHandler(async (req: TeacherRequest, res) => {
 }))
 
 /**
+ * GET /api/admin/students/:studentId/practice-records/:recordId
+ * 获取某个学生的对话练习详情（含完整对话历史）
+ */
+router.get('/:studentId/practice-records/:recordId', asyncHandler(async (req: TeacherRequest, res) => {
+  const studentId = parseInt(req.params.studentId as string)
+  const recordId = parseInt(req.params.recordId as string)
+
+  const record = await prisma.practiceRecord.findUnique({
+    where: { id: recordId },
+    include: { scene: { select: { id: true, name: true, icon: true } } },
+  })
+
+  if (!record || record.studentId !== studentId) {
+    return res.status(404).json({ success: false, message: '记录不存在' })
+  }
+
+  return success(res, {
+    id: record.id,
+    scene: record.scene,
+    totalScore: record.totalScore,
+    pronunciationScore: record.pronunciationScore,
+    fluencyScore: record.fluencyScore,
+    grammarScore: record.grammarScore,
+    roundsCompleted: record.roundsCompleted,
+    durationSeconds: record.durationSeconds,
+    feedbackText: record.feedbackText,
+    dialogueHistory: record.dialogueHistory,
+    status: record.status,
+    createdAt: record.createdAt,
+  })
+}))
+
+/**
  * DELETE /api/admin/students/:id
  */
 router.delete('/:id', asyncHandler(async (req: TeacherRequest, res) => {

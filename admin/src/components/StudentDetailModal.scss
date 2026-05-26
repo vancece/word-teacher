@@ -142,6 +142,20 @@
       background: #f8fafc;
       border-radius: 8px;
 
+      &.clickable {
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #eff6ff;
+          transform: translateX(2px);
+
+          .view-btn {
+            opacity: 1;
+          }
+        }
+      }
+
       .scene {
         flex: 1;
         font-weight: 500;
@@ -161,6 +175,23 @@
       .date {
         font-size: 13px;
         color: #94a3b8;
+      }
+
+      .view-btn {
+        margin-left: 10px;
+        padding: 4px 8px;
+        border: none;
+        background: none;
+        color: #6366f1;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0.5;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #eef2ff;
+          opacity: 1;
+        }
       }
     }
   }

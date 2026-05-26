@@ -83,6 +83,32 @@ export interface ReadAloudScene {
   createdAt: string
 }
 
+// 对话消息
+export interface DialogueMessage {
+  id: string
+  role: 'ai' | 'student'
+  text: string
+  translation?: string
+  audioUrl?: string
+  timestamp: number
+}
+
+// 对话练习详情
+export interface PracticeRecordDetail {
+  id: number
+  scene: { id: string; name: string; icon?: string }
+  totalScore: number | null
+  pronunciationScore: number | null
+  fluencyScore: number | null
+  grammarScore: number | null
+  roundsCompleted: number | null
+  durationSeconds: number | null
+  feedbackText: string | null
+  dialogueHistory: DialogueMessage[] | null
+  status: string
+  createdAt: string
+}
+
 // 对话场景
 export interface DialogueScene {
   id: string
@@ -238,6 +264,11 @@ export const adminApi = {
   // 学生详情
   getStudentDetail: async (id: number): Promise<any> => {
     return apiClient.get(`/admin/students/${id}`) as unknown as any
+  },
+
+  // 获取对话练习详情（含完整对话历史）
+  getPracticeRecordDetail: async (studentId: number, recordId: number): Promise<PracticeRecordDetail> => {
+    return apiClient.get(`/admin/students/${studentId}/practice-records/${recordId}`) as unknown as PracticeRecordDetail
   },
 
   // 对话场景
