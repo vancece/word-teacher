@@ -90,12 +90,65 @@ export class ReadAloudAgent {
     // 保留原句单词的大小写
     const originalWords = originalSentence.split(/\s+/).filter(w => w.length > 0)
 
-    // 如果 SOE 返回的词数和原句一致，直接按位置用原句文本显示
-    // （SOE 会把数字 "3" 展开为 "three"，但位置对应关系不变）
-    const useOriginalByPosition = data.words.filter(w => w.matchTag !== 'extra').length === originalWords.length
+    // 辅助: 去标点小写化用于匹配
+    const normalizeForMatch = (text: string) => text.toLowerCase().replace(/[.,!?'"''"";\-:]/g, '').trim()
+
+    // 过滤掉 extra 词（多读的，原句里没有）
+    const soeNonExtra = data.words.filter(w => w.matchTag !== 'extra')
+
+    // 建立 SOE 词到原句词的映射关系
+    // 策略: 将 SOE 连续的小词合并匹配原句单词（处理缩写被拆开的情况，如 "isn't" → "isn" + "t"）
+    const soeToOrigMap = new Map<number, string>() // soeNonExtra index -> 原句文本
 
     let origIdx = 0
-    const words: WordResult[] = data.words.map((w) => {
+    let soeIdx = 0
+    while (soeIdx < soeNonExtra.length && origIdx < originalWords.length) {
+      const origNorm = normalizeForMatch(originalWords[origIdx])
+      const soeNorm = normalizeForMatch(soeNonExtra[soeIdx].word)
+
+      if (soeNorm === origNorm) {
+        // 完全匹配
+        soeToOrigMap.set(soeIdx, originalWords[origIdx])
+        soeIdx++
+        origIdx++
+      } else if (origNorm.startsWith(soeNorm)) {
+        // 原句单词可能被 SOE 拆成多个小词（如 "isn't" → "isn" + "t"）
+        // 尝试向后合并 SOE 词直到匹配原句词
+        let merged = soeNorm
+        let lookAhead = soeIdx + 1
+        let matched = false
+        while (lookAhead < soeNonExtra.length && merged.length < origNorm.length) {
+          merged += normalizeForMatch(soeNonExtra[lookAhead].word)
+          if (merged === origNorm) {
+            // 所有被拆开的 SOE 词都映射到同一个原句单词
+            for (let k = soeIdx; k <= lookAhead; k++) {
+              soeToOrigMap.set(k, k === soeIdx ? originalWords[origIdx] : '')
+            }
+            soeIdx = lookAhead + 1
+            origIdx++
+            matched = true
+            break
+          }
+          lookAhead++
+        }
+        if (!matched) {
+          // 合并失败，跳过
+          soeToOrigMap.set(soeIdx, originalWords[origIdx])
+          soeIdx++
+          origIdx++
+        }
+      } else {
+        // 不匹配，尝试跳过（可能 SOE 多识别了或者原句里少了）
+        soeToOrigMap.set(soeIdx, originalWords[origIdx])
+        soeIdx++
+        origIdx++
+      }
+    }
+
+    // 将 soeNonExtra 的索引映射回完整 data.words 数组的索引
+    let nonExtraIdx = 0
+    const words: WordResult[] = []
+    for (const w of data.words) {
       // 将 SOE matchTag 映射为前端 status
       let status: 'correct' | 'incorrect' | 'missing' = 'correct'
       if (w.matchTag === 'missing') status = 'missing'
@@ -103,25 +156,31 @@ export class ReadAloudAgent {
       // matchTag=correct 但 accuracy 极低时才标 incorrect（避免弱读词被误判）
       if (w.matchTag === 'correct' && w.accuracy < 40) status = 'incorrect'
 
-      // 按位置取原句文本（跳过 extra 词，它们是多读的，原句里没有）
       let displayText = w.word
-      if (w.matchTag !== 'extra' && useOriginalByPosition && origIdx < originalWords.length) {
-        displayText = originalWords[origIdx]
-        origIdx++
-      } else if (w.matchTag !== 'extra') {
-        origIdx++
+      let skip = false
+      if (w.matchTag !== 'extra') {
+        const mapped = soeToOrigMap.get(nonExtraIdx)
+        if (mapped === '') {
+          // 这是缩写被拆开的后续部分（已合并到前一个词），跳过
+          skip = true
+        } else if (mapped !== undefined) {
+          displayText = mapped
+        }
+        nonExtraIdx++
       }
 
-      return {
-        text: displayText,
-        status,
-        spoken: w.realWord,
-        accuracy: w.accuracy,
-        fluency: w.fluency,
-        matchTag: w.matchTag,
-        phoneInfos: w.phoneInfos,
+      if (!skip) {
+        words.push({
+          text: displayText,
+          status,
+          spoken: w.realWord,
+          accuracy: w.accuracy,
+          fluency: w.fluency,
+          matchTag: w.matchTag,
+          phoneInfos: w.phoneInfos,
+        })
       }
-    })
+    }
 
     // 使用 SOE 的 suggestedScore 作为准确率（更合理）
     const accuracy = Math.round(data.suggestedScore)
