@@ -183,6 +183,8 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           SSL_FULLCHAIN: ${{ secrets.SSL_FULLCHAIN }}
           SSL_PRIVKEY: ${{ secrets.SSL_PRIVKEY }}
           # 直接传递构建结果，更可靠
@@ -193,7 +195,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
+          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
           script: |
             cd /root/word-teacher
 
@@ -238,6 +240,8 @@ jobs:
               printf 'TENCENT_SECRET_ID=%s\n' "$(escape_dollar "$TENCENT_SECRET_ID")"
               printf 'TENCENT_SECRET_KEY=%s\n' "$(escape_dollar "$TENCENT_SECRET_KEY")"
               printf 'TENCENT_APP_ID=%s\n' "$(escape_dollar "$TENCENT_APP_ID")"
+              printf 'DINGTALK_ACCESS_TOKEN=%s\n' "$(escape_dollar "$DINGTALK_ACCESS_TOKEN")"
+              printf 'DINGTALK_SECRET=%s\n' "$(escape_dollar "$DINGTALK_SECRET")"
             } > .env
 
             echo "✅ .env 配置文件已生成"
@@ -263,6 +267,7 @@ jobs:
             unset MINIO_ROOT_USER MINIO_ROOT_PASSWORD DOCKER_USERNAME
             unset DASHSCOPE_API_KEY ALIYUN_STT_APPKEY ALIYUN_AK_ID ALIYUN_AK_SECRET
             unset TENCENT_SECRET_ID TENCENT_SECRET_KEY TENCENT_APP_ID
+            unset DINGTALK_ACCESS_TOKEN DINGTALK_SECRET
             unset CORS_ORIGINS IMAGE_TAG
 
             # ============================================================
