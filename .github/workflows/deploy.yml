@@ -195,6 +195,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
+          command_timeout: 10m
           envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
           script: |
             cd /root/word-teacher
@@ -271,13 +272,26 @@ jobs:
             unset CORS_ORIGINS IMAGE_TAG
 
             # ============================================================
-            # 2. 拉取最新镜像
+            # 2. 配置 Docker 镜像加速（如果尚未配置）
+            # ============================================================
+            if ! grep -q "registry-mirrors" /etc/docker/daemon.json 2>/dev/null; then
+              echo "🚀 配置 Docker 镜像加速..."
+              mkdir -p /etc/docker
+              printf '{\n  "registry-mirrors": [\n    "https://docker.1ms.run",\n    "https://docker.xuanyuan.me",\n    "https://docker.m.daocloud.io"\n  ]\n}\n' > /etc/docker/daemon.json
+              systemctl daemon-reload
+              systemctl restart docker
+              sleep 3
+              echo "✅ 镜像加速配置完成"
+            fi
+
+            # ============================================================
+            # 3. 拉取最新镜像
             # ============================================================
             echo "📥 拉取最新镜像..."
             docker compose -f docker-compose.prod.yml pull
 
             # ============================================================
-            # 3. 更新服务（根据构建结果判断）
+            # 4. 更新服务（根据构建结果判断）
             # ============================================================
 
             # 手动触发时所有服务都会 build=success，确保全部重启
@@ -307,7 +321,7 @@ jobs:
             fi
 
             # ============================================================
-            # 4. 清理旧镜像
+            # 5. 清理旧镜像
             # ============================================================
             echo "🧹 清理旧镜像..."
             docker image prune -f
