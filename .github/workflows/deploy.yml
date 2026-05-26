@@ -255,13 +255,24 @@ jobs:
             fi
 
             # ============================================================
-            # 1. 拉取最新镜像
+            # 1. 清除 shell 环境变量，避免覆盖 .env 文件
+            #    (appleboy/ssh-action 通过 envs 注入的变量优先级高于 .env 文件，
+            #     如果 secret 为空会导致 docker compose 读到空值)
+            # ============================================================
+            unset MYSQL_ROOT_PASSWORD MYSQL_PASSWORD JWT_SECRET AGENT_API_KEY
+            unset MINIO_ROOT_USER MINIO_ROOT_PASSWORD DOCKER_USERNAME
+            unset DASHSCOPE_API_KEY ALIYUN_STT_APPKEY ALIYUN_AK_ID ALIYUN_AK_SECRET
+            unset TENCENT_SECRET_ID TENCENT_SECRET_KEY TENCENT_APP_ID
+            unset CORS_ORIGINS IMAGE_TAG
+
+            # ============================================================
+            # 2. 拉取最新镜像
             # ============================================================
             echo "📥 拉取最新镜像..."
             docker compose -f docker-compose.prod.yml pull
 
             # ============================================================
-            # 2. 更新服务（根据构建结果判断）
+            # 3. 更新服务（根据构建结果判断）
             # ============================================================
 
             # 手动触发时所有服务都会 build=success，确保全部重启
@@ -291,7 +302,7 @@ jobs:
             fi
 
             # ============================================================
-            # 3. 清理旧镜像
+            # 4. 清理旧镜像
             # ============================================================
             echo "🧹 清理旧镜像..."
             docker image prune -f
