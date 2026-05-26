@@ -1,9 +1,10 @@
 /**
  * 跟读评分 Agent - 两步走：
- * 1. 先用 Qwen-Omni 识别用户说了什么（提供原句作为参考，支持缩写容错）
+ * 1. 先用阿里云STT/Qwen-Omni 识别用户说了什么
  * 2. 再对比目标句子计算分数
  */
 import { env } from '../config.js'
+import { aliyunSttService } from '../services/aliyun-stt.service.js'
 
 // 使用配置中的多模态对话模型
 const MODEL_OMNI = env.models.omni
@@ -63,23 +64,47 @@ export class ReadAloudAgent {
   }
 
   /**
-   * Step 1: 使用 Qwen-Omni 识别音频内容（纯语音识别，不提供原句）
+   * Step 1: 语音识别 - 优先阿里云STT（专业、稳定），fallback到Qwen-Omni
    * @param audioBase64 音频数据
    */
   private async transcribeAudio(audioBase64: string): Promise<string> {
-    // 清理 base64 数据：移除可能的 data URI 前缀，只保留纯 base64
+    // 清理 base64 数据
     let cleanBase64 = audioBase64
     if (cleanBase64.includes(',')) {
       cleanBase64 = cleanBase64.split(',')[1]
     }
     cleanBase64 = cleanBase64.replace(/^data:audio\/\w+;base64,/, '')
 
-    // 阿里云 Qwen-Omni 要求的格式: data:;base64,{base64_data}
-    const audioData = `data:;base64,${cleanBase64}`
-
     console.log(`[ReadAloudAgent] Audio base64 length: ${cleanBase64.length}, first 50 chars: ${cleanBase64.substring(0, 50)}`)
 
-    // 构建提示词（不提供原句，防止模型作弊）
+    // 优先阿里云 STT
+    if (aliyunSttService.isConfigured()) {
+      try {
+        const result = await aliyunSttService.transcribe(cleanBase64)
+        if (result.success && result.text) {
+          console.log(`[ReadAloudAgent] Aliyun STT transcribed: "${result.text}"`)
+          return result.text
+        }
+        if (result.success && !result.text) {
+          // STT 成功但没有识别到内容 = 静音
+          console.log(`[ReadAloudAgent] Aliyun STT returned empty (silence)`)
+          return '(silence)'
+        }
+        console.warn(`[ReadAloudAgent] Aliyun STT failed: ${result.error}, falling back to Qwen-Omni`)
+      } catch (err) {
+        console.warn(`[ReadAloudAgent] Aliyun STT error: ${err}, falling back to Qwen-Omni`)
+      }
+    }
+
+    // Fallback: Qwen-Omni
+    return this.transcribeWithQwenOmni(cleanBase64)
+  }
+
+  /**
+   * Fallback: 使用 Qwen-Omni 做语音识别
+   */
+  private async transcribeWithQwenOmni(cleanBase64: string): Promise<string> {
+    const audioData = `data:;base64,${cleanBase64}`
     const prompt = buildTranscribePrompt()
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -101,17 +126,16 @@ export class ReadAloudAgent {
         ],
         modalities: ['text'],
         stream: true,
-        temperature: 0.1,  // 低温度，更准确
+        temperature: 0.1,
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[ReadAloudAgent] Transcribe API error:', errorText)
+      console.error('[ReadAloudAgent] Qwen-Omni API error:', errorText)
       return '(error)'
     }
 
-    // 解析流式响应
     let text = ''
     const reader = response.body?.getReader()
     if (!reader) return '(error)'
