@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Select, Table, Tag, Progress } from 'antd'
+import { Select, Table, Tag, Progress, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { adminApi, type ReadAloudRecord } from '../api'
 import AdminTip from '../components/AdminTip'
+import ReadAloudDetailModal from '../components/ReadAloudDetailModal'
 import './ReadAloudRecordsPage.scss'
 
 export default function ReadAloudRecordsPage() {
@@ -11,6 +12,7 @@ export default function ReadAloudRecordsPage() {
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
+  const [detailRecord, setDetailRecord] = useState<ReadAloudRecord | null>(null)
   const limit = 15
 
   useEffect(() => {
@@ -98,6 +100,21 @@ export default function ReadAloudRecordsPage() {
       key: 'createdAt',
       render: (date) => new Date(date).toLocaleString(),
     },
+    {
+      title: '操作',
+      key: 'action',
+      width: 100,
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => setDetailRecord(record)}
+          disabled={record.status !== 'COMPLETED'}
+        >
+          查看详情
+        </Button>
+      ),
+    },
   ]
 
   return (
@@ -137,6 +154,15 @@ export default function ReadAloudRecordsPage() {
           onChange: (p) => setPage(p),
         }}
       />
+
+      {detailRecord && (
+        <ReadAloudDetailModal
+          studentId={detailRecord.studentId}
+          recordId={detailRecord.id}
+          studentName={(detailRecord as any).student?.name || '学生'}
+          onClose={() => setDetailRecord(null)}
+        />
+      )}
     </div>
   )
 }
