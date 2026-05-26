@@ -182,18 +182,30 @@ export class ReadAloudAgent {
       }
     }
 
-    // 使用 SOE 的 suggestedScore 作为准确率（更合理）
-    const accuracy = Math.round(data.suggestedScore)
+    // 对 SOE suggestedScore 做宽松映射（SOE 对小朋友偏严格）
+    // 将分数适当上调：低分段提升更多，高分段提升少
+    const rawScore = data.suggestedScore
+    let accuracy: number
+    if (rawScore >= 85) {
+      accuracy = Math.round(rawScore * 1.05) // 85+ 微调
+    } else if (rawScore >= 60) {
+      accuracy = Math.round(rawScore + (85 - rawScore) * 0.3) // 60-85 适度提升
+    } else if (rawScore >= 40) {
+      accuracy = Math.round(rawScore + (60 - rawScore) * 0.35 + 8) // 40-60 提升更多
+    } else {
+      accuracy = Math.round(rawScore * 1.4 + 10) // 40以下 大幅提升
+    }
+    accuracy = Math.min(accuracy, 100)
 
-    // 基于分数生成反馈
+    // 基于调整后分数生成反馈（阈值更宽松）
     let feedback: string
-    if (accuracy >= 90) {
+    if (accuracy >= 85) {
       feedback = '太棒了！发音非常标准！🌟'
-    } else if (accuracy >= 75) {
+    } else if (accuracy >= 70) {
       feedback = '不错！大部分发音很准确！'
-    } else if (accuracy >= 60) {
+    } else if (accuracy >= 55) {
       feedback = '还可以，再练习一下会更好！'
-    } else if (accuracy >= 40) {
+    } else if (accuracy >= 35) {
       feedback = '加油！注意标红的单词，多听多练！'
     } else {
       feedback = '别灰心！跟着原音多读几遍吧！'

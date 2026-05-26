@@ -17,12 +17,12 @@ export default function SentenceCard({
 }: Props) {
   // 根据 SOE 词级分数确定颜色 class
   const getWordClass = (word: typeof result extends { words: (infer W)[] } ? W : any) => {
-    // 如果有 SOE accuracy 数据，使用分数区间映射
+    // 如果有 SOE accuracy 数据，使用分数区间映射（宽松标准）
     if (word.accuracy !== undefined && word.accuracy !== null) {
       if (word.matchTag === 'missing') return 'missing'
       if (word.matchTag === 'extra') return 'extra'
-      if (word.accuracy >= 70) return 'correct'
-      if (word.accuracy >= 40) return 'medium'
+      if (word.accuracy >= 60) return 'correct'
+      if (word.accuracy >= 30) return 'medium'
       return 'incorrect'
     }
     // fallback: 旧方案的 status 字段
