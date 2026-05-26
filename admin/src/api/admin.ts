@@ -93,6 +93,35 @@ export interface DialogueMessage {
   timestamp: number
 }
 
+// 跟读句子评分详情
+export interface SentenceResult {
+  english: string
+  chinese?: string
+  spokenText?: string
+  accuracy?: number
+  feedback?: string
+}
+
+// 跟读记录详情
+export interface ReadAloudRecordDetail {
+  id: number
+  scene: { id: string; name: string }
+  totalScore: number | null
+  intonationScore: number | null
+  fluencyScore: number | null
+  accuracyScore: number | null
+  expressionScore: number | null
+  completedCount: number
+  totalCount: number
+  durationSeconds: number | null
+  feedback: string | null
+  strengths: string[] | null
+  improvements: string[] | null
+  sentenceResults: SentenceResult[] | null
+  status: string
+  createdAt: string
+}
+
 // 对话练习详情
 export interface PracticeRecordDetail {
   id: number
@@ -269,6 +298,11 @@ export const adminApi = {
   // 获取对话练习详情（含完整对话历史）
   getPracticeRecordDetail: async (studentId: number, recordId: number): Promise<PracticeRecordDetail> => {
     return apiClient.get(`/admin/students/${studentId}/practice-records/${recordId}`) as unknown as PracticeRecordDetail
+  },
+
+  // 获取跟读练习详情（含每句评分）
+  getReadAloudRecordDetail: async (studentId: number, recordId: number): Promise<ReadAloudRecordDetail> => {
+    return apiClient.get(`/admin/students/${studentId}/read-aloud-records/${recordId}`) as unknown as ReadAloudRecordDetail
   },
 
   // 对话场景
