@@ -114,7 +114,38 @@ export default function DialogueDetailModal({ studentId, recordId, studentName, 
             {data.feedbackText && (
               <div className="feedback-section">
                 <h4>AI 评价</h4>
-                <p>{data.feedbackText}</p>
+                {(() => {
+                  try {
+                    const parsed = typeof data.feedbackText === 'string' && data.feedbackText.startsWith('{')
+                      ? JSON.parse(data.feedbackText)
+                      : null
+                    if (parsed && typeof parsed === 'object') {
+                      return (
+                        <div className="parsed-feedback">
+                          {parsed.totalScore != null && <p className="fb-score">总分：{parsed.totalScore}</p>}
+                          {parsed.vocabularyScore != null && <p className="fb-item">词汇：{parsed.vocabularyScore}</p>}
+                          {parsed.grammarScore != null && <p className="fb-item">语法：{parsed.grammarScore}</p>}
+                          {parsed.communicationScore != null && <p className="fb-item">交流：{parsed.communicationScore}</p>}
+                          {parsed.effortScore != null && <p className="fb-item">努力：{parsed.effortScore}</p>}
+                          {parsed.feedback && <p className="fb-text">{parsed.feedback}</p>}
+                          {parsed.strengths && parsed.strengths.length > 0 && (
+                            <div className="fb-list">
+                              <strong>亮点：</strong>
+                              <ul>{parsed.strengths.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+                          {parsed.improvements && parsed.improvements.length > 0 && (
+                            <div className="fb-list">
+                              <strong>建议：</strong>
+                              <ul>{parsed.improvements.map((s: string, i: number) => <li key={i}>{s}</li>)}</ul>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }
+                  } catch {}
+                  return <p>{data.feedbackText}</p>
+                })()}
               </div>
             )}
 

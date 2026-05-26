@@ -159,6 +159,50 @@
       color: #64748b;
       margin: 0;
       line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .parsed-feedback {
+      .fb-score {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 8px;
+      }
+
+      .fb-item {
+        font-size: 13px;
+        color: #475569;
+        margin: 0 0 4px;
+      }
+
+      .fb-text {
+        font-size: 14px;
+        color: #334155;
+        margin: 10px 0;
+        line-height: 1.6;
+        word-break: break-word;
+      }
+
+      .fb-list {
+        margin: 8px 0;
+
+        strong {
+          font-size: 13px;
+          color: #475569;
+        }
+
+        ul {
+          margin: 4px 0 0;
+          padding-left: 18px;
+
+          li {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+          }
+        }
+      }
     }
   }
 

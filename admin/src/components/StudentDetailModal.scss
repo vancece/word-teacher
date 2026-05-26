@@ -116,11 +116,20 @@
   }
 
   .records-section {
+    margin-top: 24px;
+
     h3 {
       font-size: 16px;
       font-weight: 600;
       color: #1e293b;
-      margin: 0 0 16px;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      svg {
+        flex-shrink: 0;
+      }
     }
 
     .empty {
