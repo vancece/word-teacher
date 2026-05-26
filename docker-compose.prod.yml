@@ -88,6 +88,9 @@ services:
       ALIYUN_STT_TOKEN: ${ALIYUN_STT_TOKEN:-}
       ALIYUN_AK_ID: ${ALIYUN_AK_ID:-}
       ALIYUN_AK_SECRET: ${ALIYUN_AK_SECRET:-}
+      # 腾讯云智聆口语评测 (SOE)
+      TENCENT_SECRET_ID: ${TENCENT_SECRET_ID:-}
+      TENCENT_SECRET_KEY: ${TENCENT_SECRET_KEY:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/api/agent/health"]
       interval: 30s

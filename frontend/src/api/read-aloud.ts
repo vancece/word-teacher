@@ -24,6 +24,16 @@ export interface WordResult {
   text: string
   status: 'correct' | 'incorrect' | 'missing'
   spoken?: string
+  // SOE 新增字段
+  accuracy?: number
+  fluency?: number
+  matchTag?: 'correct' | 'extra' | 'missing' | 'mispronounced'
+  phoneInfos?: Array<{
+    phone: string
+    accuracy: number
+    detectedStress: boolean
+    referencePhone: string
+  }>
 }
 
 // 句子评估结果
@@ -31,7 +41,12 @@ export interface SentenceEvaluation {
   words: WordResult[]
   accuracy: number
   feedback: string
-  spokenText: string
+  spokenText?: string
+  // SOE 新增字段
+  fluency?: number
+  completeness?: number
+  suggestedScore?: number
+  evaluationMethod?: 'soe' | 'stt-compare'
 }
 
 // 整体评分结果（1-5星，4个维度）
@@ -104,6 +119,22 @@ export const readAloudApi = {
       chinese: string
       spokenText?: string
       accuracy: number
+      fluency?: number
+      completeness?: number
+      suggestedScore?: number
+      evaluationMethod?: string
+      words?: Array<{
+        word: string
+        accuracy: number
+        fluency: number
+        matchTag: string
+        phoneInfos?: Array<{
+          phone: string
+          accuracy: number
+          detectedStress?: boolean
+          referencePhone: string
+        }>
+      }>
     }>
   }): Promise<{ success: boolean; data: ReadAloudScoreResult }> => {
     const data = await apiClient.post<{ success: boolean; data: ReadAloudScoreResult }>(

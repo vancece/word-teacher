@@ -88,6 +88,23 @@ export default function ReadAloudPage() {
       newResults[currentIndex] = response.data
       setResults(newResults)
 
+      console.log(`[ReadAloudPage] ===== 评测结果 =====`)
+      console.log(`[ReadAloudPage] 原句: "${currentSentence.english}"`)
+      console.log(`[ReadAloudPage] 方式: ${response.data.evaluationMethod || 'unknown'}`)
+      console.log(`[ReadAloudPage] 准确度: ${response.data.accuracy}%`)
+      console.log(`[ReadAloudPage] 流利度: ${response.data.fluency}`)
+      console.log(`[ReadAloudPage] 完整度: ${response.data.completeness}`)
+      console.log(`[ReadAloudPage] 建议评分: ${response.data.suggestedScore}`)
+      console.log(`[ReadAloudPage] 词级详情:`, response.data.words?.map(w => ({
+        word: w.text,
+        accuracy: w.accuracy,
+        fluency: w.fluency,
+        matchTag: w.matchTag,
+        status: w.status,
+        phoneInfos: w.phoneInfos?.map(p => `${p.phone}(${p.accuracy}${p.detectedStress ? '⬆️' : ''})`)
+      })))
+      console.log(`[ReadAloudPage] 反馈: ${response.data.feedback}`)
+
       // 检查是否完成所有句子
       const isLastSentence = currentIndex === sentences.length - 1
       if (isLastSentence) {
@@ -115,6 +132,22 @@ export default function ReadAloudPage() {
         chinese: sentence.chinese,
         spokenText: finalResults[i]?.spokenText || '',
         accuracy: finalResults[i]?.accuracy || 0,
+        fluency: finalResults[i]?.fluency,
+        completeness: finalResults[i]?.completeness,
+        suggestedScore: finalResults[i]?.suggestedScore,
+        evaluationMethod: finalResults[i]?.evaluationMethod,
+        words: finalResults[i]?.words?.map(w => ({
+          word: w.text,
+          accuracy: w.accuracy || 0,
+          fluency: w.fluency || 0,
+          matchTag: w.matchTag || w.status,
+          phoneInfos: w.phoneInfos?.map(p => ({
+            phone: p.phone,
+            accuracy: p.accuracy,
+            detectedStress: p.detectedStress,
+            referencePhone: p.referencePhone,
+          })),
+        })),
       }))
 
       const response = await readAloudApi.score({

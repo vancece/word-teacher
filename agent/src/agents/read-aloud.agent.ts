@@ -1,23 +1,14 @@
 /**
- * 跟读评分 Agent - 两步走：
- * 1. 先用阿里云STT/Qwen-Omni 识别用户说了什么
- * 2. 再对比目标句子计算分数
+ * 跟读评测 Agent - 两套方案：
+ * 主方案: 腾讯云 SOE 声学级评测（音素级精度，不依赖 AI）
+ * 备方案: 阿里云 STT 识别 + 文本对比（SOE 不可用时 fallback）
  */
 import { env } from '../config.js'
 import { aliyunSttService } from '../services/aliyun-stt.service.js'
+import { tencentSoeService, type SOEEvaluateResult } from '../services/tencent-soe.service.js'
 
-// 使用配置中的多模态对话模型
 const MODEL_OMNI = env.models.omni
 
-/**
- * 构建识别提示词 - 提供原句作为参考，支持缩写的语音等价识别
- *
- * 核心逻辑：
- * - 缩写和展开形式在语音上是等价的（What's = What is）
- * - 如果学生清晰地说出展开形式，应该识别为原句中的缩写形式
- * - 但如果学生说错了（不同的词、漏读、含糊），必须如实记录
- */
-// 不提供原句，防止模型"作弊"
 const buildTranscribePrompt = () => `You are a speech-to-text system. Transcribe EXACTLY what you hear in the audio.
 
 Rules:
@@ -31,6 +22,16 @@ export interface WordResult {
   text: string
   status: 'correct' | 'incorrect' | 'missing'
   spoken?: string
+  // SOE 新增字段
+  accuracy?: number
+  fluency?: number
+  matchTag?: 'correct' | 'extra' | 'missing' | 'mispronounced'
+  phoneInfos?: Array<{
+    phone: string
+    accuracy: number
+    detectedStress: boolean
+    referencePhone: string
+  }>
 }
 
 export interface ReadAloudResult {
@@ -38,6 +39,11 @@ export interface ReadAloudResult {
   accuracy: number
   feedback: string
   spokenText?: string
+  // SOE 新增字段
+  fluency?: number
+  completeness?: number
+  suggestedScore?: number
+  evaluationMethod: 'soe' | 'stt-compare'
 }
 
 export class ReadAloudAgent {
@@ -50,49 +56,124 @@ export class ReadAloudAgent {
   }
 
   /**
-   * 两步评估：先识别（带原句参考），再对比
+   * 评估音频 - 优先 SOE，fallback 到旧方案
    */
   async evaluateAudio(originalSentence: string, audioBase64: string): Promise<ReadAloudResult> {
-    console.log(`[ReadAloudAgent] Evaluating audio for: "${originalSentence}"`)
+    console.log(`[ReadAloudAgent] Evaluating: "${originalSentence}"`)
 
-    // Step 1: 纯语音识别（不提供原句，防止模型作弊）
+    // 主方案: 腾讯云 SOE
+    if (tencentSoeService.isConfigured()) {
+      try {
+        const soeResult = await tencentSoeService.evaluate(originalSentence, audioBase64)
+        if (soeResult.success && soeResult.data) {
+          console.log(`[ReadAloudAgent] SOE success: accuracy=${soeResult.data.accuracy}, suggestedScore=${soeResult.data.suggestedScore}`)
+          return this.formatSOEResult(originalSentence, soeResult)
+        }
+        console.warn(`[ReadAloudAgent] SOE failed: ${soeResult.error}, falling back to STT`)
+      } catch (err) {
+        console.warn(`[ReadAloudAgent] SOE error: ${err}, falling back to STT`)
+      }
+    }
+
+    // 备方案: STT + 文本对比
+    console.log(`[ReadAloudAgent] Using fallback: STT + text comparison`)
     const spokenText = await this.transcribeAudio(audioBase64)
     console.log(`[ReadAloudAgent] Transcribed: "${spokenText}"`)
-
-    // Step 2: 对比评分
-    return this.compareAndScore(originalSentence, spokenText)
+    return { ...this.compareAndScore(originalSentence, spokenText), evaluationMethod: 'stt-compare' }
   }
 
   /**
-   * Step 1: 语音识别 - 优先阿里云STT（专业、稳定），fallback到Qwen-Omni
-   * @param audioBase64 音频数据
+   * 将 SOE 结果格式化为统一的 ReadAloudResult
+   */
+  private formatSOEResult(originalSentence: string, soeResult: SOEEvaluateResult): ReadAloudResult {
+    const data = soeResult.data!
+    // 保留原句单词的大小写
+    const originalWords = originalSentence.split(/\s+/).filter(w => w.length > 0)
+
+    // 如果 SOE 返回的词数和原句一致，直接按位置用原句文本显示
+    // （SOE 会把数字 "3" 展开为 "three"，但位置对应关系不变）
+    const useOriginalByPosition = data.words.filter(w => w.matchTag !== 'extra').length === originalWords.length
+
+    let origIdx = 0
+    const words: WordResult[] = data.words.map((w) => {
+      // 将 SOE matchTag 映射为前端 status
+      let status: 'correct' | 'incorrect' | 'missing' = 'correct'
+      if (w.matchTag === 'missing') status = 'missing'
+      else if (w.matchTag === 'mispronounced' || w.matchTag === 'extra') status = 'incorrect'
+      // matchTag=correct 但 accuracy 极低时才标 incorrect（避免弱读词被误判）
+      if (w.matchTag === 'correct' && w.accuracy < 40) status = 'incorrect'
+
+      // 按位置取原句文本（跳过 extra 词，它们是多读的，原句里没有）
+      let displayText = w.word
+      if (w.matchTag !== 'extra' && useOriginalByPosition && origIdx < originalWords.length) {
+        displayText = originalWords[origIdx]
+        origIdx++
+      } else if (w.matchTag !== 'extra') {
+        origIdx++
+      }
+
+      return {
+        text: displayText,
+        status,
+        spoken: w.realWord,
+        accuracy: w.accuracy,
+        fluency: w.fluency,
+        matchTag: w.matchTag,
+        phoneInfos: w.phoneInfos,
+      }
+    })
+
+    // 使用 SOE 的 suggestedScore 作为准确率（更合理）
+    const accuracy = Math.round(data.suggestedScore)
+
+    // 基于分数生成反馈
+    let feedback: string
+    if (accuracy >= 90) {
+      feedback = '太棒了！发音非常标准！🌟'
+    } else if (accuracy >= 75) {
+      feedback = '不错！大部分发音很准确！'
+    } else if (accuracy >= 60) {
+      feedback = '还可以，再练习一下会更好！'
+    } else if (accuracy >= 40) {
+      feedback = '加油！注意标红的单词，多听多练！'
+    } else {
+      feedback = '别灰心！跟着原音多读几遍吧！'
+    }
+
+    return {
+      words,
+      accuracy,
+      feedback,
+      fluency: data.fluency,
+      completeness: data.completeness,
+      suggestedScore: data.suggestedScore,
+      evaluationMethod: 'soe',
+    }
+  }
+
+  /**
+   * STT 语音识别 - 优先阿里云 STT，fallback 到 Qwen-Omni
    */
   private async transcribeAudio(audioBase64: string): Promise<string> {
-    // 清理 base64 数据
     let cleanBase64 = audioBase64
     if (cleanBase64.includes(',')) {
       cleanBase64 = cleanBase64.split(',')[1]
     }
     cleanBase64 = cleanBase64.replace(/^data:audio\/\w+;base64,/, '')
 
-    console.log(`[ReadAloudAgent] Audio base64 length: ${cleanBase64.length}, first 50 chars: ${cleanBase64.substring(0, 50)}`)
-
     // 优先阿里云 STT
     if (aliyunSttService.isConfigured()) {
       try {
         const result = await aliyunSttService.transcribe(cleanBase64)
         if (result.success && result.text) {
-          console.log(`[ReadAloudAgent] Aliyun STT transcribed: "${result.text}"`)
           return result.text
         }
         if (result.success && !result.text) {
-          // STT 成功但没有识别到内容 = 静音
-          console.log(`[ReadAloudAgent] Aliyun STT returned empty (silence)`)
           return '(silence)'
         }
-        console.warn(`[ReadAloudAgent] Aliyun STT failed: ${result.error}, falling back to Qwen-Omni`)
+        console.warn(`[ReadAloudAgent] Aliyun STT failed: ${result.error}`)
       } catch (err) {
-        console.warn(`[ReadAloudAgent] Aliyun STT error: ${err}, falling back to Qwen-Omni`)
+        console.warn(`[ReadAloudAgent] Aliyun STT error: ${err}`)
       }
     }
 
@@ -100,9 +181,6 @@ export class ReadAloudAgent {
     return this.transcribeWithQwenOmni(cleanBase64)
   }
 
-  /**
-   * Fallback: 使用 Qwen-Omni 做语音识别
-   */
   private async transcribeWithQwenOmni(cleanBase64: string): Promise<string> {
     const audioData = `data:;base64,${cleanBase64}`
     const prompt = buildTranscribePrompt()
@@ -168,11 +246,9 @@ export class ReadAloudAgent {
   }
 
   /**
-   * Step 2: 对比识别结果和目标句子，计算分数
-   * 支持缩写容错和数字容错
+   * 旧方案: 文本对比评分（作为 fallback）
    */
-  private compareAndScore(originalSentence: string, spokenText: string): ReadAloudResult {
-    // 处理静音/错误情况
+  private compareAndScore(originalSentence: string, spokenText: string): Omit<ReadAloudResult, 'evaluationMethod'> {
     if (!spokenText || spokenText === '(silence)' || spokenText === '(error)') {
       return {
         words: originalSentence.split(/\s+/).map(word => ({
@@ -185,40 +261,29 @@ export class ReadAloudAgent {
       }
     }
 
-    // 规范化文本（移除标点，转小写）
-    // 使用 Unicode 转义码确保匹配各种引号：
-    // \u0027=' \u0022=" \u2018=' \u2019=' \u201C=" \u201D=" \u2010-\u2014=各种连字符
     const normalize = (text: string) => text
       .toLowerCase()
       .replace(/[.,!?\u0027\u0022\u2018\u2019\u201C\u201D\u2010-\u2014-]/g, '')
       .trim()
 
-    // 过滤空字符串（原句末尾可能有空格导致空词）
     const originalWords = originalSentence.split(/\s+/).filter(w => w.length > 0)
     const spokenWords = spokenText.split(/\s+/)
-    // 保存原始的 normalizedSpoken 用于多词匹配
     const normalizedSpokenOriginal = spokenWords.map(w => normalize(w))
-    // 用于标记已使用的词
     const usedIndices = new Set<number>()
 
-    // 检查是否说了中文
     const hasChinese = /[\u4e00-\u9fa5]/.test(spokenText)
 
-    // 逐词对比（支持缩写和数字容错）
     const words: WordResult[] = originalWords.map((word) => {
       const normalizedOriginal = normalize(word)
 
-      // 1. 精确匹配
       let foundIndex = normalizedSpokenOriginal.findIndex((w, i) => !usedIndices.has(i) && w === normalizedOriginal)
       if (foundIndex !== -1) {
         usedIndices.add(foundIndex)
         return { text: word, status: 'correct' as const }
       }
 
-      // 2. 缩写容错匹配
       const equivalents = getEquivalentForms(normalizedOriginal)
       for (const equiv of equivalents) {
-        // 单词等价（如 what's = whats）
         foundIndex = normalizedSpokenOriginal.findIndex((w, i) => !usedIndices.has(i) && w === equiv)
         if (foundIndex !== -1) {
           usedIndices.add(foundIndex)
@@ -226,7 +291,6 @@ export class ReadAloudAgent {
         }
       }
 
-      // 3. 多词展开匹配（如 "it's" 对应 "it is"）
       const multiWordMatch = tryMultiWordMatch(normalizedOriginal, normalizedSpokenOriginal, usedIndices)
       if (multiWordMatch.matched) {
         multiWordMatch.indices.forEach(i => usedIndices.add(i))
@@ -236,11 +300,9 @@ export class ReadAloudAgent {
       return { text: word, status: 'incorrect' as const }
     })
 
-    // 计算准确率
     const correctCount = words.filter(w => w.status === 'correct').length
     const accuracy = Math.round((correctCount / words.length) * 100)
 
-    // 生成反馈
     let feedback: string
     if (hasChinese && accuracy < 50) {
       feedback = '你说的是中文哦，试着说英语吧！'
@@ -258,18 +320,8 @@ export class ReadAloudAgent {
   }
 }
 
-/**
- * 缩写等价映射表
- * key: 缩写形式（规范化后，撇号已移除）
- * value: 等价的其他形式（也是规范化后的）
- *
- * 注意：normalize 会移除所有引号和撇号，所以：
- * - "it's" → "its"
- * - "isn't" → "isnt"
- * - "it is" → "it is"（空格保留，但这是多词形式，需要特殊处理）
- */
+// 缩写等价映射表
 const CONTRACTION_EQUIVALENTS: Record<string, string[]> = {
-  // 常见缩写（key 是 normalize 后的形式）
   "whats": ["what is"],
   "its": ["it is"],
   "isnt": ["is not"],
@@ -297,7 +349,7 @@ const CONTRACTION_EQUIVALENTS: Record<string, string[]> = {
   "theyve": ["they have"],
   "ill": ["i will"],
   "youll": ["you will"],
-  "well": ["we will"],  // 注意：这个可能和 "well"（好）冲突，需要上下文判断
+  "well": ["we will"],
   "theyll": ["they will"],
   "id": ["i would", "i had"],
   "youd": ["you would", "you had"],
@@ -305,153 +357,71 @@ const CONTRACTION_EQUIVALENTS: Record<string, string[]> = {
   "theyd": ["they would", "they had"],
 }
 
-/**
- * 数字等价映射表
- */
 const NUMBER_EQUIVALENTS: Record<string, string[]> = {
-  "0": ["zero"],
-  "1": ["one"],
-  "2": ["two"],
-  "3": ["three"],
-  "4": ["four"],
-  "5": ["five"],
-  "6": ["six"],
-  "7": ["seven"],
-  "8": ["eight"],
-  "9": ["nine"],
-  "10": ["ten"],
-  "11": ["eleven"],
-  "12": ["twelve"],
-  "13": ["thirteen"],
-  "14": ["fourteen"],
-  "15": ["fifteen"],
-  "16": ["sixteen"],
-  "17": ["seventeen"],
-  "18": ["eighteen"],
-  "19": ["nineteen"],
-  "20": ["twenty"],
-  // normalize 会移除 -，所以 "twenty-one" → "twentyone"
-  "21": ["twentyone"],
-  "22": ["twentytwo"],
-  "23": ["twentythree"],
-  "24": ["twentyfour"],
-  "25": ["twentyfive"],
-  "26": ["twentysix"],
-  "27": ["twentyseven"],
-  "28": ["twentyeight"],
-  "29": ["twentynine"],
-  "30": ["thirty"],
-  "40": ["forty"],
-  "50": ["fifty"],
-  "60": ["sixty"],
-  "70": ["seventy"],
-  "80": ["eighty"],
-  "90": ["ninety"],
-  "100": ["hundred"],  // "one hundred" 是两个词，需要多词匹配
+  "0": ["zero"], "1": ["one"], "2": ["two"], "3": ["three"], "4": ["four"],
+  "5": ["five"], "6": ["six"], "7": ["seven"], "8": ["eight"], "9": ["nine"],
+  "10": ["ten"], "11": ["eleven"], "12": ["twelve"], "13": ["thirteen"],
+  "14": ["fourteen"], "15": ["fifteen"], "16": ["sixteen"], "17": ["seventeen"],
+  "18": ["eighteen"], "19": ["nineteen"], "20": ["twenty"],
+  "21": ["twentyone"], "22": ["twentytwo"], "23": ["twentythree"],
+  "24": ["twentyfour"], "25": ["twentyfive"], "26": ["twentysix"],
+  "27": ["twentyseven"], "28": ["twentyeight"], "29": ["twentynine"],
+  "30": ["thirty"], "40": ["forty"], "50": ["fifty"], "60": ["sixty"],
+  "70": ["seventy"], "80": ["eighty"], "90": ["ninety"], "100": ["hundred"],
 }
 
-/**
- * 获取一个词的所有等价形式
- */
 function getEquivalentForms(word: string): string[] {
   const equivalents: string[] = []
-
-  // 检查缩写等价
   if (CONTRACTION_EQUIVALENTS[word]) {
     equivalents.push(...CONTRACTION_EQUIVALENTS[word])
   }
-
-  // 反向检查：如果 word 是展开形式，找对应的缩写
   for (const [contraction, forms] of Object.entries(CONTRACTION_EQUIVALENTS)) {
     if (forms.includes(word)) {
       equivalents.push(contraction)
-      // 也添加其他等价形式
       equivalents.push(...forms.filter(f => f !== word))
     }
   }
-
-  // 检查数字等价
   if (NUMBER_EQUIVALENTS[word]) {
     equivalents.push(...NUMBER_EQUIVALENTS[word])
   }
-
-  // 反向检查数字
   for (const [number, forms] of Object.entries(NUMBER_EQUIVALENTS)) {
     if (forms.includes(word)) {
       equivalents.push(number)
       equivalents.push(...forms.filter(f => f !== word))
     }
   }
-
-  return [...new Set(equivalents)] // 去重
+  return [...new Set(equivalents)]
 }
 
-/**
- * 尝试多词匹配（如 "it's" 对应连续的 "it" + "is"）
- */
 function tryMultiWordMatch(
   originalWord: string,
   spokenWords: string[],
   usedIndices: Set<number>
 ): { matched: boolean; indices: number[] } {
-  // 缩写到多词的映射（key 和 value 都是 normalize 后的形式）
   const expansions: Record<string, string[]> = {
-    "whats": ["what", "is"],
-    "its": ["it", "is"],
-    "isnt": ["is", "not"],
-    "thats": ["that", "is"],
-    "theres": ["there", "is"],
-    "heres": ["here", "is"],
-    "hes": ["he", "is"],
-    "shes": ["she", "is"],
-    "lets": ["let", "us"],
-    "dont": ["do", "not"],
-    "doesnt": ["does", "not"],
-    "didnt": ["did", "not"],
-    "cant": ["can", "not"],
-    "wont": ["will", "not"],
-    "wouldnt": ["would", "not"],
-    "couldnt": ["could", "not"],
-    "shouldnt": ["should", "not"],
-    "im": ["i", "am"],
-    "youre": ["you", "are"],
-    "were": ["we", "are"],
-    "theyre": ["they", "are"],
-    "ive": ["i", "have"],
-    "youve": ["you", "have"],
-    "weve": ["we", "have"],
-    "theyve": ["they", "have"],
-    "ill": ["i", "will"],
-    "youll": ["you", "will"],
-    // "well" 不加，因为会和 "well"（好）冲突
-    "theyll": ["they", "will"],
-    "id": ["i", "would"],
-    "youd": ["you", "would"],
-    "wed": ["we", "would"],
+    "whats": ["what", "is"], "its": ["it", "is"], "isnt": ["is", "not"],
+    "thats": ["that", "is"], "theres": ["there", "is"], "heres": ["here", "is"],
+    "hes": ["he", "is"], "shes": ["she", "is"], "lets": ["let", "us"],
+    "dont": ["do", "not"], "doesnt": ["does", "not"], "didnt": ["did", "not"],
+    "cant": ["can", "not"], "wont": ["will", "not"], "wouldnt": ["would", "not"],
+    "couldnt": ["could", "not"], "shouldnt": ["should", "not"],
+    "im": ["i", "am"], "youre": ["you", "are"], "were": ["we", "are"],
+    "theyre": ["they", "are"], "ive": ["i", "have"], "youve": ["you", "have"],
+    "weve": ["we", "have"], "theyve": ["they", "have"],
+    "ill": ["i", "will"], "youll": ["you", "will"], "theyll": ["they", "will"],
+    "id": ["i", "would"], "youd": ["you", "would"], "wed": ["we", "would"],
     "theyd": ["they", "would"],
-    // 数字的多词形式
-    "21": ["twenty", "one"],
-    "22": ["twenty", "two"],
-    "23": ["twenty", "three"],
-    "24": ["twenty", "four"],
-    "25": ["twenty", "five"],
-    "26": ["twenty", "six"],
-    "27": ["twenty", "seven"],
-    "28": ["twenty", "eight"],
-    "29": ["twenty", "nine"],
+    "21": ["twenty", "one"], "22": ["twenty", "two"], "23": ["twenty", "three"],
+    "24": ["twenty", "four"], "25": ["twenty", "five"], "26": ["twenty", "six"],
+    "27": ["twenty", "seven"], "28": ["twenty", "eight"], "29": ["twenty", "nine"],
   }
 
   const expansion = expansions[originalWord]
-  if (!expansion) {
-    return { matched: false, indices: [] }
-  }
+  if (!expansion) return { matched: false, indices: [] }
 
-  // 查找连续的多词匹配
   for (let i = 0; i <= spokenWords.length - expansion.length; i++) {
-    // 检查这个位置开始的词是否都未使用
     const indices: number[] = []
     let allMatch = true
-
     for (let j = 0; j < expansion.length; j++) {
       const idx = i + j
       if (usedIndices.has(idx) || spokenWords[idx] !== expansion[j]) {
@@ -460,14 +430,10 @@ function tryMultiWordMatch(
       }
       indices.push(idx)
     }
-
-    if (allMatch) {
-      return { matched: true, indices }
-    }
+    if (allMatch) return { matched: true, indices }
   }
 
   return { matched: false, indices: [] }
 }
 
 export const readAloudAgent = new ReadAloudAgent()
-

@@ -111,6 +111,46 @@ async function main() {
   })
   console.log('✅ Created read-aloud scene:', readAloudScene.name)
 
+  // 跟读场景: It's / He's 缩写
+  const readItsHe = await prisma.readAloudScene.upsert({
+    where: { id: 'read_itshe' },
+    update: {},
+    create: {
+      id: 'read_itshe',
+      name: '介绍与描述',
+      description: "练习 It's 和 He's 的缩写表达",
+      grade: '基础',
+      sentences: [
+        { id: 1, english: "It's a beautiful day!", chinese: '今天天气真好！' },
+        { id: 2, english: "It's my favorite book.", chinese: '这是我最喜欢的书。' },
+        { id: 3, english: "He's my best friend.", chinese: '他是我最好的朋友。' },
+        { id: 4, english: "He's very tall and strong.", chinese: '他又高又壮。' },
+        { id: 5, english: "It's time to go to school.", chinese: '该上学了。' },
+      ],
+    },
+  })
+  console.log('✅ Created read-aloud scene:', readItsHe.name)
+
+  // 跟读场景: 包含阿拉伯数字
+  const readNumbers = await prisma.readAloudScene.upsert({
+    where: { id: 'read_numbers' },
+    update: {},
+    create: {
+      id: 'read_numbers',
+      name: '数字表达',
+      description: '练习包含数字的日常句子',
+      grade: '基础',
+      sentences: [
+        { id: 1, english: 'I have 3 cats and 2 dogs.', chinese: '我有3只猫和2只狗。' },
+        { id: 2, english: 'There are 7 days in a week.', chinese: '一周有7天。' },
+        { id: 3, english: 'My sister is 10 years old.', chinese: '我姐姐10岁了。' },
+        { id: 4, english: 'We need 5 apples and 8 oranges.', chinese: '我们需要5个苹果和8个橘子。' },
+        { id: 5, english: "The bus comes at 6 o'clock.", chinese: '公交车6点来。' },
+      ],
+    },
+  })
+  console.log('✅ Created read-aloud scene:', readNumbers.name)
+
   console.log('')
   console.log('🎉 Seeding completed!')
   console.log('')

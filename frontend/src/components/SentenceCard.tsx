@@ -15,7 +15,21 @@ export default function SentenceCard({
   isActive,
   result,
 }: Props) {
-  // 渲染单词（带颜色）
+  // 根据 SOE 词级分数确定颜色 class
+  const getWordClass = (word: typeof result extends { words: (infer W)[] } ? W : any) => {
+    // 如果有 SOE accuracy 数据，使用分数区间映射
+    if (word.accuracy !== undefined && word.accuracy !== null) {
+      if (word.matchTag === 'missing') return 'missing'
+      if (word.matchTag === 'extra') return 'extra'
+      if (word.accuracy >= 70) return 'correct'
+      if (word.accuracy >= 40) return 'medium'
+      return 'incorrect'
+    }
+    // fallback: 旧方案的 status 字段
+    return word.status
+  }
+
+  // 渲染单词（带颜色和分数）
   const renderWords = () => {
     if (!result?.words) {
       return <span className="sentence-text">{sentence.english}</span>
@@ -24,7 +38,9 @@ export default function SentenceCard({
     return (
       <span className="sentence-text evaluated">
         {result.words.map((word, idx) => (
-          <span key={idx} className={`word ${word.status}`}>
+          <span key={idx} className={`word ${getWordClass(word)}`} title={
+            word.accuracy !== undefined ? `${word.accuracy}分` : undefined
+          }>
             {word.text}{' '}
           </span>
         ))}
@@ -53,6 +69,7 @@ export default function SentenceCard({
               {result.accuracy}
             </span>
             <span className="feedback">{result.feedback}</span>
+
           </div>
         ) : (
           isActive && <span className="waiting">等待朗读</span>
@@ -61,4 +78,3 @@ export default function SentenceCard({
     </div>
   )
 }
-

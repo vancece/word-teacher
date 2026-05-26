@@ -36,11 +36,20 @@ router.post('/evaluate', async (req, res) => {
     const result = await readAloudAgent.evaluateAudio(originalSentence, audioBase64)
 
     console.log('[ReadAloud] Result:', {
+      method: result.evaluationMethod,
       accuracy: result.accuracy,
-      spokenText: result.spokenText,  // 模型听到了什么
+      fluency: result.fluency,
+      completeness: result.completeness,
+      suggestedScore: result.suggestedScore,
       feedback: result.feedback,
-      words: result.words,
     })
+    console.log('[ReadAloud] Words detail:', JSON.stringify(result.words.map(w => ({
+      word: w.text,
+      accuracy: w.accuracy,
+      fluency: w.fluency,
+      matchTag: w.matchTag,
+      phones: w.phoneInfos?.map(p => `${p.phone}(${Math.round(p.accuracy)}${p.detectedStress ? '⬆' : ''})`)
+    })), null, 2))
 
     res.json({
       success: true,

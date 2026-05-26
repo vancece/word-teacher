@@ -56,9 +56,14 @@
     &.evaluated {
       .word {
         transition: color 0.3s ease;
+        cursor: default;
 
         &.correct {
           color: #22c55e;
+        }
+
+        &.medium {
+          color: #f59e0b;
         }
 
         &.incorrect {
@@ -67,8 +72,15 @@
         }
 
         &.missing {
-          color: #f59e0b;
+          color: #94a3b8;
           opacity: 0.6;
+          text-decoration: line-through;
+        }
+
+        &.extra {
+          color: #a855f7;
+          font-style: italic;
+          opacity: 0.7;
         }
       }
     }
@@ -116,7 +128,13 @@
     color: #64748b;
     white-space: nowrap;
   }
+
+  .method-badge {
+    font-size: 0.6rem;
+    color: #6366f1;
+    background: #eef2ff;
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.2rem;
+    font-weight: 500;
+  }
 }
-
-
-

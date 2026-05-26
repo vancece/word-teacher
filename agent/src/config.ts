@@ -37,6 +37,12 @@ export const env = {
     accessKeyId: process.env.ALIYUN_AK_ID || '',
     accessKeySecret: process.env.ALIYUN_AK_SECRET || '',
   },
+  // 腾讯云智聆口语评测 (SOE) - 新版 WebSocket API
+  tencentSoe: {
+    secretId: process.env.TENCENT_SECRET_ID || '',
+    secretKey: process.env.TENCENT_SECRET_KEY || '',
+    appId: process.env.TENCENT_APP_ID || '',
+  },
   server: {
     port: parseInt(process.env.PORT || '8000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',

@@ -31,12 +31,15 @@
     "dotenv": "^16.6.1",
     "express": "^5.2.1",
     "langchain": "^1.2.28",
-    "openai": "^6.25.0"
+    "openai": "^6.25.0",
+    "tencentcloud-sdk-nodejs": "^4.1.235",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.12",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
