@@ -170,13 +170,14 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
+          DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
           ALIYUN_STT_APPKEY: ${{ secrets.ALIYUN_STT_APPKEY }}
           ALIYUN_AK_ID: ${{ secrets.ALIYUN_AK_ID }}
           ALIYUN_AK_SECRET: ${{ secrets.ALIYUN_AK_SECRET }}
           TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
           TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
-          TENCENT_APP_ID: ${{ secrets.TENCENT_APP_ID }}
+          TENCENT_APP_ID: ${{ vars.TENCENT_APP_ID }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -192,7 +193,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
+          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
           script: |
             cd /root/word-teacher
 
@@ -220,6 +221,7 @@ jobs:
 
             {
               printf 'IMAGE_TAG=latest\n'
+              printf 'DOCKER_USERNAME=%s\n' "$(escape_dollar "$(get_value "$DOCKER_USERNAME" "your-dockerhub-username")")"
               printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_ROOT_PASSWORD" "WordTeacher2024!")")"
               printf 'MYSQL_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_PASSWORD" "change_this_app_password_456")")"
               printf 'JWT_SECRET=%s\n' "$(escape_dollar "$(get_value "$JWT_SECRET" "word-teacher-jwt-secret-key-2024-production")")"
@@ -262,6 +264,7 @@ jobs:
             # 2. 更新服务（根据构建结果判断）
             # ============================================================
 
+            # 手动触发时所有服务都会 build=success，确保全部重启
             if [ "$BUILD_BACKEND" = "success" ]; then
               echo "📦 更新 Backend 服务..."
               docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
@@ -278,6 +281,13 @@ jobs:
               echo "🌐 更新 Nginx 服务..."
               docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
               echo "✅ Nginx 更新完成"
+            fi
+
+            # 如果没有任何服务构建（仅配置变化），也重启 agent 使 .env 生效
+            if [ "$BUILD_BACKEND" != "success" ] && [ "$BUILD_AGENT" != "success" ] && [ "$BUILD_FRONTEND" != "success" ]; then
+              echo "🔄 仅配置变化，重启所有服务使 .env 生效..."
+              docker compose -f docker-compose.prod.yml up -d --force-recreate
+              echo "✅ 全部服务重启完成"
             fi
 
             # ============================================================
