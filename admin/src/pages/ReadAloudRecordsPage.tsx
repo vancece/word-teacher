@@ -81,7 +81,7 @@ export default function ReadAloudRecordsPage() {
       key: 'progress',
       render: (_, record) => (
         <Progress
-          percent={Math.round((record.completedCount / record.totalCount) * 100)}
+          percent={record.totalCount > 0 ? Math.round((record.completedCount / record.totalCount) * 100) : 0}
           size="small"
           format={() => `${record.completedCount}/${record.totalCount}`}
         />
