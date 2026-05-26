@@ -91,6 +91,7 @@ services:
       # 腾讯云智聆口语评测 (SOE)
       TENCENT_SECRET_ID: ${TENCENT_SECRET_ID:-}
       TENCENT_SECRET_KEY: ${TENCENT_SECRET_KEY:-}
+      TENCENT_APP_ID: ${TENCENT_APP_ID:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/api/agent/health"]
       interval: 30s

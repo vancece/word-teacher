@@ -166,6 +166,7 @@ jobs:
           ALIYUN_AK_SECRET: ${{ secrets.ALIYUN_AK_SECRET }}
           TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
           TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
+          TENCENT_APP_ID: ${{ secrets.TENCENT_APP_ID }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -181,7 +182,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
+          envs: DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,TENCENT_SECRET_ID,TENCENT_SECRET_KEY,TENCENT_APP_ID,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
           script: |
             cd /root/word-teacher
 
@@ -224,6 +225,7 @@ jobs:
               printf 'ALIYUN_AK_SECRET=%s\n' "$(escape_dollar "$ALIYUN_AK_SECRET")"
               printf 'TENCENT_SECRET_ID=%s\n' "$(escape_dollar "$TENCENT_SECRET_ID")"
               printf 'TENCENT_SECRET_KEY=%s\n' "$(escape_dollar "$TENCENT_SECRET_KEY")"
+              printf 'TENCENT_APP_ID=%s\n' "$(escape_dollar "$TENCENT_APP_ID")"
             } > .env
 
             echo "✅ .env 配置文件已生成"
