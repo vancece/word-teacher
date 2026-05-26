@@ -60,8 +60,8 @@ jobs:
             echo "agent=false" >> $GITHUB_OUTPUT
           fi
 
-          # 检测配置文件是否有变更（docker-compose.prod.yml）
-          if echo "$CHANGED" | grep -qE "^docker-compose.prod.yml"; then
+          # 检测配置文件是否有变更（docker-compose, workflow, deploy配置等）
+          if echo "$CHANGED" | grep -qE "^docker-compose.prod.yml|^\.github/workflows/|^deploy/"; then
             echo "config=true" >> $GITHUB_OUTPUT
           else
             echo "config=false" >> $GITHUB_OUTPUT
@@ -151,7 +151,7 @@ jobs:
   # 部署到服务器
   deploy:
     needs: [detect-changes, build-backend, build-frontend, build-agent]
-    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-agent.result == 'success')
+    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-agent.result == 'success' || needs.detect-changes.outputs.config == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
