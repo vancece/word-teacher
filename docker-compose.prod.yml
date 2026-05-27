@@ -35,7 +35,7 @@ services:
 
   # ============ Backend API 服务 ============
   backend:
-    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-backend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-word-teacher}-backend:${IMAGE_TAG:-latest}
     container_name: word-teacher-backend
     restart: always
     depends_on:
@@ -72,7 +72,7 @@ services:
 
   # ============ AI Agent 服务 ============
   agent:
-    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-agent:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-word-teacher}-agent:${IMAGE_TAG:-latest}
     container_name: word-teacher-agent
     restart: always
     environment:
@@ -125,7 +125,7 @@ services:
 
   # ============ Nginx 前端 + 反向代理 ============
   nginx:
-    image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-nginx:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-word-teacher}-nginx:${IMAGE_TAG:-latest}
     container_name: word-teacher-nginx
     restart: always
     ports:
