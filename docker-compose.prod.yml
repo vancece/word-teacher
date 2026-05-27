@@ -43,6 +43,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
+    volumes:
+      - ./logs/backend:/app/logs
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -75,6 +77,8 @@ services:
     image: ${DOCKER_USERNAME:-your-dockerhub-username}/word-teacher-agent:${IMAGE_TAG:-latest}
     container_name: word-teacher-agent
     restart: always
+    volumes:
+      - ./logs/agent:/app/logs
     environment:
       NODE_ENV: production
       PORT: 3002
@@ -120,6 +124,57 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - word-teacher-network
+
+  # ============ MySQL 自动备份 ============
+  mysql-backup:
+    image: mysql:8.0
+    container_name: word-teacher-mysql-backup
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./backups:/backups
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "MySQL backup service started"
+        while true; do
+          # 计算距离下次凌晨3点的秒数
+          now=$$(date +%s)
+          target=$$(date -d "today 03:00" +%s 2>/dev/null || date -d "03:00" +%s 2>/dev/null)
+          if [ "$$now" -ge "$$target" ]; then
+            target=$$(( $$target + 86400 ))
+          fi
+          wait_seconds=$$(( $$target - $$now ))
+          next_run=$$(date -d "@$$target" "+%Y-%m-%d %H:%M:%S" 2>/dev/null || echo "tomorrow 03:00")
+          echo "[backup] Next backup at $$next_run (in $${wait_seconds}s)"
+          sleep $$wait_seconds
+
+          # 执行备份
+          TIMESTAMP=$$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="/backups/word_teacher_$$TIMESTAMP.sql.gz"
+          echo "[backup] Starting backup: $$BACKUP_FILE"
+          if mysqldump -h mysql -u wordteacher -p"$$MYSQL_PASSWORD" --single-transaction --quick word_teacher | gzip > "$$BACKUP_FILE"; then
+            SIZE=$$(du -h "$$BACKUP_FILE" | cut -f1)
+            echo "[backup] ✅ Backup completed: $$BACKUP_FILE ($$SIZE)"
+          else
+            echo "[backup] ❌ Backup failed!"
+            rm -f "$$BACKUP_FILE"
+          fi
+
+          # 清理7天前的备份
+          deleted=$$(find /backups -name "word_teacher_*.sql.gz" -mtime +7 -delete -print | wc -l)
+          if [ "$$deleted" -gt 0 ]; then
+            echo "[backup] 🧹 Cleaned $$deleted old backup(s)"
+          fi
+        done
     networks:
       - word-teacher-network
 

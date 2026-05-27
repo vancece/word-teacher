@@ -34,9 +34,13 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
-# 创建非 root 用户
+# 创建日志目录（容器内，会被宿主机 volume 挂载覆盖）
+RUN mkdir -p /app/logs
+
+# 创建非 root 用户，并赋予日志目录权限
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 agent
+RUN chown -R agent:nodejs /app/logs
 USER agent
 
 # 健康检查

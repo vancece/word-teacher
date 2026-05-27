@@ -200,6 +200,10 @@ jobs:
           script: |
             cd /root/word-teacher
 
+            # 确保日志目录和备份目录存在，并设置权限（UID 1001 = 容器内非 root 用户）
+            mkdir -p logs/backend logs/agent backups
+            chown -R 1001:1001 logs/
+
             echo "🚀 开始部署..."
             echo "BUILD_BACKEND=$BUILD_BACKEND"
             echo "BUILD_FRONTEND=$BUILD_FRONTEND"
