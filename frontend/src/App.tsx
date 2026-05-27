@@ -111,7 +111,10 @@ function App() {
   const basePath = import.meta.env.VITE_BASE_PATH || ''
 
   return (
-    <BrowserRouter basename={basePath}>
+    <BrowserRouter
+      basename={basePath}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>

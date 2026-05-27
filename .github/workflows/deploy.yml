@@ -138,12 +138,12 @@ jobs:
           AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
           MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
-          ALIYUN_STT_APPKEY: ${{ secrets.ALIYUN_STT_APPKEY }}
+          ALIYUN_STT_APPKEY: ${{ vars.ALIYUN_STT_APPKEY }}
           ALIYUN_AK_ID: ${{ secrets.ALIYUN_AK_ID }}
           ALIYUN_AK_SECRET: ${{ secrets.ALIYUN_AK_SECRET }}
-          TENCENT_SECRET_ID: ${{ secrets.TENCENT_SECRET_ID }}
-          TENCENT_SECRET_KEY: ${{ secrets.TENCENT_SECRET_KEY }}
-          TENCENT_APP_ID: ${{ vars.TENCENT_APP_ID }}
+          XFYUN_APP_ID: ${{ vars.XFYUN_APP_ID }}
+          XFYUN_API_KEY: ${{ secrets.XFYUN_API_KEY }}
+          XFYUN_API_SECRET: ${{ secrets.XFYUN_API_SECRET }}
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
         run: |
@@ -163,9 +163,9 @@ jobs:
             printf 'ALIYUN_STT_APPKEY=%s\n' "$ALIYUN_STT_APPKEY"
             printf 'ALIYUN_AK_ID=%s\n' "$ALIYUN_AK_ID"
             printf 'ALIYUN_AK_SECRET=%s\n' "$ALIYUN_AK_SECRET"
-            printf 'TENCENT_SECRET_ID=%s\n' "$TENCENT_SECRET_ID"
-            printf 'TENCENT_SECRET_KEY=%s\n' "$TENCENT_SECRET_KEY"
-            printf 'TENCENT_APP_ID=%s\n' "$TENCENT_APP_ID"
+            printf 'XFYUN_APP_ID=%s\n' "$XFYUN_APP_ID"
+            printf 'XFYUN_API_KEY=%s\n' "$XFYUN_API_KEY"
+            printf 'XFYUN_API_SECRET=%s\n' "$XFYUN_API_SECRET"
             printf 'DINGTALK_ACCESS_TOKEN=%s\n' "$DINGTALK_ACCESS_TOKEN"
             printf 'DINGTALK_SECRET=%s\n' "$DINGTALK_SECRET"
           } > /tmp/deploy.env

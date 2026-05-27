@@ -24,7 +24,6 @@ export interface WordResult {
   text: string
   status: 'correct' | 'incorrect' | 'missing'
   spoken?: string
-  // SOE 新增字段
   accuracy?: number
   fluency?: number
   matchTag?: 'correct' | 'extra' | 'missing' | 'mispronounced'
@@ -42,11 +41,10 @@ export interface SentenceEvaluation {
   accuracy: number
   feedback: string
   spokenText?: string
-  // SOE 新增字段
   fluency?: number
   completeness?: number
   suggestedScore?: number
-  evaluationMethod?: 'soe' | 'stt-compare'
+  evaluationMethod?: 'ise'
 }
 
 // 整体评分结果（1-5星，4个维度）

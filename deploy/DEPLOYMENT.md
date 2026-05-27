@@ -202,8 +202,19 @@ vim .env  # 填写实际的密钥
   NODE_ENV=production
   DASHSCOPE_API_KEY="sk-你的阿里云API密钥"
   OPENAI_API_KEY="sk-你的阿里云API密钥"
+  OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
   AGENT_API_KEY="与Backend相同的Agent密钥"
   CORS_ORIGINS="*"  # 或者填写你的域名
+
+  # ===== 语音评测（科大讯飞 ISE，主方案）=====
+  XFYUN_APP_ID="你的讯飞APPID"
+  XFYUN_API_KEY="你的讯飞APIKey"
+  XFYUN_API_SECRET="你的讯飞APISecret"
+
+  # ===== 语音识别（阿里云 STT）=====
+  ALIYUN_STT_APPKEY="你的阿里云STT AppKey"
+  ALIYUN_AK_ID="你的阿里云AccessKeyID"
+  ALIYUN_AK_SECRET="你的阿里云AccessKeySecret"
 
   # ===== 可选修改 =====
   PORT=8000
@@ -373,33 +384,35 @@ vim .env  # 填写实际的密钥
 2. 点击 **Settings** → **Secrets and variables** → **Actions**
 3. 点击 **New repository secret** 逐个添加以下变量
 
-### 必需的 Secrets
+### 必需的 Secrets（敏感密钥）
 
 | Secret 名称 | 说明 | 示例值 |
 |------------|------|--------|
 | `SERVER_HOST` | 服务器 IP 地址 | `123.45.67.89` |
 | `SERVER_SSH_KEY` | SSH 私钥（完整内容） | `-----BEGIN RSA PRIVATE KEY-----...` |
-| `DOCKER_PASSWORD` | Docker Hub 密码或 Access Token | `dckr_pat_xxx` |
 | `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | `YourSecureRootPassword123!` |
 | `MYSQL_PASSWORD` | MySQL 应用用户密码 | `YourSecureAppPassword456!` |
 | `JWT_SECRET` | JWT 签名密钥（64+ 字符） | `openssl rand -base64 48` 生成 |
 | `AGENT_API_KEY` | Agent 服务 API 密钥 | `openssl rand -hex 32` 生成 |
 | `DASHSCOPE_API_KEY` | 阿里云百炼 API Key | `sk-xxxxxxxxxxxxxxxx` |
+| `MINIO_ROOT_PASSWORD` | MinIO 管理员密码 | `openssl rand -base64 16` 生成 |
+| `ALIYUN_AK_ID` | 阿里云 AccessKey ID | `LTAI5txxxxxxxx` |
+| `ALIYUN_AK_SECRET` | 阿里云 AccessKey Secret | `LljJkhrXPxxxxxx` |
+| `XFYUN_API_KEY` | 科大讯飞 API Key | `c1ed35b5xxxxxxxx` |
+| `XFYUN_API_SECRET` | 科大讯飞 API Secret | `YTE5OWMxxxxxxxx` |
+| `DINGTALK_ACCESS_TOKEN` | 钉钉机器人 Token（部署通知） | `xxxxxxxx` |
+| `DINGTALK_SECRET` | 钉钉机器人签名密钥 | `SECxxxxxxxx` |
 
 ### 可选的 Secrets
 
 | Secret 名称 | 说明 | 默认值 |
 |------------|------|--------|
-| `ALIYUN_STT_APPKEY` | 阿里云语音识别 AppKey | 无（语音功能不可用） |
-| `ALIYUN_AK_ID` | 阿里云 AccessKey ID | 无 |
-| `ALIYUN_AK_SECRET` | 阿里云 AccessKey Secret | 无 |
-| `MINIO_ROOT_PASSWORD` | MinIO 管理员密码 | `minio123456` |
 | `SSL_FULLCHAIN` | SSL 证书（fullchain.pem 内容） | 无（使用 HTTP） |
 | `SSL_PRIVKEY` | SSL 私钥（privkey.pem 内容） | 无（使用 HTTP） |
 
-### 必需的 Variables
+### 必需的 Variables（非敏感标识符）
 
-除了 Secrets，还需要配置一个 Repository Variable：
+除了 Secrets，还需要配置 Repository Variables：
 
 1. 在 **Settings** → **Secrets and variables** → **Actions** 页面
 2. 切换到 **Variables** 标签
@@ -407,7 +420,10 @@ vim .env  # 填写实际的密钥
 
 | Variable 名称 | 说明 | 示例值 |
 |--------------|------|--------|
-| `DOCKER_USERNAME` | Docker Hub 用户名 | `your-dockerhub-username` |
+| `ALIYUN_STT_APPKEY` | 阿里云语音识别 AppKey | `c3y122r0kCsesm5A` |
+| `XFYUN_APP_ID` | 科大讯飞应用 ID | `022edb08` |
+
+> 💡 **Secrets vs Variables 的区别**：Secrets 存放密码、密钥等敏感信息（配置后不可查看）；Variables 存放 App ID、AppKey 等非敏感标识符（配置后仍可查看和修改）。
 
 ### 获取各项密钥的方法
 
@@ -423,13 +439,7 @@ ssh-copy-id -i ~/.ssh/github_actions.pub root@YOUR_SERVER_IP
 cat ~/.ssh/github_actions
 ```
 
-#### 2. Docker Hub Access Token
-1. 登录 [Docker Hub](https://hub.docker.com/)
-2. 点击头像 → **Account Settings** → **Security**
-3. 点击 **New Access Token**
-4. 复制生成的 Token
-
-#### 3. JWT Secret 和 Agent API Key
+#### 2. JWT Secret 和 Agent API Key
 ```bash
 # JWT Secret（64 字符）
 openssl rand -base64 48
@@ -438,10 +448,20 @@ openssl rand -base64 48
 openssl rand -hex 32
 ```
 
-#### 4. 阿里云 Dashscope API Key
+#### 3. 阿里云 Dashscope API Key
 1. 登录 [阿里云百炼控制台](https://bailian.console.aliyun.com/)
 2. 点击右上角 **API-KEY 管理**
 3. 创建新的 API Key
+
+#### 4. 阿里云语音识别 (STT)
+1. 登录 [智能语音交互控制台](https://nls-portal.console.aliyun.com/)
+2. 创建项目，获取 **AppKey**（放 Variables）
+3. 在 RAM 访问控制中获取 AccessKey ID/Secret（放 Secrets）
+
+#### 5. 科大讯飞语音评测 (ISE)
+1. 登录 [讯飞开放平台](https://console.xfyun.cn/)
+2. 创建应用，获取 **APPID**（放 Variables）
+3. 在应用详情中获取 **APIKey** 和 **APISecret**（放 Secrets）
 
 ### 首次部署前的服务器准备
 
@@ -453,16 +473,9 @@ curl -fsSL https://get.docker.com | sh
 
 # 2. 创建项目目录
 mkdir -p /root/word-teacher
-
-# 3. 创建 .env 文件（Actions 会更新它）
-cat > /root/word-teacher/.env << 'EOF'
-IMAGE_TAG=latest
-DOCKER_USERNAME=your-dockerhub-username
-EOF
-
-# 4. 登录 Docker Hub（拉取镜像需要）
-docker login
 ```
+
+> 💡 当前部署方式为**镜像直传**（本地构建 → gzip 压缩 → SCP 传到服务器 → docker load），不需要 Docker Hub。
 
 ### 触发部署
 

@@ -1,14 +1,13 @@
 /**
- * Backend 日志系统 - pino + pino-roll
+ * Agent 日志系统 - pino + pino-roll
  * 开发环境: console 美化输出 + 文件
  * 生产环境: JSON 格式 + 文件
- * 日志路径: backend/logs/backend-YYYY-MM-DD.log（按天切割）
+ * 日志路径: agent/logs/agent-YYYY-MM-DD.log（按天切割）
  */
 import pino from 'pino'
 import { mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { env } from '../config/env.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LOG_DIR = join(__dirname, '../../logs')
@@ -16,13 +15,15 @@ const LOG_DIR = join(__dirname, '../../logs')
 // 确保日志目录存在
 mkdirSync(LOG_DIR, { recursive: true })
 
+const isDev = process.env.NODE_ENV !== 'production'
+
 // 构建 transport targets
 const targets: pino.TransportTargetOptions[] = [
   // 文件输出（按天切割）
   {
     target: 'pino-roll',
     options: {
-      file: join(LOG_DIR, 'backend'),
+      file: join(LOG_DIR, 'agent'),
       frequency: 'daily',
       dateFormat: 'yyyy-MM-dd',
       extension: '.log',
@@ -33,7 +34,7 @@ const targets: pino.TransportTargetOptions[] = [
 ]
 
 // 开发环境加 console 美化
-if (env.isDev) {
+if (isDev) {
   targets.push({
     target: 'pino-pretty',
     options: {
@@ -53,15 +54,15 @@ if (env.isDev) {
 }
 
 export const logger = pino(
-  { level: env.isDev ? 'debug' : 'info' },
+  { level: 'debug' },
   pino.transport({ targets })
 )
 
-// 创建子 logger 用于不同模块
+// 创建模块子 logger
 export const createLogger = (module: string) => logger.child({ module })
 
-// 常用模块 logger
-export const dbLogger = createLogger('database')
-export const authLogger = createLogger('auth')
-export const apiLogger = createLogger('api')
-export const agentLogger = createLogger('agent')
+// 预定义模块 logger
+export const iseLogger = createLogger('xfyun-ise')
+export const sttLogger = createLogger('aliyun-stt')
+export const readAloudLogger = createLogger('read-aloud')
+export const dialogueLogger = createLogger('dialogue')

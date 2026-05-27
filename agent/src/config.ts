@@ -15,9 +15,6 @@ export const env = {
     apiKey: process.env.DASHSCOPE_API_KEY || process.env.OPENAI_API_KEY || '',
     baseUrl: process.env.DASHSCOPE_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
   },
-  // ===========================================
-  // 模型配置（统一管理，修改时只需改这里）
-  // ===========================================
   models: {
     // 对话模型（支持语音输入输出的多模态模型）
     omni: process.env.MODEL_OMNI || 'qwen-omni-turbo',
@@ -28,20 +25,18 @@ export const env = {
     // 图片生成模型
     image: process.env.MODEL_IMAGE || 'wanx2.1-t2i-turbo',
   },
-  // 阿里云智能语音交互（一句话识别）
+  // 阿里云智能语音交互（对话场景一句话识别）
   aliyunStt: {
     appKey: process.env.ALIYUN_STT_APPKEY || '',
-    // 方式1: 直接配置 Token（适合测试，Token 有效期约 24 小时）
     token: process.env.ALIYUN_STT_TOKEN || '',
-    // 方式2: 配置 AccessKey，自动获取和刷新 Token（推荐生产环境）
     accessKeyId: process.env.ALIYUN_AK_ID || '',
     accessKeySecret: process.env.ALIYUN_AK_SECRET || '',
   },
-  // 腾讯云智聆口语评测 (SOE) - 新版 WebSocket API
-  tencentSoe: {
-    secretId: process.env.TENCENT_SECRET_ID || '',
-    secretKey: process.env.TENCENT_SECRET_KEY || '',
-    appId: process.env.TENCENT_APP_ID || '',
+  // 科大讯飞语音评测 (ISE)
+  xfyunIse: {
+    appId: process.env.XFYUN_APP_ID || '',
+    apiKey: process.env.XFYUN_API_KEY || '',
+    apiSecret: process.env.XFYUN_API_SECRET || '',
   },
   server: {
     port: parseInt(process.env.PORT || '8000', 10),
@@ -70,8 +65,7 @@ export function validateEnv(): void {
   if (!env.auth.apiKey && !isDev) {
     console.warn('⚠️  AGENT_API_KEY is not set. Agent API is unprotected!')
   }
-  if (!env.aliyunStt.token && (!env.aliyunStt.accessKeyId || !env.aliyunStt.accessKeySecret)) {
-    console.warn('⚠️  ALIYUN_STT_TOKEN or ALIYUN_AK_ID/SECRET is not set. Aliyun STT will not work, falling back to Qwen-Omni.')
+  if (!env.xfyunIse.appId || !env.xfyunIse.apiKey || !env.xfyunIse.apiSecret) {
+    console.warn('⚠️  XFYUN_APP_ID/API_KEY/API_SECRET is not set. 语音评测功能不可用！')
   }
 }
-
