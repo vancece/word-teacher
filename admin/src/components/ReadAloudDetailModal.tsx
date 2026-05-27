@@ -42,7 +42,14 @@ export default function ReadAloudDetailModal({ studentId, recordId, studentName,
 
   const renderStars = (score: number | null) => {
     if (score == null) return '-'
-    return '★'.repeat(score) + '☆'.repeat(5 - score)
+    // 百分制转五星制
+    let stars: number
+    if (score >= 90) stars = 5
+    else if (score >= 75) stars = 4
+    else if (score >= 60) stars = 3
+    else if (score >= 40) stars = 2
+    else stars = 1
+    return '★'.repeat(stars) + '☆'.repeat(5 - stars)
   }
 
   return (
