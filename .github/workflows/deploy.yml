@@ -183,13 +183,26 @@ jobs:
           $SCP /tmp/deploy.env $SERVER:/root/word-teacher/.env
           $SCP docker-compose.prod.yml $SERVER:/root/word-teacher/docker-compose.prod.yml
 
-          # 传镜像
+          # 并行传输镜像
+          PIDS=""
           for img in backend nginx agent; do
             if [ -f /tmp/images/${img}.tar.gz ]; then
               echo "📤 传输 ${img} 镜像 ($(du -h /tmp/images/${img}.tar.gz | cut -f1))..."
-              $SCP /tmp/images/${img}.tar.gz $SERVER:/tmp/word-teacher-images/
+              $SCP /tmp/images/${img}.tar.gz $SERVER:/tmp/word-teacher-images/ &
+              PIDS="$PIDS $!"
             fi
           done
+
+          # 等待所有传输完成
+          FAILED=0
+          for pid in $PIDS; do
+            if ! wait $pid; then
+              echo "❌ 传输失败 (PID: $pid)"
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -ne 0 ]; then exit 1; fi
+          echo "✅ 所有镜像传输完成"
 
       - name: Transfer SSL certificates
         env:
