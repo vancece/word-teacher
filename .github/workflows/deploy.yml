@@ -83,16 +83,16 @@ jobs:
       - uses: actions/checkout@v5
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.backend
@@ -112,16 +112,16 @@ jobs:
       - uses: actions/checkout@v5
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Nginx
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.nginx
@@ -141,16 +141,16 @@ jobs:
       - uses: actions/checkout@v5
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Agent
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.agent
@@ -316,8 +316,11 @@ jobs:
             # ============================================================
             # 5. 拉取最新镜像
             # ============================================================
-            echo "📥 拉取最新镜像..."
-            docker compose -f docker-compose.prod.yml pull
+            echo "📥 拉取最新镜像（直接从 Docker Hub 拉取，绕过镜像加速器缓存）..."
+            IMAGE_PREFIX="${DOCKER_USERNAME}/word-teacher"
+            [ "$BUILD_BACKEND" = "success" ] && docker pull "${IMAGE_PREFIX}-backend:latest"
+            [ "$BUILD_FRONTEND" = "success" ] && docker pull "${IMAGE_PREFIX}-nginx:latest"
+            [ "$BUILD_AGENT" = "success" ] && docker pull "${IMAGE_PREFIX}-agent:latest"
 
             # ============================================================
             # 6. 启动基础设施服务（mysql、minio）并等待就绪
