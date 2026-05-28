@@ -382,8 +382,13 @@ jobs:
               sleep 2
             done
             if [ "$BACKEND_READY" = "true" ]; then
-              docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --accept-data-loss --skip-generate
-              echo "✅ 数据库结构同步完成"
+              # 注意：不使用 --accept-data-loss，这样如果 schema 变更会删列/改类型，命令会失败而不是静默丢数据
+              # 只会创建新表、新增列，不会删除已有的表/列
+              if docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --skip-generate 2>&1; then
+                echo "✅ 数据库结构同步完成"
+              else
+                echo "⚠️ 数据库同步失败（可能存在破坏性变更需要手动处理），但不阻塞部署"
+              fi
             else
               echo "⚠️ Backend 未就绪，跳过数据库同步（容器可能仍在启动，prisma 会在下次部署补上）"
             fi
