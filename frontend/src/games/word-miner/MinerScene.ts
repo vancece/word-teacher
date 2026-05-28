@@ -38,7 +38,7 @@ export class MinerScene extends Phaser.Scene {
   private elapsed = 0
 
   private hookAngle = 0
-  private hookSpeed = 1
+  private hookSpeed = 1.4
   private hookDirection = 1
   private hookLength = 0
   private maxHookLength = 0
@@ -622,8 +622,8 @@ export class MinerScene extends Phaser.Scene {
     switch (this.state) {
       case 'swinging':
         this.hookAngle += this.hookSpeed * this.hookDirection * (delta / 16)
-        if (this.hookAngle > 75) { this.hookAngle = 75; this.hookDirection = -1 }
-        if (this.hookAngle < -75) { this.hookAngle = -75; this.hookDirection = 1 }
+        if (this.hookAngle > 85) { this.hookAngle = 85; this.hookDirection = -1 }
+        if (this.hookAngle < -85) { this.hookAngle = -85; this.hookDirection = 1 }
         // 待机时绳子保持一定长度，让玩家看清方向
         this.hookLength = 80
         break

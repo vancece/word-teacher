@@ -107,7 +107,8 @@ services:
 
   # ============ MinIO 对象存储 ============
   minio:
-    image: minio/minio:RELEASE.2024-10-29T16-01-48Z
+    # 注意：不要降级 MinIO 版本，新版本写入的元数据旧版本无法读取
+    image: minio/minio:latest
     container_name: word-teacher-minio
     restart: always
     ports:
