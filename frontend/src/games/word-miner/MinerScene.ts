@@ -19,6 +19,7 @@ export interface MinerGameResult {
   wordsCorrect: number
   wordsWrong: number
   maxCombo: number
+  wrongWords: { english: string; chinese: string }[]
 }
 
 type GameState = 'swinging' | 'extending' | 'retracting' | 'answering'
@@ -31,6 +32,7 @@ export class MinerScene extends Phaser.Scene {
   private maxCombo = 0
   private wordsCorrect = 0
   private wordsWrong = 0
+  private wrongWordsList: { english: string; chinese: string }[] = []
   private round = 1
   private totalRounds = 10
   private elapsed = 0
@@ -73,6 +75,7 @@ export class MinerScene extends Phaser.Scene {
     this.maxCombo = 0
     this.wordsCorrect = 0
     this.wordsWrong = 0
+    this.wrongWordsList = []
     this.round = 1
     this.totalRounds = Math.min(data.words.length, 8) // 等于矿石数量
     this.elapsed = 0
@@ -448,6 +451,9 @@ export class MinerScene extends Phaser.Scene {
       this.combo = 0
       this.comboText.setText('')
       this.wordsWrong++
+      if (this.caughtMineral) {
+        this.wrongWordsList.push({ english: this.caughtMineral.word.english, chinese: this.caughtMineral.word.chinese })
+      }
       this.cameras.main.shake(200, 0.005)
     }
 
@@ -520,6 +526,7 @@ export class MinerScene extends Phaser.Scene {
       wordsCorrect: this.wordsCorrect,
       wordsWrong: this.wordsWrong,
       maxCombo: this.maxCombo,
+      wrongWords: this.wrongWordsList,
     }
     this.onReport?.(gameResult)
 
@@ -591,6 +598,7 @@ export class MinerScene extends Phaser.Scene {
         wordsCorrect: this.wordsCorrect,
         wordsWrong: this.wordsWrong,
         maxCombo: this.maxCombo,
+        wrongWords: this.wrongWordsList,
       })
     })
     resultContainer.add(btnHit)
@@ -620,16 +628,18 @@ export class MinerScene extends Phaser.Scene {
         this.hookLength = 80
         break
 
-      case 'extending':
+      case 'extending': {
         this.hookLength += this.hookExtendSpeed * (delta / 16)
-        if (this.hookLength >= this.maxHookLength) {
+        const extTipX = this.hookPivotX + Math.sin(Phaser.Math.DegToRad(this.hookAngle)) * this.hookLength
+        const extTipY = this.hookPivotY + Math.cos(Phaser.Math.DegToRad(this.hookAngle)) * this.hookLength
+        const { width, height } = this.scale
+
+        // 到达屏幕边缘才回弹（底部、左侧、右侧）
+        if (extTipY >= height - 20 || extTipX <= 20 || extTipX >= width - 20) {
           this.state = 'retracting'
         } else {
-          const tipX = this.hookPivotX + Math.sin(Phaser.Math.DegToRad(this.hookAngle)) * this.hookLength
-          const tipY = this.hookPivotY + Math.cos(Phaser.Math.DegToRad(this.hookAngle)) * this.hookLength
-
           for (const mineral of this.minerals) {
-            const dist = Phaser.Math.Distance.Between(tipX, tipY, mineral.x, mineral.y)
+            const dist = Phaser.Math.Distance.Between(extTipX, extTipY, mineral.x, mineral.y)
             if (dist < mineral.size * 0.8) {
               this.caughtMineral = mineral
               this.state = 'retracting'
@@ -639,6 +649,7 @@ export class MinerScene extends Phaser.Scene {
           }
         }
         break
+      }
 
       case 'retracting': {
         const retractSpeed = this.caughtMineral ? this.hookRetractSpeed : this.hookRetractSpeed * 2

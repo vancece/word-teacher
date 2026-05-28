@@ -244,7 +244,7 @@ export interface WordGameNotification {
 
 const GAME_TYPE_NAMES: Record<string, string> = {
   shooter: '保卫城堡',
-  match: '翻牌配对',
+  match: '魔法配对',
   spell: '美食餐车',
   miner: '黄金矿工',
 }

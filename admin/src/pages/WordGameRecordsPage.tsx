@@ -7,14 +7,14 @@ import './WordGameRecordsPage.scss'
 const GAME_TYPE_OPTIONS = [
   { value: '', label: '全部游戏' },
   { value: 'shooter', label: '保卫城堡' },
-  { value: 'match', label: '翻牌配对' },
+  { value: 'match', label: '魔法配对' },
   { value: 'spell', label: '美食餐车' },
   { value: 'miner', label: '黄金矿工' },
 ]
 
 const GAME_TYPE_MAP: Record<string, { label: string; color: string }> = {
   shooter: { label: '保卫城堡', color: 'red' },
-  match: { label: '翻牌配对', color: 'purple' },
+  match: { label: '魔法配对', color: 'purple' },
   spell: { label: '美食餐车', color: 'blue' },
   miner: { label: '黄金矿工', color: 'orange' },
 }

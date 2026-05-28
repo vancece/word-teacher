@@ -435,7 +435,7 @@ router.get('/word-game-records', asyncHandler(async (req: TeacherRequest, res) =
  * 删除游戏记录
  */
 router.delete('/word-game-records/:id', asyncHandler(async (req: TeacherRequest, res) => {
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   if (isNaN(id)) return res.status(400).json({ success: false, message: '无效的记录ID' })
 
   const record = await prisma.wordGameRecord.findUnique({ where: { id } })
@@ -450,7 +450,7 @@ router.delete('/word-game-records/:id', asyncHandler(async (req: TeacherRequest,
  * 删除学习记录（跟读或对话）
  */
 router.delete('/learning-records/:type/:id', asyncHandler(async (req: TeacherRequest, res) => {
-  const { type, id: idStr } = req.params
+  const { type, id: idStr } = req.params as Record<string, string>
   const id = parseInt(idStr)
   if (isNaN(id)) return res.status(400).json({ success: false, message: '无效的记录ID' })
 

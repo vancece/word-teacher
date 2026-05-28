@@ -25,7 +25,7 @@ interface GameInfo {
 
 const GAMES: GameInfo[] = [
   { type: 'shooter', icon: <Crosshair size={24} />, title: '保卫城堡', desc: '射击入侵的单词保卫城堡', color: '#ff6b6b', gradient: 'linear-gradient(135deg, #ff6b6b, #ee5a24)' },
-  { type: 'match', icon: <Layers size={24} />, title: '翻牌配对', desc: '翻牌匹配英文和中文', color: '#6c63ff', gradient: 'linear-gradient(135deg, #6c63ff, #5a4fcf)' },
+  { type: 'match', icon: <Layers size={24} />, title: '魔法配对', desc: '匹配英文和中文释义', color: '#6c63ff', gradient: 'linear-gradient(135deg, #6c63ff, #5a4fcf)' },
   { type: 'spell', icon: <PenLine size={24} />, title: '美食餐车', desc: '顾客点单，拼出食材', color: '#48c6ef', gradient: 'linear-gradient(135deg, #48c6ef, #6f86d6)' },
   { type: 'miner', icon: <Pickaxe size={24} />, title: '黄金矿工', desc: '抓取矿石翻译单词', color: '#ff8f00', gradient: 'linear-gradient(135deg, #ff8f00, #ff6f00)' },
 ]
@@ -109,10 +109,14 @@ export default function WordGamePage() {
         : 0
       const mins = Math.floor(result.time / 60)
       const secs = result.time % 60
+      const wrongList = result.wrongWords.length > 0
+        ? result.wrongWords.map(w => `${w.english}(${w.chinese})`).join('、')
+        : '无'
       const summary = [
         `**正确率** ${accuracy}%（正确 ${result.wordsCorrect} / 错误 ${result.wordsWrong}）`,
         `**最大连击** ${result.maxCombo}x`,
         `**用时** ${mins}分${secs}秒`,
+        `**答错的单词** ${wrongList}`,
       ].join('\n\n')
 
       wordGameApi.reportResult({
@@ -359,10 +363,10 @@ export default function WordGamePage() {
                 const mins = Math.floor(result.time / 60)
                 const secs = result.time % 60
                 const summary = [
-                  `**翻牌次数** ${result.moves}次`,
+                  `**翻卡次数** ${result.moves}次`,
                   `**用时** ${mins}分${secs}秒`,
                   `**配对数** ${pack.words.length}对`,
-                  `**效率** 平均每对${(result.moves / pack.words.length).toFixed(1)}次翻牌`,
+                  `**效率** 平均每对${(result.moves / pack.words.length).toFixed(1)}次翻卡`,
                 ].join('\n\n')
                 wordGameApi.reportResult({
                   gameType: 'match',

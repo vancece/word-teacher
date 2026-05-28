@@ -7,7 +7,7 @@ import './WordPacksPage.scss'
 
 const GAME_TYPES: { key: GameType; label: string; icon: React.ReactNode; color: string }[] = [
   { key: 'shooter', label: '单词射击', icon: <Crosshair size={16} />, color: '#ff6b6b' },
-  { key: 'match', label: '翻牌配对', icon: <Layers size={16} />, color: '#6c63ff' },
+  { key: 'match', label: '魔法配对', icon: <Layers size={16} />, color: '#6c63ff' },
   { key: 'spell', label: '美食餐车', icon: <PenLine size={16} />, color: '#48c6ef' },
   { key: 'miner', label: '黄金矿工', icon: <Pickaxe size={16} />, color: '#ff8f00' },
 ]

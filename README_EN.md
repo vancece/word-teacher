@@ -72,7 +72,7 @@ Four fun mini-games to help students memorize vocabulary:
 - **🎯 Word Shooter**: Shoot flying word bubbles, train reaction speed and vocabulary recognition
 - **🍳 Food Truck (Spell)**: NPC customers order food, students spell words to "serve" dishes
 - **⛏️ Gold Miner**: Control a miner to dig word gems in an underground adventure
-- **🃏 Card Match**: 4×3 memory card game, match English words with Chinese meanings
+- **🃏 Magic Match**: 4×3 memory matching game, match English words with Chinese meanings
 
 **Game Features**:
 - Unique background music for each game (procedurally generated via Web Audio API)
