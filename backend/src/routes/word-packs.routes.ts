@@ -48,7 +48,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * 获取单个单词包详情
  */
 router.get('/:id', asyncHandler(async (req, res) => {
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
 
   const pack = await prisma.wordPack.findFirst({
     where: { id, visible: true },

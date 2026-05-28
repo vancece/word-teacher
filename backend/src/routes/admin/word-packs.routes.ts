@@ -37,7 +37,7 @@ router.get('/', asyncHandler(async (req: TeacherRequest, res) => {
  * 获取单个单词包详情
  */
 router.get('/:id', asyncHandler(async (req: TeacherRequest, res) => {
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
 
   const pack = await prisma.wordPack.findUnique({
     where: { id },
@@ -103,7 +103,7 @@ router.post('/', asyncHandler(async (req: TeacherRequest, res) => {
  * 更新单词包（整体替换单词列表）
  */
 router.put('/:id', asyncHandler(async (req: TeacherRequest, res) => {
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   const { name, description, gameType, grade, visible, sortOrder, words } = req.body
   const { teacherId, isAdmin } = req.teacher!
 
@@ -165,7 +165,7 @@ router.put('/:id', asyncHandler(async (req: TeacherRequest, res) => {
  * 删除单词包（级联删除所有单词）
  */
 router.delete('/:id', asyncHandler(async (req: TeacherRequest, res) => {
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   const { teacherId, isAdmin } = req.teacher!
 
   const pack = await prisma.wordPack.findUnique({ where: { id }, select: { creatorId: true } })
