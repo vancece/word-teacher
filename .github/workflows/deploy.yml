@@ -285,6 +285,9 @@ jobs:
               echo "⚠️ 未提供 SSL 证书，HTTPS 可能不可用"
             fi
 
+            # 保存镜像前缀（后续 docker pull 需要用）
+            IMAGE_PREFIX="${DOCKER_USERNAME}/word-teacher"
+
             # ============================================================
             # 3. 清除 shell 环境变量，避免覆盖 .env 文件
             # ============================================================
@@ -317,7 +320,6 @@ jobs:
             # 5. 拉取最新镜像
             # ============================================================
             echo "📥 拉取最新镜像（直接从 Docker Hub 拉取，绕过镜像加速器缓存）..."
-            IMAGE_PREFIX="${DOCKER_USERNAME}/word-teacher"
             [ "$BUILD_BACKEND" = "success" ] && docker pull "${IMAGE_PREFIX}-backend:latest"
             [ "$BUILD_FRONTEND" = "success" ] && docker pull "${IMAGE_PREFIX}-nginx:latest"
             [ "$BUILD_AGENT" = "success" ] && docker pull "${IMAGE_PREFIX}-agent:latest"
