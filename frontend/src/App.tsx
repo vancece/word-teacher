@@ -11,6 +11,7 @@ import ReadAloudListPage from './pages/ReadAloudListPage'
 import ReadAloudPage from './pages/ReadAloudPage'
 import ReadAloudEvaluationPage from './pages/ReadAloudEvaluationPage'
 import ProfilePage from './pages/ProfilePage'
+import WordGamePage from './pages/WordGamePage'
 
 // 登录页路由守卫（已登录则跳转首页）
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -97,6 +98,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/word-game"
+          element={
+            <ProtectedRoute>
+              <WordGamePage />
             </ProtectedRoute>
           }
         />

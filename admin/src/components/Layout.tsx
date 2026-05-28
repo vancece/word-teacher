@@ -8,7 +8,9 @@ import {
   TrendingUp,
   School,
   Users,
-  Shield
+  Shield,
+  Gamepad2,
+  Trophy
 } from 'lucide-react'
 import './Layout.scss'
 
@@ -43,7 +45,9 @@ export default function Layout() {
   const commonNavItems: NavItem[] = [
     { path: '/classes', icon: School, label: '班级管理' },
     { path: '/learning-records', icon: BookOpen, label: '学习记录' },
+    { path: '/game-records', icon: Trophy, label: '游戏记录' },
     { path: '/scenes', icon: Mic2, label: '场景管理' },
+    { path: '/word-packs', icon: Gamepad2, label: '游戏管理' },
     { path: '/progress', icon: TrendingUp, label: '进步情况' },
   ]
 

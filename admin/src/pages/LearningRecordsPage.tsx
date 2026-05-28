@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Select, Table, Tag, Progress, Button, Input } from 'antd'
+import { Select, Table, Tag, Progress, Button, Input, Popconfirm, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { adminApi, type LearningRecord, type Class } from '../api'
+import { adminApi, learningRecordsApi, type LearningRecord, type Class } from '../api'
 import AdminTip from '../components/AdminTip'
 import ReadAloudDetailModal from '../components/ReadAloudDetailModal'
 import DialogueDetailModal from '../components/DialogueDetailModal'
@@ -77,6 +77,16 @@ export default function LearningRecordsPage() {
     setPage(1)
   }
 
+  const handleDelete = async (record: LearningRecord) => {
+    try {
+      await learningRecordsApi.deleteRecord(record.type, record.id)
+      message.success('删除成功')
+      loadRecords()
+    } catch {
+      message.error('删除失败')
+    }
+  }
+
   const columns: ColumnsType<LearningRecord> = [
     {
       title: '学生',
@@ -85,7 +95,7 @@ export default function LearningRecordsPage() {
       render: (student) => (
         <div className="student-info">
           <span className="name">{student?.name || '-'}</span>
-          <span className="class">{student?.className || ''}</span>
+          <span className="meta">{student?.studentNo ? `${student.studentNo}` : ''}{student?.className ? ` · ${student.className}` : ''}</span>
         </div>
       ),
     },
@@ -140,16 +150,27 @@ export default function LearningRecordsPage() {
     {
       title: '操作',
       key: 'action',
-      width: 100,
+      width: 150,
       render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          onClick={() => setDetailRecord(record)}
-          disabled={record.status !== 'COMPLETED'}
-        >
-          查看详情
-        </Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => setDetailRecord(record)}
+            disabled={record.status !== 'COMPLETED'}
+          >
+            详情
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除这条学习记录吗？"
+            onConfirm={() => handleDelete(record)}
+            okText="删除"
+            cancelText="取消"
+          >
+            <Button type="link" size="small" danger>删除</Button>
+          </Popconfirm>
+        </div>
       ),
     },
   ]

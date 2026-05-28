@@ -22,6 +22,7 @@ model Student {
   class            Class            @relation(fields: [classId], references: [id], onDelete: Cascade)
   practiceRecords  PracticeRecord[]
   readAloudRecords ReadAloudRecord[]
+  wordGameRecords  WordGameRecord[]
 
   @@map("students")
 }
@@ -40,6 +41,7 @@ model Teacher {
   classes                ClassTeacher[]
   createdScenes          Scene[]          @relation("SceneCreator")
   createdReadAloudScenes ReadAloudScene[] @relation("ReadAloudSceneCreator")
+  createdWordPacks       WordPack[]       @relation("WordPackCreator")
 
   @@map("teachers")
 }
@@ -132,18 +134,44 @@ enum PracticeStatus {
   ABANDONED
 }
 
-// 作业表（暂未使用，预留扩展）
-// model Assignment {
-//   id          Int      @id @default(autoincrement())
-//   teacherId   Int      @map("teacher_id")
-//   classId     Int      @map("class_id")
-//   sceneIds    Json     @map("scene_ids")
-//   title       String   @db.VarChar(100)
-//   description String?  @db.Text
-//   dueDate     DateTime @map("due_date")
-//   createdAt   DateTime @default(now()) @map("created_at")
-//   @@map("assignments")
-// }
+// 单词包表（按游戏类型分类配置）
+model WordPack {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)          // 单词包名称，如 "动物世界"
+  description String?  @db.VarChar(500)          // 描述
+  gameType    String   @map("game_type") @db.VarChar(20) // 游戏类型: shooter / match / spell
+  grade       String   @default("通用") @db.VarChar(20)  // 适用年级/难度
+  visible     Boolean  @default(true)            // 是否对学生可见
+  sortOrder   Int      @default(0) @map("sort_order")    // 排序权重
+  creatorId   Int?     @map("creator_id")        // 创建者教师ID
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 关联
+  words   Word[]
+  creator Teacher? @relation("WordPackCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@index([gameType])
+  @@index([visible])
+  @@map("word_packs")
+}
+
+// 单词表
+model Word {
+  id         Int    @id @default(autoincrement())
+  packId     Int    @map("pack_id")
+  english    String @db.VarChar(100)    // 英文单词
+  chinese    String @db.VarChar(100)    // 中文释义
+  phonetic   String? @db.VarChar(100)   // 音标
+  difficulty Int    @default(1)         // 难度等级 1-5
+  sortOrder  Int    @default(0) @map("sort_order") // 排序
+
+  // 关联
+  pack WordPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@index([packId])
+  @@map("words")
+}
 
 // ==================== 跟读功能 ====================
 
@@ -206,5 +234,24 @@ model ReadAloudRecord {
   @@index([createdAt])
   @@index([studentId, createdAt])
   @@map("read_aloud_records")
+}
+
+// 单词游戏记录表
+model WordGameRecord {
+  id          Int      @id @default(autoincrement())
+  studentId   Int      @map("student_id")
+  gameType    String   @map("game_type") @db.VarChar(20)   // shooter / match / spell / miner
+  packName    String   @map("pack_name") @db.VarChar(100)  // 词包名称
+  score       Int                                           // 得分
+  summary     String   @db.Text                             // 文本摘要
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // 关联
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([gameType])
+  @@index([studentId, createdAt])
+  @@map("word_game_records")
 }
 

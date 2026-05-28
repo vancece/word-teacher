@@ -10,6 +10,8 @@ import ClassStudentsPage from './pages/classes/StudentsPage'
 import LearningRecordsPage from './pages/LearningRecordsPage'
 import ScenesPage from './pages/ScenesPage'
 import ProgressPage from './pages/ProgressPage'
+import WordPacksPage from './pages/WordPacksPage'
+import WordGameRecordsPage from './pages/WordGameRecordsPage'
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
             <Route path="learning-records" element={<LearningRecordsPage />} />
             <Route path="read-aloud-records" element={<Navigate to="/learning-records" replace />} />
             <Route path="scenes" element={<ScenesPage />} />
+            <Route path="word-packs" element={<WordPacksPage />} />
+            <Route path="game-records" element={<WordGameRecordsPage />} />
             <Route path="progress" element={<ProgressPage />} />
           </Route>
         </Routes>

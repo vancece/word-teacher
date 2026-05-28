@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="silverMain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0e0e0"/>
+      <stop offset="50%" stop-color="#9e9e9e"/>
+      <stop offset="100%" stop-color="#616161"/>
+    </linearGradient>
+    <radialGradient id="silverGlow" cx="35%" cy="30%">
+      <stop offset="0%" stop-color="#fafafa" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#9e9e9e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="40" cy="42" rx="34" ry="32" fill="url(#silverGlow)"/>
+  <!-- 主体 -->
+  <path d="M14 38 L24 18 L40 10 L56 18 L66 38 L58 56 L40 64 L22 56Z" fill="url(#silverMain)"/>
+  <!-- 顶面 -->
+  <path d="M24 18 L40 10 L56 18 L40 28Z" fill="#eeeeee"/>
+  <!-- 左面 -->
+  <path d="M14 38 L24 18 L40 28 L30 44Z" fill="#757575"/>
+  <!-- 右面 -->
+  <path d="M56 18 L66 38 L50 44 L40 28Z" fill="#bdbdbd"/>
+  <!-- 底暗面 -->
+  <path d="M22 56 L40 64 L58 56 L50 44 L30 44Z" fill="#424242" opacity="0.6"/>
+  <path d="M14 38 L30 44 L22 56Z" fill="#616161"/>
+  <path d="M66 38 L50 44 L58 56Z" fill="#757575"/>
+  <!-- 中心 -->
+  <path d="M30 44 L40 28 L50 44Z" fill="#9e9e9e" opacity="0.7"/>
+  <!-- 闪光 -->
+  <g opacity="0.85">
+    <path d="M28 22 L29.5 18.5 L31 22 L34.5 23.5 L31 25 L29.5 28.5 L28 25 L24.5 23.5Z" fill="#fff"/>
+  </g>
+  <circle cx="48" cy="26" r="1.5" fill="#fff" opacity="0.6"/>
+  <circle cx="34" cy="20" r="1" fill="#fff" opacity="0.5"/>
+</svg>

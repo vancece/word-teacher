@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" fill="none">
+  <defs>
+    <!-- 天空渐变 -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a90d9"/>
+      <stop offset="60%" stop-color="#87ceeb"/>
+      <stop offset="100%" stop-color="#b8e4f0"/>
+    </linearGradient>
+    <!-- 草地渐变 -->
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6abf4b"/>
+      <stop offset="40%" stop-color="#4caf50"/>
+      <stop offset="100%" stop-color="#357a38"/>
+    </linearGradient>
+    <!-- 浅土层渐变 -->
+    <linearGradient id="soil1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a0795c"/>
+      <stop offset="100%" stop-color="#8d6e63"/>
+    </linearGradient>
+    <!-- 中土层渐变 -->
+    <linearGradient id="soil2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7d5a47"/>
+      <stop offset="100%" stop-color="#5d4037"/>
+    </linearGradient>
+    <!-- 深岩层渐变 -->
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4e342e"/>
+      <stop offset="100%" stop-color="#3e2723"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 天空 -->
+  <rect width="400" height="105" fill="url(#sky)"/>
+
+  <!-- 太阳 -->
+  <circle cx="340" cy="35" r="22" fill="#ffe082" opacity="0.9"/>
+  <circle cx="340" cy="35" r="18" fill="#ffecb3"/>
+
+  <!-- 云朵 1 -->
+  <g opacity="0.85">
+    <ellipse cx="60" cy="30" rx="28" ry="14" fill="#fff"/>
+    <ellipse cx="42" cy="34" rx="18" ry="10" fill="#fff"/>
+    <ellipse cx="80" cy="34" rx="20" ry="11" fill="#fff"/>
+    <ellipse cx="60" cy="26" rx="20" ry="10" fill="#f5f5f5"/>
+  </g>
+  <!-- 云朵 2 -->
+  <g opacity="0.6">
+    <ellipse cx="220" cy="50" rx="24" ry="12" fill="#fff"/>
+    <ellipse cx="200" cy="54" rx="16" ry="9" fill="#fff"/>
+    <ellipse cx="240" cy="54" rx="18" ry="10" fill="#fff"/>
+  </g>
+
+  <!-- 远山 -->
+  <path d="M0 105 Q60 70 120 100 Q180 65 240 95 Q300 60 360 90 Q380 85 400 105 Z" fill="#81c784" opacity="0.4"/>
+
+  <!-- 草地主体 -->
+  <rect y="95" width="400" height="22" fill="url(#grass)" rx="0"/>
+
+  <!-- 草地顶部波浪边缘 - 自然草丛效果 -->
+  <path d="M0 97 Q5 90 10 97 Q15 88 20 96 Q25 91 30 97 Q35 89 40 96 Q45 92 50 97 Q55 88 60 96 Q65 91 70 97 Q75 89 80 96 Q85 92 90 97 Q95 88 100 96 Q105 91 110 97 Q115 89 120 96 Q125 92 130 97 Q135 88 140 96 Q145 91 150 97 Q155 89 160 96 Q165 92 170 97 Q175 88 180 96 Q185 91 190 97 Q195 89 200 96 Q205 92 210 97 Q215 88 220 96 Q225 91 230 97 Q235 89 240 96 Q245 92 250 97 Q255 88 260 96 Q265 91 270 97 Q275 89 280 96 Q285 92 290 97 Q295 88 300 96 Q305 91 310 97 Q315 89 320 96 Q325 92 330 97 Q335 88 340 96 Q345 91 350 97 Q355 89 360 96 Q365 92 370 97 Q375 88 380 96 Q385 91 390 97 Q395 89 400 96 V105 H0 Z" fill="#6abf4b"/>
+
+  <!-- 草地中的小花 -->
+  <g opacity="0.7">
+    <circle cx="45" cy="100" r="2.5" fill="#ffeb3b"/>
+    <circle cx="130" cy="102" r="2" fill="#ff7043"/>
+    <circle cx="250" cy="99" r="2.5" fill="#e1bee7"/>
+    <circle cx="330" cy="101" r="2" fill="#ffeb3b"/>
+    <circle cx="180" cy="103" r="2" fill="#64b5f6"/>
+  </g>
+
+  <!-- 草地与泥土分界的碎土 -->
+  <path d="M0 117 Q20 115 40 117 Q60 119 80 116 Q100 118 120 117 Q140 115 160 118 Q180 116 200 117 Q220 119 240 116 Q260 118 280 117 Q300 115 320 118 Q340 116 360 117 Q380 119 400 117 V120 H0 Z" fill="#a0795c" opacity="0.5"/>
+
+  <!-- 浅土层 -->
+  <rect y="117" width="400" height="110" fill="url(#soil1)"/>
+
+  <!-- 中土层 -->
+  <rect y="227" width="400" height="140" fill="url(#soil2)"/>
+
+  <!-- 深岩层 -->
+  <rect y="367" width="400" height="233" fill="url(#rock)"/>
+
+  <!-- 土层交界线 -->
+  <path d="M0 227 Q40 224 80 228 Q120 231 160 226 Q200 229 240 227 Q280 224 320 229 Q360 226 400 228" stroke="#6d4c41" stroke-width="1.5" fill="none" opacity="0.3"/>
+  <path d="M0 367 Q50 364 100 368 Q150 371 200 366 Q250 369 300 367 Q350 364 400 368" stroke="#4e342e" stroke-width="1.5" fill="none" opacity="0.3"/>
+
+  <!-- 岩石纹理 - 浅层 -->
+  <g opacity="0.15">
+    <ellipse cx="55" cy="155" rx="35" ry="10" fill="#5d4037"/>
+    <ellipse cx="210" cy="175" rx="45" ry="8" fill="#5d4037"/>
+    <ellipse cx="350" cy="145" rx="28" ry="9" fill="#5d4037"/>
+    <ellipse cx="130" cy="200" rx="30" ry="7" fill="#5d4037"/>
+  </g>
+
+  <!-- 岩石纹理 - 中层 -->
+  <g opacity="0.18">
+    <ellipse cx="90" cy="270" rx="40" ry="10" fill="#3e2723"/>
+    <ellipse cx="280" cy="300" rx="50" ry="12" fill="#3e2723"/>
+    <ellipse cx="180" cy="330" rx="35" ry="8" fill="#3e2723"/>
+  </g>
+
+  <!-- 岩石纹理 - 深层 -->
+  <g opacity="0.2">
+    <ellipse cx="70" cy="420" rx="35" ry="10" fill="#2c1c10"/>
+    <ellipse cx="200" cy="450" rx="55" ry="14" fill="#2c1c10"/>
+    <ellipse cx="340" cy="430" rx="30" ry="9" fill="#2c1c10"/>
+    <ellipse cx="120" cy="500" rx="45" ry="12" fill="#2c1c10"/>
+    <ellipse cx="300" cy="520" rx="40" ry="10" fill="#2c1c10"/>
+    <ellipse cx="50" cy="560" rx="30" ry="8" fill="#2c1c10"/>
+    <ellipse cx="250" cy="570" rx="50" ry="13" fill="#2c1c10"/>
+  </g>
+
+  <!-- 小石子散布 -->
+  <g opacity="0.25">
+    <circle cx="32" cy="135" r="3.5" fill="#bcaaa4"/>
+    <circle cx="155" cy="150" r="2.5" fill="#a1887f"/>
+    <circle cx="380" cy="190" r="3" fill="#bcaaa4"/>
+    <circle cx="75" cy="255" r="3" fill="#8d6e63"/>
+    <circle cx="230" cy="285" r="2.5" fill="#8d6e63"/>
+    <circle cx="340" cy="310" r="3.5" fill="#795548"/>
+    <circle cx="110" cy="400" r="3" fill="#6d4c41"/>
+    <circle cx="310" cy="440" r="2.5" fill="#6d4c41"/>
+    <circle cx="45" cy="490" r="3.5" fill="#5d4037"/>
+    <circle cx="360" cy="540" r="3" fill="#5d4037"/>
+    <circle cx="170" cy="560" r="2.5" fill="#4e342e"/>
+  </g>
+
+  <!-- 地下矿脉纹理 -->
+  <g opacity="0.1">
+    <path d="M30 250 Q60 245 80 260 Q100 270 130 255" stroke="#ffb74d" stroke-width="2" fill="none"/>
+    <path d="M250 380 Q280 375 300 390 Q320 400 350 385" stroke="#ffb74d" stroke-width="2" fill="none"/>
+    <path d="M150 480 Q180 470 210 485 Q240 495 270 480" stroke="#90a4ae" stroke-width="2" fill="none"/>
+  </g>
+
+  <!-- 底部岩浆微光 -->
+  <rect y="585" width="400" height="15" fill="#3e2723" opacity="0.5"/>
+  <g opacity="0.08">
+    <ellipse cx="100" cy="592" rx="60" ry="6" fill="#ff5722"/>
+    <ellipse cx="300" cy="595" rx="50" ry="5" fill="#ff5722"/>
+  </g>
+</svg>

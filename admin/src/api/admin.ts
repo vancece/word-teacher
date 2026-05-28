@@ -488,3 +488,109 @@ export interface StudentSummary {
   suggestions: string[]
 }
 
+// 单词
+export interface WordItem {
+  id?: number
+  english: string
+  chinese: string
+  phonetic?: string
+  difficulty: number
+}
+
+// 单词包
+export type GameType = 'shooter' | 'match' | 'spell' | 'miner'
+
+export interface WordPack {
+  id: number
+  name: string
+  description?: string
+  gameType: GameType
+  grade: string
+  visible: boolean
+  sortOrder: number
+  words: WordItem[]
+  creatorId?: number
+  creator?: { id: number; name: string }
+  createdAt: string
+  updatedAt: string
+}
+
+export const wordPackApi = {
+  getAll: async (gameType?: GameType): Promise<WordPack[]> => {
+    const params: any = {}
+    if (gameType) params.gameType = gameType
+    return apiClient.get('/admin/word-packs', { params }) as unknown as WordPack[]
+  },
+
+  getById: async (id: number): Promise<WordPack> => {
+    return apiClient.get(`/admin/word-packs/${id}`) as unknown as WordPack
+  },
+
+  create: async (data: {
+    name: string
+    description?: string
+    gameType: GameType
+    grade?: string
+    visible?: boolean
+    sortOrder?: number
+    words: Omit<WordItem, 'id'>[]
+  }): Promise<WordPack> => {
+    return apiClient.post('/admin/word-packs', data) as unknown as WordPack
+  },
+
+  update: async (id: number, data: {
+    name?: string
+    description?: string
+    gameType?: GameType
+    grade?: string
+    visible?: boolean
+    sortOrder?: number
+    words?: Omit<WordItem, 'id'>[]
+  }): Promise<WordPack> => {
+    return apiClient.put(`/admin/word-packs/${id}`, data) as unknown as WordPack
+  },
+
+  delete: async (id: number): Promise<void> => {
+    return apiClient.delete(`/admin/word-packs/${id}`) as unknown as void
+  },
+}
+
+// 游戏记录
+export interface WordGameRecord {
+  id: number
+  studentId: number
+  gameType: string
+  packName: string
+  score: number
+  summary: string
+  createdAt: string
+  student: {
+    id: number
+    name: string
+    studentNo: string
+    class: { name: string }
+  }
+}
+
+export const wordGameRecordsApi = {
+  getRecords: async (params?: {
+    page?: number
+    limit?: number
+    classId?: number
+    gameType?: string
+    search?: string
+  }): Promise<{ records: WordGameRecord[]; total: number; page: number; limit: number }> => {
+    return apiClient.get('/admin/word-game-records', { params }) as unknown as { records: WordGameRecord[]; total: number; page: number; limit: number }
+  },
+
+  deleteRecord: async (id: number): Promise<void> => {
+    return apiClient.delete(`/admin/word-game-records/${id}`) as unknown as void
+  },
+}
+
+export const learningRecordsApi = {
+  deleteRecord: async (type: 'readAloud' | 'dialogue', id: number): Promise<void> => {
+    return apiClient.delete(`/admin/learning-records/${type}/${id}`) as unknown as void
+  },
+}
+

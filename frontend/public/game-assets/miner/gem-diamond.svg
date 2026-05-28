@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="diaMain" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#e0f7fa"/>
+      <stop offset="50%" stop-color="#4dd0e1"/>
+      <stop offset="100%" stop-color="#00838f"/>
+    </linearGradient>
+    <radialGradient id="diaGlow" cx="40%" cy="30%">
+      <stop offset="0%" stop-color="#e0f7fa" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#4dd0e1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="40" cy="38" rx="36" ry="34" fill="url(#diaGlow)"/>
+  <!-- 经典钻石切割 -->
+  <!-- 冠部 -->
+  <path d="M10 30 L26 12 L40 8 L54 12 L70 30Z" fill="#80deea"/>
+  <!-- 冠顶面 -->
+  <path d="M26 12 L40 8 L54 12 L40 18Z" fill="#e0f7fa"/>
+  <!-- 冠左 -->
+  <path d="M10 30 L26 12 L40 18 L24 30Z" fill="#4dd0e1"/>
+  <!-- 冠右 -->
+  <path d="M54 12 L70 30 L56 30 L40 18Z" fill="#80deea"/>
+  <!-- 腰带 -->
+  <path d="M10 30 L24 30 L40 18 L56 30 L70 30 L56 34 L24 34Z" fill="url(#diaMain)"/>
+  <!-- 亭部（下面的三角） -->
+  <path d="M10 30 L24 34 L40 68Z" fill="#00838f"/>
+  <path d="M24 34 L40 34 L40 68Z" fill="#00acc1"/>
+  <path d="M40 34 L56 34 L40 68Z" fill="#0097a7"/>
+  <path d="M56 34 L70 30 L40 68Z" fill="#006064"/>
+  <!-- 内部折射光 -->
+  <path d="M28 34 L40 50 L36 34Z" fill="#4dd0e1" opacity="0.4"/>
+  <path d="M44 34 L40 50 L52 34Z" fill="#80deea" opacity="0.3"/>
+  <!-- 闪光星 -->
+  <g opacity="0.95">
+    <path d="M30 18 L31.5 14 L33 18 L37 19.5 L33 21 L31.5 25 L30 21 L26 19.5Z" fill="#fff"/>
+  </g>
+  <g opacity="0.6">
+    <path d="M55 24 L56 21.5 L57 24 L59.5 25 L57 26 L56 28.5 L55 26 L52.5 25Z" fill="#fff"/>
+  </g>
+  <circle cx="20" cy="28" r="1.2" fill="#fff" opacity="0.6"/>
+  <circle cx="46" cy="14" r="1.5" fill="#fff" opacity="0.7"/>
+</svg>

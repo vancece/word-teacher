@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Target, Play, Loader2, RefreshCw, MessageCircle, BookOpen, Mic, Sparkles } from 'lucide-react'
+import { Target, Play, Loader2, RefreshCw, MessageCircle, BookOpen, Mic, Sparkles, Gamepad2 } from 'lucide-react'
 import { sceneApi, readAloudApi, type Scene, type ReadAloudScene } from '../api'
 import './SceneListPage.scss'
 
@@ -106,6 +106,17 @@ export default function SceneListPage() {
           <h3>英语跟读</h3>
           <p>朗读句子，纠正发音</p>
           <span className="count">{readAloudScenes.length} 个场景</span>
+        </div>
+        <div
+          className="mode-card game-card"
+          onClick={() => navigate('/word-game')}
+        >
+          <div className="icon-wrapper game">
+            <Gamepad2 size={28} />
+          </div>
+          <h3>单词游戏</h3>
+          <p>边玩边记单词</p>
+          <span className="count">3 个词包</span>
         </div>
       </section>
 

@@ -1,0 +1,227 @@
+.word-packs-page {
+  padding: 24px;
+
+  .page-header {
+    margin-bottom: 24px;
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0 0 4px;
+    }
+
+    .page-desc {
+      color: #666;
+      font-size: 14px;
+      margin: 0;
+    }
+  }
+
+  .tab-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .packs-content {
+    margin-top: 16px;
+  }
+
+  .loading-state {
+    text-align: center;
+    padding: 60px 0;
+    color: #999;
+  }
+
+  .packs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .word-pack-card {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      border-color: #e0e0e0;
+    }
+
+    &.hidden-pack {
+      opacity: 0.6;
+    }
+
+    .pack-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+
+      .pack-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        h3 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .pack-desc {
+      color: #666;
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+
+    .pack-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #999;
+
+      .word-count {
+        color: #1677ff;
+        font-weight: 500;
+      }
+    }
+
+    .pack-words-preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+
+      .word-tag {
+        font-size: 12px;
+        border-radius: 4px;
+
+        &.more {
+          color: #999;
+          border-color: #eee;
+        }
+      }
+    }
+  }
+}
+
+.word-pack-modal {
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .words-editor {
+    margin-top: 16px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 16px;
+
+    .words-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+
+      h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+      }
+    }
+
+    .words-table {
+      border: 1px solid #f0f0f0;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .words-table-head {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        background: #fafafa;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 12px;
+        font-weight: 500;
+        color: #666;
+        gap: 8px;
+
+        .col-english { flex: 2; }
+        .col-chinese { flex: 2; }
+        .col-phonetic { flex: 2; }
+        .col-difficulty { width: 50px; text-align: center; }
+        .col-action { width: 32px; }
+      }
+
+      .words-table-body {
+        max-height: 320px;
+        overflow-y: auto;
+
+        .words-table-row {
+          display: flex;
+          align-items: center;
+          padding: 6px 12px;
+          gap: 8px;
+          border-bottom: 1px solid #f5f5f5;
+
+          &:last-child { border-bottom: none; }
+
+          .row-index {
+            width: 20px;
+            font-size: 11px;
+            color: #bbb;
+            text-align: center;
+            flex-shrink: 0;
+          }
+
+          input, select {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+
+            &:focus { border-color: #1677ff; }
+          }
+
+          .col-english { flex: 2; }
+          .col-chinese { flex: 2; }
+          .col-phonetic { flex: 2; }
+          .col-difficulty { width: 50px; text-align: center; padding: 4px; }
+          .col-action { width: 32px; flex-shrink: 0; }
+
+          .remove-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.2s;
+
+            &:hover:not(:disabled) {
+              background: #fff1f0;
+              color: #ff4d4f;
+            }
+
+            &:disabled {
+              opacity: 0.3;
+              cursor: not-allowed;
+            }
+          }
+        }
+      }
+    }
+  }
+}

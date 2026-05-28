@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "lsof -ti:5174 | xargs kill -9 2>/dev/null || true",
     "dev": "vite --port 5174",
     "build": "tsc && vite build",
     "preview": "vite preview"

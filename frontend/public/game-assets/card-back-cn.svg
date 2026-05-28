@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" fill="none">
+  <!-- 卡片背景 - 暖红色 -->
+  <rect width="170" height="120" rx="10" fill="#c62828"/>
+  <!-- 内边框 -->
+  <rect x="5" y="5" width="160" height="110" rx="8" fill="none" stroke="#ffab40" stroke-width="1.5"/>
+  <!-- 内部装饰背景 -->
+  <rect x="11" y="11" width="148" height="98" rx="5" fill="#d32f2f"/>
+  <!-- 祥云纹理 -->
+  <g opacity="0.12">
+    <circle cx="40" cy="30" r="12" fill="#fff"/>
+    <circle cx="52" cy="27" r="10" fill="#fff"/>
+    <circle cx="46" cy="23" r="8" fill="#fff"/>
+    <circle cx="120" cy="40" r="12" fill="#fff"/>
+    <circle cx="132" cy="37" r="10" fill="#fff"/>
+    <circle cx="126" cy="33" r="8" fill="#fff"/>
+    <circle cx="40" cy="85" r="12" fill="#fff"/>
+    <circle cx="52" cy="82" r="10" fill="#fff"/>
+    <circle cx="46" cy="78" r="8" fill="#fff"/>
+    <circle cx="120" cy="90" r="12" fill="#fff"/>
+    <circle cx="132" cy="87" r="10" fill="#fff"/>
+    <circle cx="126" cy="83" r="8" fill="#fff"/>
+  </g>
+  <!-- 中心大字 中 -->
+  <text x="85" y="72" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="38" font-weight="bold" fill="#ffcdd2" opacity="0.35" text-anchor="middle">中</text>
+  <!-- 中心菱形装饰 -->
+  <path d="M85 30 L115 60 L85 90 L55 60Z" fill="none" stroke="#ffab40" stroke-width="1.2" opacity="0.5"/>
+  <path d="M85 38 L109 60 L85 82 L61 60Z" fill="none" stroke="#ffcdd2" stroke-width="0.8" opacity="0.3"/>
+  <!-- 四角装饰 -->
+  <circle cx="22" cy="22" r="4" fill="#ffab40" opacity="0.6"/>
+  <circle cx="148" cy="22" r="4" fill="#ffab40" opacity="0.6"/>
+  <circle cx="22" cy="98" r="4" fill="#ffab40" opacity="0.6"/>
+  <circle cx="148" cy="98" r="4" fill="#ffab40" opacity="0.6"/>
+  <!-- 角标 -->
+  <rect x="8" y="8" width="22" height="16" rx="4" fill="#ffab40"/>
+  <text x="19" y="20" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">中</text>
+</svg>

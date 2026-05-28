@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" fill="none">
+  <!-- 钩子顶部连接点 -->
+  <circle cx="16" cy="4" r="4" fill="#78909c"/>
+  <circle cx="16" cy="4" r="2" fill="#546e7a"/>
+  <!-- 钩子主杆 -->
+  <rect x="14" y="4" width="4" height="20" rx="2" fill="#78909c"/>
+  <!-- 钩子弯曲部分 -->
+  <path d="M14 24 L14 30 Q14 38 22 38 Q30 38 30 30" stroke="#78909c" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- 钩尖 -->
+  <polygon points="28,26 32,30 28,32" fill="#546e7a"/>
+  <!-- 高光 -->
+  <rect x="15" y="8" width="1.5" height="12" rx="0.75" fill="#b0bec5" opacity="0.6"/>
+</svg>

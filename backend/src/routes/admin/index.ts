@@ -12,6 +12,7 @@ import studentsRoutes from './students.routes.js'
 import scenesRoutes from './scenes.routes.js'
 import progressRoutes from './progress.routes.js'
 import teachersRoutes from './teachers.routes.js'
+import wordPacksRoutes from './word-packs.routes.js'
 
 const router = Router()
 
@@ -25,6 +26,7 @@ router.use('/students', studentsRoutes)       // GET/POST/PUT/DELETE /students
 router.use('/scenes', scenesRoutes)           // 对话场景 CRUD
 router.use('/progress', progressRoutes)       // GET /progress/overview, /progress/student/:id
 router.use('/teachers', teachersRoutes)       // GET/POST/PUT/DELETE /teachers
+router.use('/word-packs', wordPacksRoutes)    // 单词包 CRUD
 
 // 向后兼容：旧路径映射
 // /read-aloud-records -> /read-aloud/records
@@ -347,6 +349,124 @@ router.post('/scene/supplement', asyncHandler(async (req: TeacherRequest, res) =
 
   const data = await response.json()
   return success(res, data)
+}))
+
+/**
+ * GET /api/admin/word-game-records
+ * 游戏记录列表，支持班级筛选、游戏类型筛选、搜索
+ */
+router.get('/word-game-records', asyncHandler(async (req: TeacherRequest, res) => {
+  const { teacherId, isAdmin } = req.teacher!
+  const page = parseInt(req.query.page as string) || 1
+  const limit = parseInt(req.query.limit as string) || 15
+  const classId = req.query.classId ? parseInt(req.query.classId as string) : undefined
+  const gameType = req.query.gameType as string | undefined
+  const search = req.query.search as string | undefined
+
+  // 权限：非管理员只能看自己负责的班级
+  let allowedStudentIds: number[] | undefined
+  if (!isAdmin) {
+    const teacherClasses = await prisma.classTeacher.findMany({
+      where: { teacherId },
+      select: { classId: true },
+    })
+    const classIds = teacherClasses.map(tc => tc.classId)
+    if (classIds.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+    const students = await prisma.student.findMany({
+      where: { classId: { in: classIds } },
+      select: { id: true },
+    })
+    allowedStudentIds = students.map(s => s.id)
+    if (allowedStudentIds.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+  }
+
+  // 班级 + 搜索筛选
+  let studentFilter: number[] | undefined = allowedStudentIds
+  if (classId || search) {
+    const studentWhere: any = {}
+    if (classId) studentWhere.classId = classId
+    if (search) {
+      studentWhere.OR = [
+        { name: { contains: search } },
+        { studentNo: { contains: search } },
+      ]
+    }
+    if (allowedStudentIds) {
+      studentWhere.id = { in: allowedStudentIds }
+    }
+    const filteredStudents = await prisma.student.findMany({
+      where: studentWhere,
+      select: { id: true },
+    })
+    studentFilter = filteredStudents.map(s => s.id)
+    if (studentFilter.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+  }
+
+  const where: any = {}
+  if (studentFilter) where.studentId = { in: studentFilter }
+  if (gameType) where.gameType = gameType
+
+  const [records, total] = await Promise.all([
+    prisma.wordGameRecord.findMany({
+      where,
+      include: {
+        student: {
+          select: { id: true, name: true, studentNo: true, class: { select: { name: true } } },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.wordGameRecord.count({ where }),
+  ])
+
+  return success(res, { records, total, page, limit })
+}))
+
+/**
+ * DELETE /api/admin/word-game-records/:id
+ * 删除游戏记录
+ */
+router.delete('/word-game-records/:id', asyncHandler(async (req: TeacherRequest, res) => {
+  const id = parseInt(req.params.id)
+  if (isNaN(id)) return res.status(400).json({ success: false, message: '无效的记录ID' })
+
+  const record = await prisma.wordGameRecord.findUnique({ where: { id } })
+  if (!record) return res.status(404).json({ success: false, message: '记录不存在' })
+
+  await prisma.wordGameRecord.delete({ where: { id } })
+  res.status(204).send()
+}))
+
+/**
+ * DELETE /api/admin/learning-records/:type/:id
+ * 删除学习记录（跟读或对话）
+ */
+router.delete('/learning-records/:type/:id', asyncHandler(async (req: TeacherRequest, res) => {
+  const { type, id: idStr } = req.params
+  const id = parseInt(idStr)
+  if (isNaN(id)) return res.status(400).json({ success: false, message: '无效的记录ID' })
+
+  if (type === 'readAloud') {
+    const record = await prisma.readAloudRecord.findUnique({ where: { id } })
+    if (!record) return res.status(404).json({ success: false, message: '记录不存在' })
+    await prisma.readAloudRecord.delete({ where: { id } })
+  } else if (type === 'dialogue') {
+    const record = await prisma.practiceRecord.findUnique({ where: { id } })
+    if (!record) return res.status(404).json({ success: false, message: '记录不存在' })
+    await prisma.practiceRecord.delete({ where: { id } })
+  } else {
+    return res.status(400).json({ success: false, message: '无效的记录类型' })
+  }
+
+  res.status(204).send()
 }))
 
 export default router

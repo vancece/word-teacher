@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <defs>
+    <linearGradient id="rubyMain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ef5350"/>
+      <stop offset="50%" stop-color="#c62828"/>
+      <stop offset="100%" stop-color="#880e4f"/>
+    </linearGradient>
+    <radialGradient id="rubyGlow" cx="35%" cy="30%">
+      <stop offset="0%" stop-color="#ff8a80" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#c62828" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="40" cy="40" rx="35" ry="33" fill="url(#rubyGlow)"/>
+  <!-- 椭圆形宝石切割 -->
+  <!-- 主体 -->
+  <path d="M16 36 L24 16 L40 10 L56 16 L64 36 L56 56 L40 62 L24 56Z" fill="url(#rubyMain)"/>
+  <!-- 顶面 -->
+  <path d="M24 16 L40 10 L56 16 L40 26Z" fill="#ef5350"/>
+  <!-- 左面 -->
+  <path d="M16 36 L24 16 L40 26 L30 42Z" fill="#b71c1c"/>
+  <!-- 右面 -->
+  <path d="M56 16 L64 36 L50 42 L40 26Z" fill="#e53935"/>
+  <!-- 底暗面 -->
+  <path d="M24 56 L40 62 L56 56 L50 42 L30 42Z" fill="#880e4f" opacity="0.7"/>
+  <path d="M16 36 L30 42 L24 56Z" fill="#ad1457"/>
+  <path d="M64 36 L50 42 L56 56Z" fill="#c62828"/>
+  <!-- 中心切面 -->
+  <path d="M30 42 L40 26 L50 42Z" fill="#d32f2f" opacity="0.6"/>
+  <!-- 内部光泽 -->
+  <path d="M32 24 L40 18 L48 24 L40 32Z" fill="#ff8a80" opacity="0.25"/>
+  <!-- 闪光 -->
+  <g opacity="0.9">
+    <path d="M28 20 L29.5 16 L31 20 L35 21.5 L31 23 L29.5 27 L28 23 L24 21.5Z" fill="#fff"/>
+  </g>
+  <circle cx="48" cy="24" r="1.5" fill="#fff" opacity="0.7"/>
+  <circle cx="36" cy="18" r="1" fill="#fff" opacity="0.5"/>
+</svg>

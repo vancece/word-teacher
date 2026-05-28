@@ -25,14 +25,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .catch(() => {
           localStorage.removeItem('admin_token')
+          tryDevAutoLogin()
         })
         .finally(() => {
           setIsLoading(false)
         })
     } else {
-      setIsLoading(false)
+      tryDevAutoLogin()
     }
   }, [])
+
+  const tryDevAutoLogin = async () => {
+    if (import.meta.env.DEV) {
+      try {
+        const response = await authApi.login('admin', '123456')
+        localStorage.setItem('admin_token', response.token)
+        setTeacher(response.teacher)
+      } catch {
+        // dev 自动登录失败（如后端没启动），静默忽略
+      }
+    }
+    setIsLoading(false)
+  }
 
   const login = async (username: string, password: string) => {
     const response = await authApi.login(username, password)

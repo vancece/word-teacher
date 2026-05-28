@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 120" fill="none">
+  <!-- 卡片背景 - 深海蓝 -->
+  <rect width="170" height="120" rx="10" fill="#1565c0"/>
+  <!-- 内边框 -->
+  <rect x="5" y="5" width="160" height="110" rx="8" fill="none" stroke="#64b5f6" stroke-width="1.5"/>
+  <!-- 内部装饰背景 -->
+  <rect x="11" y="11" width="148" height="98" rx="5" fill="#1976d2"/>
+  <!-- 波浪纹理 -->
+  <g opacity="0.15">
+    <path d="M11 30 Q50 20 85 30 Q120 40 159 30 L159 42 Q120 52 85 42 Q50 32 11 42Z" fill="#fff"/>
+    <path d="M11 55 Q50 45 85 55 Q120 65 159 55 L159 67 Q120 77 85 67 Q50 57 11 67Z" fill="#fff"/>
+    <path d="M11 80 Q50 70 85 80 Q120 90 159 80 L159 92 Q120 102 85 92 Q50 82 11 92Z" fill="#fff"/>
+  </g>
+  <!-- 中心大字母 EN -->
+  <text x="85" y="68" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#90caf9" opacity="0.4" text-anchor="middle">EN</text>
+  <!-- 中心圆形装饰 -->
+  <circle cx="85" cy="60" r="30" fill="none" stroke="#64b5f6" stroke-width="1.2" opacity="0.5"/>
+  <circle cx="85" cy="60" r="24" fill="none" stroke="#bbdefb" stroke-width="0.8" opacity="0.3"/>
+  <!-- 四角小圆点 -->
+  <circle cx="22" cy="22" r="4" fill="#64b5f6" opacity="0.6"/>
+  <circle cx="148" cy="22" r="4" fill="#64b5f6" opacity="0.6"/>
+  <circle cx="22" cy="98" r="4" fill="#64b5f6" opacity="0.6"/>
+  <circle cx="148" cy="98" r="4" fill="#64b5f6" opacity="0.6"/>
+  <!-- 角标 -->
+  <rect x="8" y="8" width="22" height="16" rx="4" fill="#64b5f6"/>
+  <text x="19" y="20" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#fff" text-anchor="middle">EN</text>
+</svg>

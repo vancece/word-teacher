@@ -1,0 +1,68 @@
+.word-game-records-page {
+  .page-header {
+    margin-bottom: 20px;
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+    }
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .record-detail {
+    .detail-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 10px;
+      background: #f8f9fc;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #555;
+
+      span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        &::before {
+          content: '';
+          display: inline-block;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: #4f46e5;
+        }
+      }
+
+      strong {
+        color: #4f46e5;
+        font-size: 16px;
+      }
+    }
+
+    .detail-summary {
+      font-size: 14px;
+      line-height: 2.2;
+      color: #333;
+      padding: 16px;
+      border-radius: 10px;
+      background: #fafafa;
+      border: 1px solid #f0f0f0;
+
+      strong {
+        color: #1a1a1a;
+        font-weight: 600;
+      }
+    }
+  }
+}

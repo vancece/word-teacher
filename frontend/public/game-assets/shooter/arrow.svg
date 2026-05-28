@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 60" width="12" height="60">
+  <!-- 箭头 -->
+  <polygon points="6,0 1,12 6,9 11,12" fill="#555"/>
+  <!-- 箭杆 -->
+  <rect x="5" y="10" width="2" height="40" fill="#8B5E3C"/>
+  <!-- 箭羽 -->
+  <polygon points="4,48 6,42 6,52" fill="#E74C3C"/>
+  <polygon points="8,48 6,42 6,52" fill="#C0392B"/>
+</svg>

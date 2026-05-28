@@ -27,9 +27,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken && storedStudent) {
       setToken(storedToken)
       setStudent(JSON.parse(storedStudent))
+      setIsLoading(false)
+    } else {
+      tryDevAutoLogin()
+    }
+  }, [])
+
+  const tryDevAutoLogin = async () => {
+    if (import.meta.env.DEV) {
+      try {
+        await login({ studentNo: '2026050101', password: '123456' })
+      } catch {
+        // dev 自动登录失败（如后端没启动），静默忽略
+      }
     }
     setIsLoading(false)
-  }, [])
+  }
 
   const login = async (data: LoginRequest) => {
     const response = await authApi.login(data)

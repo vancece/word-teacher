@@ -32,4 +32,5 @@ export {
   type SentenceEvaluation,
   type StartReadAloudResponse,
 } from './read-aloud'
+export { wordGameApi, type WordGameReportParams } from './word-game'
 

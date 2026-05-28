@@ -12,6 +12,8 @@ import dialogueRoutes from './dialogue.routes.js'
 import readAloudRoutes from './read-aloud.routes.js'
 import uploadRoutes from './upload.routes.js'
 import adminRoutes from './admin/index.js'
+import wordPacksRoutes from './word-packs.routes.js'
+import wordGameRoutes from './word-game.routes.js'
 
 const router = Router()
 
@@ -73,6 +75,8 @@ router.use('/scenes', sceneRoutes)
 router.use('/dialogue', dialogueRoutes)
 router.use('/read-aloud', readAloudRoutes)
 router.use('/upload', uploadRoutes)
+router.use('/word-packs', wordPacksRoutes)
+router.use('/word-game', wordGameRoutes)
 router.use('/admin', adminRoutes)
 
 export default router

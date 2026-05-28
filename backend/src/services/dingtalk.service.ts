@@ -233,8 +233,61 @@ ${improvementsList}
   return sendMessage(markdown)
 }
 
+export interface WordGameNotification {
+  studentName: string
+  className: string
+  gameType: string
+  packName: string
+  score: number
+  summary: string  // 各游戏自定义的文本摘要
+}
+
+const GAME_TYPE_NAMES: Record<string, string> = {
+  shooter: '保卫城堡',
+  match: '翻牌配对',
+  spell: '美食餐车',
+  miner: '黄金矿工',
+}
+
+/**
+ * 发送单词游戏完成通知
+ */
+export async function notifyWordGameComplete(data: WordGameNotification): Promise<boolean> {
+  const { studentName, className, gameType, packName, score, summary } = data
+  const gameName = GAME_TYPE_NAMES[gameType] || gameType
+
+  const markdown = {
+    msgtype: 'markdown',
+    markdown: {
+      title: `🎮 ${studentName} 完成${gameName}`,
+      text: `**${className} · ${studentName}**
+
+&nbsp;
+
+🎮 **${gameName}** | 词包: ${packName}
+
+&nbsp;
+
+📊 **得分** ${score}分
+
+&nbsp;
+
+${summary}
+
+&nbsp;
+
+---
+
+⏰ ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+    },
+  }
+
+  return sendMessage(markdown)
+}
+
 export default {
   notifyDialoguePracticeComplete,
   notifyReadAloudPracticeComplete,
+  notifyWordGameComplete,
 }
 
