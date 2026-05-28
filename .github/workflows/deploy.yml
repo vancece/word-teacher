@@ -55,7 +55,7 @@ jobs:
             echo "backend=false" >> $GITHUB_OUTPUT
           fi
 
-          if echo "$CHANGED" | grep -qE "^frontend/|^admin/|^homepage/|^Dockerfile.nginx|^deploy/nginx"; then
+          if echo "$CHANGED" | grep -qE "^frontend/|^admin/|^deploy/homepage/|^Dockerfile.nginx|^deploy/nginx"; then
             echo "frontend=true" >> $GITHUB_OUTPUT
           else
             echo "frontend=false" >> $GITHUB_OUTPUT

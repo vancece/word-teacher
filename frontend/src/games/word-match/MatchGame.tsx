@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { playCorrect, playWrong, playClick, playLevelUp, playGameOver } from '../word-shooter/sounds'
 import { startMatchBgm, stopMatchBgm } from './matchBgm'
 import type { WordItem } from '../word-shooter/config'
+import cardBackEn from '/game-assets/card-back-en.svg'
+import cardBackCn from '/game-assets/card-back-cn.svg'
 import './MatchGame.scss'
 
 interface Card {
@@ -178,7 +180,7 @@ export default function MatchGame({ words, onGameEnd, onReport }: MatchGameProps
             <div className="card-inner">
               <div className={`card-front ${card.type}`}>
                 <img
-                  src={card.type === 'english' ? `${import.meta.env.BASE_URL}game-assets/card-back-en.svg` : `${import.meta.env.BASE_URL}game-assets/card-back-cn.svg`}
+                  src={card.type === 'english' ? cardBackEn : cardBackCn}
                   alt=""
                   className="card-back-img"
                 />

@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { playCorrect, playWrong, playClick, playLevelUp, playCombo } from '../word-shooter/sounds'
 import { startSpellBgm, stopSpellBgm } from './spellBgm'
 import type { WordItem } from '../word-shooter/config'
+import customer1 from '/game-assets/spell/customer-1.png'
+import customer2 from '/game-assets/spell/customer-2.png'
+import customer3 from '/game-assets/spell/customer-3.png'
+import customer4 from '/game-assets/spell/customer-4.png'
+import customer5 from '/game-assets/spell/customer-5.png'
+import customer6 from '/game-assets/spell/customer-6.png'
+import customer7 from '/game-assets/spell/customer-7.png'
+import customer8 from '/game-assets/spell/customer-8.png'
 import './SpellGame.scss'
 
 interface SpellGameProps {
@@ -16,17 +24,7 @@ interface LetterTile {
   used: boolean
 }
 
-const base = import.meta.env.BASE_URL || '/'
-const CUSTOMER_IMAGES = [
-  `${base}game-assets/spell/customer-1.png`,
-  `${base}game-assets/spell/customer-2.png`,
-  `${base}game-assets/spell/customer-3.png`,
-  `${base}game-assets/spell/customer-4.png`,
-  `${base}game-assets/spell/customer-5.png`,
-  `${base}game-assets/spell/customer-6.png`,
-  `${base}game-assets/spell/customer-7.png`,
-  `${base}game-assets/spell/customer-8.png`,
-]
+const CUSTOMER_IMAGES = [customer1, customer2, customer3, customer4, customer5, customer6, customer7, customer8]
 
 const HAPPY_REPLIES = [
   '太好吃了！谢谢！😋',

@@ -39,7 +39,7 @@ COPY --from=builder /app/frontend/dist /usr/share/nginx/html/frontend
 COPY --from=builder /app/admin/dist /usr/share/nginx/html/admin
 
 # 复制首页（个人博客）
-COPY homepage /usr/share/nginx/html/homepage
+COPY deploy/homepage /usr/share/nginx/html/homepage
 
 # 复制 nginx 配置
 COPY deploy/nginx-docker.conf /etc/nginx/nginx.conf
