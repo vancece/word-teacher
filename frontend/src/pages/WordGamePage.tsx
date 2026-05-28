@@ -8,6 +8,7 @@ import MatchGame from '../games/word-match/MatchGame'
 import SpellGame from '../games/word-spell/SpellGame'
 import { MinerScene, type MinerGameResult } from '../games/word-miner'
 import { MinerBgm } from '../games/word-miner/minerBgm'
+import { LoadingScene } from '../games/LoadingScene'
 import { wordGameApi } from '../api/word-game'
 import './WordGamePage.scss'
 
@@ -151,8 +152,8 @@ export default function WordGamePage() {
       width: width * dpr,
       height: height * dpr,
       parent: container,
-      backgroundColor: '#e8f4fd',
-      scene: [], // 不自动注册任何场景
+      backgroundColor: '#1a1a2e',
+      scene: [],
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -163,11 +164,16 @@ export default function WordGamePage() {
       },
     })
 
-    // 手动添加场景并启动，确保 init(data) 能接收参数
-    game.scene.add('ShooterScene', ShooterScene, true, {
-      words: selectedPack.words,
-      onGameEnd: handleShooterEnd,
-      onReport: handleShooterReport,
+    game.scene.add('ShooterScene', ShooterScene, false)
+    game.scene.add('LoadingScene', LoadingScene, true, {
+      nextScene: 'ShooterScene',
+      nextSceneData: {
+        words: selectedPack.words,
+        onGameEnd: handleShooterEnd,
+        onReport: handleShooterReport,
+      },
+      loadAssets: ShooterScene.loadAssets,
+      bgColor: 0x1a1a2e,
     })
 
     gameRef.current = game
@@ -199,10 +205,16 @@ export default function WordGamePage() {
       },
     })
 
-    game.scene.add('MinerScene', MinerScene, true, {
-      words: selectedPack.words,
-      onGameEnd: handleMinerEnd,
-      onReport: handleMinerReport,
+    game.scene.add('MinerScene', MinerScene, false)
+    game.scene.add('LoadingScene', LoadingScene, true, {
+      nextScene: 'MinerScene',
+      nextSceneData: {
+        words: selectedPack.words,
+        onGameEnd: handleMinerEnd,
+        onReport: handleMinerReport,
+      },
+      loadAssets: MinerScene.loadAssets,
+      bgColor: 0x5c4a1e,
     })
 
     gameRef.current = game

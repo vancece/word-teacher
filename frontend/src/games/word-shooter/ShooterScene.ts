@@ -61,8 +61,6 @@ export class ShooterScene extends Phaser.Scene {
   private correctWords: Map<string, number> = new Map()  // english -> 正确次数
   private startTime = 0
 
-  private clouds: Phaser.GameObjects.Graphics[] = []
-
   constructor() {
     super({ key: 'ShooterScene' })
   }
@@ -81,7 +79,6 @@ export class ShooterScene extends Phaser.Scene {
     this.spawnTimer = 0
     this.isGameOver = false
     this.isShooting = false
-    this.clouds = []
     this.elapsed = 0
     this.wrongWords = new Map()
     this.correctWords = new Map()
@@ -98,22 +95,23 @@ export class ShooterScene extends Phaser.Scene {
     this.bossHp = this.bossMaxHp
   }
 
+  static loadAssets(scene: Phaser.Scene) {
+    const base = import.meta.env.BASE_URL || '/'
+    scene.load.image('boss', `${base}game-assets/boss.png`)
+    scene.load.image('castle', `${base}game-assets/castle.png`)
+    scene.load.image('shooter-bg', `${base}game-assets/shooter-bg.jpg`)
+  }
+
   preload() {
-    // 全用 Graphics 绘制
+    // 资源由 LoadingScene 统一加载
   }
 
   create() {
     const { width, height } = this.scale
 
-    // 天空渐变
-    const bg = this.add.graphics()
-    bg.fillGradientStyle(0x1a1a2e, 0x1a1a2e, 0x16213e, 0x16213e, 1)
-    bg.fillRect(0, 0, width, height * 0.55)
-    bg.fillGradientStyle(0x16213e, 0x16213e, 0x87ceeb, 0x87ceeb, 1)
-    bg.fillRect(0, height * 0.55, width, height * 0.45)
-
-    this.drawClouds(width)
-    this.drawHills(width, height)
+    // 背景图
+    const bg = this.add.image(width / 2, height / 2, 'shooter-bg')
+    bg.setDisplaySize(width, height)
 
     this.castleTopY = height - height * 0.2
     this.drawCastle(width, height)
@@ -147,454 +145,26 @@ export class ShooterScene extends Phaser.Scene {
     SFX.startBgm()
   }
 
-  private drawClouds(width: number) {
-    const positions = [
-      { x: width * 0.15, y: 100, s: 1 },
-      { x: width * 0.6, y: 70, s: 0.8 },
-      { x: width * 0.85, y: 120, s: 0.6 },
-    ]
-    for (const pos of positions) {
-      const cloud = this.add.graphics()
-      cloud.fillStyle(0xffffff, 0.12)
-      cloud.fillEllipse(pos.x, pos.y, 90 * pos.s, 36 * pos.s)
-      cloud.fillEllipse(pos.x - 28 * pos.s, pos.y + 5 * pos.s, 55 * pos.s, 26 * pos.s)
-      cloud.fillEllipse(pos.x + 30 * pos.s, pos.y + 4 * pos.s, 64 * pos.s, 28 * pos.s)
-      this.clouds.push(cloud)
-    }
-  }
-
-  private drawHills(width: number, height: number) {
-    const hills = this.add.graphics()
-    hills.fillStyle(0x2d5a27, 0.6)
-    hills.beginPath()
-    hills.moveTo(0, height * 0.8)
-    hills.lineTo(width * 0.2, height * 0.73)
-    hills.lineTo(width * 0.5, height * 0.78)
-    hills.lineTo(width * 0.8, height * 0.72)
-    hills.lineTo(width, height * 0.76)
-    hills.lineTo(width, height)
-    hills.lineTo(0, height)
-    hills.closePath()
-    hills.fillPath()
-  }
-
   private drawCastle(width: number, height: number) {
     this.castleContainer = this.add.container(0, 0).setDepth(5)
-    const g = this.add.graphics()
+
+    // 城堡图片 (原图 1920x304)
     const castleH = height * 0.22
     const topY = height - castleH
+    const castleImg = this.add.image(width / 2, height - castleH / 2, 'castle')
+    castleImg.setDisplaySize(width, castleH)
+    this.castleContainer.add(castleImg)
 
-    // 护城河
-    const moatG = this.add.graphics()
-    moatG.fillStyle(0x1a5276, 0.5)
-    moatG.fillRect(0, height - 10, width, 10)
-    moatG.fillStyle(0x2980b9, 0.3)
-    moatG.fillRect(0, height - 8, width, 4)
-    this.castleContainer.add(moatG)
-
-    // 城墙主体 — 渐变石色
-    g.fillStyle(0x7f8c8d, 1)
-    g.fillRect(0, topY + 40, width, castleH - 40)
-    // 墙面上半高光
-    g.fillStyle(0x95a5a6, 0.5)
-    g.fillRect(0, topY + 40, width, 20)
-
-    // 城垛（更精致的锯齿）
-    const mW = 40, mH = 40, gap = 24
-    const step = mW + gap
-    for (let x = 0; x < width; x += step) {
-      // 城垛主体
-      g.fillStyle(0x7f8c8d, 1)
-      g.fillRect(x, topY, mW, mH)
-      // 顶部石帽
-      g.fillStyle(0x6c7a7a, 1)
-      g.fillRect(x - 2, topY - 4, mW + 4, 6)
-      // 高光
-      g.fillStyle(0xa0b0b0, 0.4)
-      g.fillRect(x + 2, topY + 2, mW - 4, 6)
-    }
-
-    // 砖缝纹理（交错砖块）
-    g.lineStyle(1, 0x5d6d6d, 0.3)
-    for (let y = topY + 45; y < height - 10; y += 22) {
-      g.beginPath(); g.moveTo(0, y); g.lineTo(width, y); g.strokePath()
-      const row = Math.floor((y - topY - 45) / 22)
-      const off = (row % 2) * 30
-      for (let x = off; x < width; x += 60) {
-        g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 22); g.strokePath()
-      }
-    }
-
-    // 左塔
-    this.drawTower(g, width * 0.06, topY, 84, castleH + 60)
-    // 右塔
-    this.drawTower(g, width * 0.94, topY, 84, castleH + 60)
-    // 中门塔（更宽）
-    this.drawGateTower(g, width / 2, topY, 120, castleH + 45)
-
-    // 火把（城墙上）
-    this.drawTorch(g, width * 0.25, topY + 60)
-    this.drawTorch(g, width * 0.75, topY + 60)
-
-    // 旗帜
-    this.drawFlag(g, width * 0.06, topY - 110, 0x2e86c1)
-    this.drawFlag(g, width * 0.94, topY - 110, 0xc0392b)
-
-    this.castleContainer.add(g)
     this.castleTopY = topY
-  }
-
-  private drawTower(g: Phaser.GameObjects.Graphics, cx: number, wallTop: number, tw: number, th: number) {
-    const tTop = wallTop - 65
-    const tBot = wallTop + th - 65
-
-    // 塔身
-    g.fillStyle(0x6c7a7a, 1)
-    g.fillRect(cx - tw / 2, tTop + 30, tw, tBot - tTop - 30)
-    // 塔身高光
-    g.fillStyle(0x85929e, 0.4)
-    g.fillRect(cx - tw / 2, tTop + 30, tw / 3, tBot - tTop - 30)
-
-    // 锥形塔顶
-    g.fillStyle(0x943126, 1)
-    g.beginPath()
-    g.moveTo(cx, tTop - 30)
-    g.lineTo(cx - tw / 2 - 8, tTop + 32)
-    g.lineTo(cx + tw / 2 + 8, tTop + 32)
-    g.closePath()
-    g.fillPath()
-    // 塔顶高光
-    g.fillStyle(0xb03a2e, 0.5)
-    g.beginPath()
-    g.moveTo(cx, tTop - 30)
-    g.lineTo(cx - 6, tTop + 30)
-    g.lineTo(cx + tw / 4, tTop + 30)
-    g.closePath()
-    g.fillPath()
-
-    // 塔顶尖
-    g.fillStyle(0xf1c40f, 1)
-    g.fillCircle(cx, tTop - 32, 5)
-
-    // 城垛环
-    const mw = 12, mg = 7, st = mw + mg
-    g.fillStyle(0x6c7a7a, 1)
-    for (let x = cx - tw / 2; x < cx + tw / 2; x += st) {
-      g.fillRect(x, tTop + 28, mw, 12)
-    }
-
-    // 拱形窗户
-    this.drawArchWindow(g, cx, tTop + 60, 16, 24)
-    this.drawArchWindow(g, cx, tTop + 100, 16, 24)
-
-    // 塔身砖缝
-    g.lineStyle(1, 0x5a6868, 0.2)
-    for (let y = tTop + 35; y < tBot; y += 20) {
-      g.beginPath(); g.moveTo(cx - tw / 2 + 2, y); g.lineTo(cx + tw / 2 - 2, y); g.strokePath()
-    }
-  }
-
-  private drawGateTower(g: Phaser.GameObjects.Graphics, cx: number, wallTop: number, tw: number, th: number) {
-    const tTop = wallTop - 50
-    const tBot = wallTop + th - 50
-
-    // 塔身
-    g.fillStyle(0x616a6b, 1)
-    g.fillRect(cx - tw / 2, tTop + 25, tw, tBot - tTop - 25)
-    g.fillStyle(0x7b8a8b, 0.3)
-    g.fillRect(cx - tw / 2, tTop + 25, tw / 3, tBot - tTop - 25)
-
-    // 锥形大塔顶
-    g.fillStyle(0x7b241c, 1)
-    g.beginPath()
-    g.moveTo(cx, tTop - 40)
-    g.lineTo(cx - tw / 2 - 12, tTop + 28)
-    g.lineTo(cx + tw / 2 + 12, tTop + 28)
-    g.closePath()
-    g.fillPath()
-    g.fillStyle(0x943126, 0.4)
-    g.beginPath()
-    g.moveTo(cx, tTop - 40)
-    g.lineTo(cx - 8, tTop + 26)
-    g.lineTo(cx + tw / 3, tTop + 26)
-    g.closePath()
-    g.fillPath()
-
-    // 塔顶尖
-    g.fillStyle(0xf1c40f, 1)
-    g.fillCircle(cx, tTop - 42, 6)
-
-    // 城垛环
-    const mw = 16, mg = 9, st = mw + mg
-    g.fillStyle(0x616a6b, 1)
-    for (let x = cx - tw / 2; x < cx + tw / 2; x += st) {
-      g.fillRect(x, tTop + 22, mw, 14)
-    }
-
-    // 大门拱形
-    const gW = 52, gH = 72
-    g.fillStyle(0x1a1a2e, 1)
-    g.fillRect(cx - gW / 2, tBot - gH, gW, gH)
-    // 拱顶
-    g.fillStyle(0x1a1a2e, 1)
-    g.fillEllipse(cx, tBot - gH, gW, 30)
-    // 拱形石边
-    g.lineStyle(4, 0x515a5a, 1)
-    g.beginPath()
-    g.arc(cx, tBot - gH, gW / 2, Math.PI, 0, false)
-    g.strokePath()
-    g.beginPath()
-    g.moveTo(cx - gW / 2, tBot - gH)
-    g.lineTo(cx - gW / 2, tBot)
-    g.strokePath()
-    g.beginPath()
-    g.moveTo(cx + gW / 2, tBot - gH)
-    g.lineTo(cx + gW / 2, tBot)
-    g.strokePath()
-
-    // 铁栅栏
-    g.lineStyle(3, 0x3d3d3d, 0.8)
-    for (let x = cx - gW / 2 + 8; x < cx + gW / 2; x += 10) {
-      g.beginPath(); g.moveTo(x, tBot - gH + 12); g.lineTo(x, tBot); g.strokePath()
-    }
-    // 横杆
-    g.lineStyle(2, 0x3d3d3d, 0.6)
-    g.beginPath(); g.moveTo(cx - gW / 2 + 4, tBot - gH / 2); g.lineTo(cx + gW / 2 - 4, tBot - gH / 2); g.strokePath()
-
-    // 窗户
-    this.drawArchWindow(g, cx - 30, tTop + 55, 14, 20)
-    this.drawArchWindow(g, cx + 30, tTop + 55, 14, 20)
-  }
-
-  private drawArchWindow(g: Phaser.GameObjects.Graphics, cx: number, cy: number, w: number, h: number) {
-    // 窗户暗色
-    g.fillStyle(0x1a1a2e, 0.9)
-    g.fillRect(cx - w / 2, cy, w, h)
-    g.fillEllipse(cx, cy, w, w * 0.8)
-    // 窗户十字格
-    g.lineStyle(2, 0x515a5a, 0.8)
-    g.beginPath(); g.moveTo(cx, cy - w * 0.3); g.lineTo(cx, cy + h); g.strokePath()
-    g.beginPath(); g.moveTo(cx - w / 2, cy + h * 0.4); g.lineTo(cx + w / 2, cy + h * 0.4); g.strokePath()
-    // 窗台
-    g.fillStyle(0x515a5a, 1)
-    g.fillRect(cx - w / 2 - 2, cy + h, w + 4, 3)
-  }
-
-  private drawTorch(g: Phaser.GameObjects.Graphics, cx: number, cy: number) {
-    // 火把架
-    g.fillStyle(0x5d4e37, 1)
-    g.fillRect(cx - 3, cy, 6, 20)
-    // 火焰底座
-    g.fillStyle(0x5d4e37, 1)
-    g.fillRect(cx - 6, cy - 2, 12, 5)
-    // 火焰
-    g.fillStyle(0xff6600, 0.9)
-    g.fillEllipse(cx, cy - 8, 14, 18)
-    g.fillStyle(0xffcc00, 0.8)
-    g.fillEllipse(cx, cy - 10, 8, 12)
-    g.fillStyle(0xffee88, 0.6)
-    g.fillEllipse(cx, cy - 12, 4, 6)
-  }
-
-  private drawFlag(g: Phaser.GameObjects.Graphics, cx: number, y: number, color: number) {
-    // 旗杆
-    g.lineStyle(3, 0x7f8c8d, 1)
-    g.beginPath(); g.moveTo(cx, y + 80); g.lineTo(cx, y); g.strokePath()
-    // 旗杆顶球
-    g.fillStyle(0xf1c40f, 1)
-    g.fillCircle(cx, y - 3, 4)
-    // 旗帜（波浪形）
-    g.fillStyle(color, 0.9)
-    g.beginPath()
-    g.moveTo(cx, y)
-    g.lineTo(cx + 20, y + 5)
-    g.lineTo(cx + 38, y + 3)
-    g.lineTo(cx + 40, y + 16)
-    g.lineTo(cx + 22, y + 20)
-    g.lineTo(cx, y + 28)
-    g.closePath()
-    g.fillPath()
-    // 旗帜装饰线
-    g.lineStyle(1, 0xffffff, 0.3)
-    g.beginPath(); g.moveTo(cx + 6, y + 8); g.lineTo(cx + 34, y + 8); g.strokePath()
-    g.beginPath(); g.moveTo(cx + 6, y + 18); g.lineTo(cx + 34, y + 18); g.strokePath()
   }
 
   private createBoss(width: number) {
     this.bossContainer = this.add.container(width / 2, 90).setDepth(20)
 
-    const g = this.add.graphics()
-
-    // 火焰光环（最底层）
-    g.fillStyle(0xff4400, 0.12)
-    g.fillCircle(0, 0, 100)
-    g.fillStyle(0xff6600, 0.08)
-    g.fillCircle(0, 0, 120)
-
-    // 翅膀（先画，在身体下面）
-    // 左翅 — 蝙蝠翼骨架
-    g.fillStyle(0x2c0a3a, 0.85)
-    g.beginPath()
-    g.moveTo(-50, -15)
-    g.lineTo(-90, -70)
-    g.lineTo(-130, -55)
-    g.lineTo(-145, -20)
-    g.lineTo(-130, 5)
-    g.lineTo(-100, 20)
-    g.lineTo(-60, 15)
-    g.closePath()
-    g.fillPath()
-    // 翅膜
-    g.fillStyle(0x4a1a6b, 0.4)
-    g.beginPath()
-    g.moveTo(-55, -10)
-    g.lineTo(-85, -60)
-    g.lineTo(-120, -45)
-    g.lineTo(-135, -15)
-    g.lineTo(-100, 15)
-    g.lineTo(-60, 10)
-    g.closePath()
-    g.fillPath()
-    // 翅骨
-    g.lineStyle(3, 0x1a0a26, 0.7)
-    g.beginPath(); g.moveTo(-50, -10); g.lineTo(-90, -65); g.strokePath()
-    g.beginPath(); g.moveTo(-55, 0); g.lineTo(-130, -50); g.strokePath()
-    g.beginPath(); g.moveTo(-55, 5); g.lineTo(-140, -15); g.strokePath()
-
-    // 右翅
-    g.fillStyle(0x2c0a3a, 0.85)
-    g.beginPath()
-    g.moveTo(50, -15)
-    g.lineTo(90, -70)
-    g.lineTo(130, -55)
-    g.lineTo(145, -20)
-    g.lineTo(130, 5)
-    g.lineTo(100, 20)
-    g.lineTo(60, 15)
-    g.closePath()
-    g.fillPath()
-    g.fillStyle(0x4a1a6b, 0.4)
-    g.beginPath()
-    g.moveTo(55, -10)
-    g.lineTo(85, -60)
-    g.lineTo(120, -45)
-    g.lineTo(135, -15)
-    g.lineTo(100, 15)
-    g.lineTo(60, 10)
-    g.closePath()
-    g.fillPath()
-    g.lineStyle(3, 0x1a0a26, 0.7)
-    g.beginPath(); g.moveTo(50, -10); g.lineTo(90, -65); g.strokePath()
-    g.beginPath(); g.moveTo(55, 0); g.lineTo(130, -50); g.strokePath()
-    g.beginPath(); g.moveTo(55, 5); g.lineTo(140, -15); g.strokePath()
-
-    // 尾巴
-    g.lineStyle(12, 0x3d1259, 1)
-    g.beginPath()
-    g.moveTo(0, 50)
-    g.lineTo(30, 60)
-    g.lineTo(55, 55)
-    g.lineTo(75, 42)
-    g.strokePath()
-    g.lineStyle(8, 0x4a1a6b, 1)
-    g.beginPath()
-    g.moveTo(75, 42)
-    g.lineTo(88, 32)
-    g.lineTo(95, 20)
-    g.strokePath()
-    // 尾巴尖刺
-    g.fillStyle(0xff4444, 0.9)
-    g.beginPath()
-    g.moveTo(95, 20)
-    g.lineTo(108, 12)
-    g.lineTo(100, 25)
-    g.lineTo(108, 30)
-    g.lineTo(95, 24)
-    g.closePath()
-    g.fillPath()
-
-    // 身体 — 椭圆形龙躯
-    g.fillStyle(0x3d1259, 1)
-    g.fillEllipse(0, 10, 100, 80)
-    // 腹部亮色
-    g.fillStyle(0x5b2d8e, 0.6)
-    g.fillEllipse(0, 18, 60, 50)
-    // 鳞片纹理
-    g.lineStyle(1, 0x2a0e42, 0.3)
-    for (let row = 0; row < 4; row++) {
-      const sy = -8 + row * 14
-      const off = (row % 2) * 10
-      for (let sx = -35 + off; sx < 35; sx += 20) {
-        g.beginPath()
-        g.arc(sx, sy, 8, 0.2, Math.PI - 0.2, false)
-        g.strokePath()
-      }
-    }
-
-    // 龙头
-    g.fillStyle(0x4a1a6b, 1)
-    g.fillEllipse(0, -40, 68, 52)
-    // 头部高光
-    g.fillStyle(0x5b2d8e, 0.5)
-    g.fillEllipse(-8, -48, 35, 25)
-
-    // 龙角
-    g.fillStyle(0x2c0a3a, 1)
-    g.beginPath(); g.moveTo(-22, -58); g.lineTo(-30, -95); g.lineTo(-14, -62); g.closePath(); g.fillPath()
-    g.beginPath(); g.moveTo(22, -58); g.lineTo(30, -95); g.lineTo(14, -62); g.closePath(); g.fillPath()
-    // 角尖发光
-    g.fillStyle(0xff3333, 0.9)
-    g.fillCircle(-30, -95, 5)
-    g.fillCircle(30, -95, 5)
-    g.fillStyle(0xff8866, 0.5)
-    g.fillCircle(-30, -95, 8)
-    g.fillCircle(30, -95, 8)
-
-    // 眉脊
-    g.fillStyle(0x2c0a3a, 1)
-    g.fillEllipse(-18, -50, 26, 8)
-    g.fillEllipse(18, -50, 26, 8)
-
-    // 眼睛 — 发光红眼
-    g.fillStyle(0x000000, 1)
-    g.fillEllipse(-18, -42, 22, 18)
-    g.fillEllipse(18, -42, 22, 18)
-    g.fillStyle(0xdd0000, 1)
-    g.fillEllipse(-18, -42, 18, 14)
-    g.fillEllipse(18, -42, 18, 14)
-    // 竖瞳
-    g.fillStyle(0x000000, 1)
-    g.fillEllipse(-18, -42, 5, 12)
-    g.fillEllipse(18, -42, 5, 12)
-    // 瞳孔反光
-    g.fillStyle(0xffcc00, 0.8)
-    g.fillCircle(-15, -45, 3)
-    g.fillCircle(21, -45, 3)
-
-    // 鼻孔
-    g.fillStyle(0x1a0a26, 1)
-    g.fillEllipse(-8, -28, 6, 4)
-    g.fillEllipse(8, -28, 6, 4)
-    // 鼻烟
-    g.fillStyle(0xff6600, 0.3)
-    g.fillEllipse(-8, -32, 8, 5)
-    g.fillEllipse(8, -32, 8, 5)
-
-    // 嘴巴
-    g.fillStyle(0x1a0a26, 1)
-    g.fillEllipse(0, -20, 36, 14)
-    // 尖牙
-    g.fillStyle(0xeeeeee, 1)
-    g.beginPath(); g.moveTo(-14, -24); g.lineTo(-11, -14); g.lineTo(-8, -24); g.closePath(); g.fillPath()
-    g.beginPath(); g.moveTo(-4, -24); g.lineTo(-2, -16); g.lineTo(0, -24); g.closePath(); g.fillPath()
-    g.beginPath(); g.moveTo(4, -24); g.lineTo(6, -16); g.lineTo(8, -24); g.closePath(); g.fillPath()
-    g.beginPath(); g.moveTo(8, -24); g.lineTo(11, -14); g.lineTo(14, -24); g.closePath(); g.fillPath()
-
-    // 下颚
-    g.fillStyle(0x3d1259, 0.8)
-    g.fillEllipse(0, -16, 30, 8)
-
-    this.bossContainer.add(g)
+    // Boss 图片
+    const bossSprite = this.add.image(0, -10, 'boss')
+    bossSprite.setDisplaySize(160, 160)
+    this.bossContainer.add(bossSprite)
 
     // 魔王血条
     const hpBarW = 280
@@ -863,11 +433,6 @@ export class ShooterScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     if (this.isGameOver) return
     this.elapsed += delta
-
-    // 云朵
-    this.clouds.forEach((cloud, i) => {
-      cloud.x += 0.06 * (i % 2 === 0 ? 1 : -0.5)
-    })
 
     // 弩箭跟随鼠标方向
     if (!this.isShooting) {
