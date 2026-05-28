@@ -303,6 +303,12 @@ jobs:
               echo "📦 更新 Backend 服务..."
               docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
               echo "✅ Backend 更新完成"
+
+              # 等待 backend 容器启动就绪
+              echo "🗄️ 同步数据库结构..."
+              sleep 5
+              docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --accept-data-loss --skip-generate
+              echo "✅ 数据库同步完成"
             fi
 
             if [ "$BUILD_AGENT" = "success" ]; then
