@@ -16,15 +16,16 @@ interface LetterTile {
   used: boolean
 }
 
+const base = import.meta.env.BASE_URL || '/'
 const CUSTOMER_IMAGES = [
-  '/game-assets/spell/customer-1.png',
-  '/game-assets/spell/customer-2.png',
-  '/game-assets/spell/customer-3.png',
-  '/game-assets/spell/customer-4.png',
-  '/game-assets/spell/customer-5.png',
-  '/game-assets/spell/customer-6.png',
-  '/game-assets/spell/customer-7.png',
-  '/game-assets/spell/customer-8.png',
+  `${base}game-assets/spell/customer-1.png`,
+  `${base}game-assets/spell/customer-2.png`,
+  `${base}game-assets/spell/customer-3.png`,
+  `${base}game-assets/spell/customer-4.png`,
+  `${base}game-assets/spell/customer-5.png`,
+  `${base}game-assets/spell/customer-6.png`,
+  `${base}game-assets/spell/customer-7.png`,
+  `${base}game-assets/spell/customer-8.png`,
 ]
 
 const HAPPY_REPLIES = [

@@ -178,7 +178,7 @@ export default function MatchGame({ words, onGameEnd, onReport }: MatchGameProps
             <div className="card-inner">
               <div className={`card-front ${card.type}`}>
                 <img
-                  src={card.type === 'english' ? '/game-assets/card-back-en.svg' : '/game-assets/card-back-cn.svg'}
+                  src={card.type === 'english' ? `${import.meta.env.BASE_URL}game-assets/card-back-en.svg` : `${import.meta.env.BASE_URL}game-assets/card-back-cn.svg`}
                   alt=""
                   className="card-back-img"
                 />
