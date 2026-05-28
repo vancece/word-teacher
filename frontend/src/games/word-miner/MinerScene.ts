@@ -87,13 +87,14 @@ export class MinerScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.svg('bg-underground', '/game-assets/miner/bg-underground.svg', { width: 1600, height: 2400 })
-    this.load.image('miner-char', '/game-assets/miner/miner-character.png')
-    this.load.svg('gem-gold', '/game-assets/miner/gem-gold.svg', { width: 192, height: 192 })
-    this.load.svg('gem-silver', '/game-assets/miner/gem-silver.svg', { width: 160, height: 160 })
-    this.load.svg('gem-diamond', '/game-assets/miner/gem-diamond.svg', { width: 176, height: 176 })
-    this.load.svg('gem-ruby', '/game-assets/miner/gem-ruby.svg', { width: 160, height: 160 })
-    this.load.svg('hook', '/game-assets/miner/hook.svg', { width: 96, height: 120 })
+    const base = import.meta.env.BASE_URL || '/'
+    this.load.svg('bg-underground', `${base}game-assets/miner/bg-underground.svg`, { width: 1600, height: 2400 })
+    this.load.image('miner-char', `${base}game-assets/miner/miner-character.png`)
+    this.load.svg('gem-gold', `${base}game-assets/miner/gem-gold.svg`, { width: 192, height: 192 })
+    this.load.svg('gem-silver', `${base}game-assets/miner/gem-silver.svg`, { width: 160, height: 160 })
+    this.load.svg('gem-diamond', `${base}game-assets/miner/gem-diamond.svg`, { width: 176, height: 176 })
+    this.load.svg('gem-ruby', `${base}game-assets/miner/gem-ruby.svg`, { width: 160, height: 160 })
+    this.load.svg('hook', `${base}game-assets/miner/hook.svg`, { width: 96, height: 120 })
   }
 
   create() {
