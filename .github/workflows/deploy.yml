@@ -295,7 +295,24 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
 
             # ============================================================
-            # 4. 更新服务（根据构建结果判断）
+            # 4. 确保基础设施服务运行（mysql、minio）
+            # ============================================================
+            echo "🛠️ 确保基础设施服务运行..."
+            docker compose -f docker-compose.prod.yml up -d mysql minio
+            echo "⏳ 等待 MySQL 就绪..."
+            for i in $(seq 1 30); do
+              if docker compose -f docker-compose.prod.yml exec -T mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
+                echo "✅ MySQL 已就绪"
+                break
+              fi
+              sleep 2
+            done
+            echo "⏳ 等待 MinIO 就绪..."
+            sleep 5
+            echo "✅ 基础设施服务已就绪"
+
+            # ============================================================
+            # 5. 更新业务服务（根据构建结果判断）
             # ============================================================
 
             # 手动触发时所有服务都会 build=success，确保全部重启
@@ -331,13 +348,26 @@ jobs:
             fi
 
             # ============================================================
-            # 5. 清理旧镜像
+            # 6. 清理旧镜像
             # ============================================================
             echo "🧹 清理旧镜像..."
             docker image prune -f
 
-            echo "✅ 部署完成!"
+            # ============================================================
+            # 7. 最终健康检查
+            # ============================================================
+            echo "🏥 最终健康检查..."
+            sleep 5
             docker compose -f docker-compose.prod.yml ps
+            # 确保核心服务都在运行
+            for svc in mysql minio backend nginx; do
+              if ! docker compose -f docker-compose.prod.yml ps $svc | grep -q "Up"; then
+                echo "❌ 服务 $svc 未正常运行!"
+                docker compose -f docker-compose.prod.yml logs $svc --tail 10
+                exit 1
+              fi
+            done
+            echo "✅ 部署完成! 所有服务运行正常"
 
   # 部署后通知（可选）
   notify:
