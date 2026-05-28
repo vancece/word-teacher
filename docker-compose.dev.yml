@@ -10,8 +10,6 @@
 #   cd admin && npm run dev       # 管理端 :5174
 #   cd agent && npm run dev       # Agent :3002
 
-version: '3.8'
-
 services:
   # ============ MySQL 数据库 ============
   mysql:
