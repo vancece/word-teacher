@@ -88,7 +88,7 @@ export class MinerScene extends Phaser.Scene {
 
   static loadAssets(scene: Phaser.Scene) {
     const base = import.meta.env.BASE_URL || '/'
-    scene.load.svg('bg-underground', `${base}game-assets/miner/bg-underground.svg`, { width: 1600, height: 2400 })
+    scene.load.image('miner-bg', `${base}game-assets/miner/miner-bg.jpg`)
     scene.load.image('miner-char', `${base}game-assets/miner/miner-character.png`)
     scene.load.svg('gem-gold', `${base}game-assets/miner/gem-gold.svg`, { width: 192, height: 192 })
     scene.load.svg('gem-silver', `${base}game-assets/miner/gem-silver.svg`, { width: 160, height: 160 })
@@ -109,7 +109,7 @@ export class MinerScene extends Phaser.Scene {
     this.hookPivotY = height * 0.20
 
     // 背景
-    const bg = this.add.image(width / 2, height / 2, 'bg-underground')
+    const bg = this.add.image(width / 2, height / 2, 'miner-bg')
     bg.setDisplaySize(width, height)
 
     // 矿工角色 - 站在地面上，脚踩草地
