@@ -100,6 +100,7 @@ export class ShooterScene extends Phaser.Scene {
     scene.load.image('boss', `${base}game-assets/boss.png`)
     scene.load.image('castle', `${base}game-assets/castle.png`)
     scene.load.image('shooter-bg', `${base}game-assets/shooter-bg.jpg`)
+    scene.load.image('crossbow', `${base}game-assets/crossbow.png`)
   }
 
   preload() {
@@ -130,7 +131,7 @@ export class ShooterScene extends Phaser.Scene {
 
     // 弩箭（城堡墙头正中）
     this.crossbowX = width / 2
-    this.crossbowY = this.castleTopY - 10
+    this.crossbowY = this.castleTopY + 90
     this.createCrossbow()
 
     // 鼠标跟踪
@@ -273,52 +274,10 @@ export class ShooterScene extends Phaser.Scene {
 
   private createCrossbow() {
     const container = this.add.container(this.crossbowX, this.crossbowY).setDepth(40)
-    const g = this.add.graphics()
-
-    // 弩身
-    g.fillStyle(0x8b6914, 1)
-    g.fillRect(-14, -100, 28, 110)
-    g.fillStyle(0xa07d30, 1)
-    g.fillRect(-9, -95, 10, 100)
-
-    // 弩臂
-    g.fillStyle(0x6d4c00, 1)
-    g.fillRect(-62, -78, 124, 16)
-    g.fillStyle(0x5c3d00, 1)
-    g.fillRect(-68, -76, 12, 12)
-    g.fillRect(56, -76, 12, 12)
-
-    // 弓弦
-    g.lineStyle(2, 0xd4a843, 0.9)
-    g.beginPath()
-    g.moveTo(-62, -70)
-    g.lineTo(0, -90)
-    g.lineTo(62, -70)
-    g.strokePath()
-
-    // 箭槽
-    g.fillStyle(0x4a3500, 1)
-    g.fillRect(-4, -100, 8, 76)
-
-    // 待发射箭头
-    g.fillStyle(0xc0c0c0, 1)
-    g.beginPath()
-    g.moveTo(0, -120)
-    g.lineTo(-7, -100)
-    g.lineTo(7, -100)
-    g.closePath()
-    g.fillPath()
-
-    // 箭杆
-    g.fillStyle(0x8b6914, 1)
-    g.fillRect(-2, -100, 4, 55)
-
-    // 握把
-    g.fillStyle(0x5c3d00, 1)
-    g.fillRoundedRect(-18, 6, 36, 26, 6)
-
-    container.add(g)
-    container.setScale(1.1)
+    const sprite = this.add.image(0, 0, 'crossbow')
+    sprite.setDisplaySize(120, 90)
+    container.add(sprite)
+    container.setScale(1.6)
     this.crossbowContainer = container
   }
 
