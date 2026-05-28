@@ -64,6 +64,28 @@ export interface ReadAloudRecord {
   }
 }
 
+// 统一学习记录（合并跟读 + 对话）
+export interface LearningRecord {
+  id: number
+  type: 'readAloud' | 'dialogue'
+  studentId: number
+  student?: {
+    id: number
+    name: string
+    studentNo?: string
+    className?: string | null
+  }
+  scene?: {
+    id: string
+    name: string
+  }
+  totalScore?: number | null
+  status: string
+  completedCount: number
+  totalCount: number
+  createdAt: string
+}
+
 // 跟读场景
 export interface ReadAloudScene {
   id: string
@@ -252,7 +274,29 @@ export const adminApi = {
     }
   },
 
-  // 跟读记录
+  // 统一学习记录（跟读 + 对话）
+  getLearningRecords: async (params?: {
+    page?: number
+    limit?: number
+    classId?: number
+    search?: string
+    type?: string  // 'readAloud' | 'dialogue'
+    status?: string
+  }): Promise<{
+    records: LearningRecord[]
+    total: number
+    page: number
+    limit: number
+  }> => {
+    return apiClient.get('/admin/learning-records', { params }) as unknown as {
+      records: LearningRecord[]
+      total: number
+      page: number
+      limit: number
+    }
+  },
+
+  // 跟读记录（保留兼容）
   getReadAloudRecords: async (params?: {
     page?: number
     limit?: number

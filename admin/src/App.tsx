@@ -7,7 +7,7 @@ import DashboardPage from './pages/DashboardPage'
 import TeachersPage from './pages/TeachersPage'
 import ClassesPage from './pages/classes'
 import ClassStudentsPage from './pages/classes/StudentsPage'
-import ReadAloudRecordsPage from './pages/ReadAloudRecordsPage'
+import LearningRecordsPage from './pages/LearningRecordsPage'
 import ScenesPage from './pages/ScenesPage'
 import ProgressPage from './pages/ProgressPage'
 
@@ -30,7 +30,8 @@ function App() {
             <Route path="teachers" element={<TeachersPage />} />
             <Route path="classes" element={<ClassesPage />} />
             <Route path="classes/:classId/students" element={<ClassStudentsPage />} />
-            <Route path="read-aloud-records" element={<ReadAloudRecordsPage />} />
+            <Route path="learning-records" element={<LearningRecordsPage />} />
+            <Route path="read-aloud-records" element={<Navigate to="/learning-records" replace />} />
             <Route path="scenes" element={<ScenesPage />} />
             <Route path="progress" element={<ProgressPage />} />
           </Route>

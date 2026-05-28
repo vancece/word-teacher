@@ -42,8 +42,8 @@ export default function Layout() {
   // 通用菜单项
   const commonNavItems: NavItem[] = [
     { path: '/classes', icon: School, label: '班级管理' },
-    { path: '/read-aloud-records', icon: Mic2, label: '跟读记录' },
-    { path: '/scenes', icon: BookOpen, label: '场景管理' },
+    { path: '/learning-records', icon: BookOpen, label: '学习记录' },
+    { path: '/scenes', icon: Mic2, label: '场景管理' },
     { path: '/progress', icon: TrendingUp, label: '进步情况' },
   ]
 

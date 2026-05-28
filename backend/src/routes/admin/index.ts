@@ -59,6 +59,139 @@ async function processCoverImage(coverImage: string | undefined, sceneId: string
   return coverImage
 }
 
+/**
+ * GET /api/admin/learning-records
+ * 统一学习记录列表（跟读 + 对话），支持班级筛选、搜索、类型筛选
+ */
+router.get('/learning-records', asyncHandler(async (req: TeacherRequest, res) => {
+  const { teacherId, isAdmin } = req.teacher!
+  const page = parseInt(req.query.page as string) || 1
+  const limit = parseInt(req.query.limit as string) || 15
+  const classId = req.query.classId ? parseInt(req.query.classId as string) : undefined
+  const search = req.query.search as string | undefined
+  const type = req.query.type as string | undefined // 'readAloud' | 'dialogue' | undefined(全部)
+  const status = req.query.status as string | undefined
+
+  // 权限：非管理员只能看自己负责的班级
+  let allowedStudentIds: number[] | undefined
+  if (!isAdmin) {
+    const teacherClasses = await prisma.classTeacher.findMany({
+      where: { teacherId },
+      select: { classId: true },
+    })
+    const classIds = teacherClasses.map(tc => tc.classId)
+    if (classIds.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+    const students = await prisma.student.findMany({
+      where: { classId: { in: classIds } },
+      select: { id: true },
+    })
+    allowedStudentIds = students.map(s => s.id)
+    if (allowedStudentIds.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+  }
+
+  // 班级筛选 + 搜索
+  let studentFilter: number[] | undefined = allowedStudentIds
+  if (classId || search) {
+    const studentWhere: any = {}
+    if (classId) studentWhere.classId = classId
+    if (search) {
+      studentWhere.OR = [
+        { name: { contains: search } },
+        { studentNo: { contains: search } },
+      ]
+    }
+    if (allowedStudentIds) {
+      studentWhere.id = { in: allowedStudentIds }
+    }
+    const filteredStudents = await prisma.student.findMany({
+      where: studentWhere,
+      select: { id: true },
+    })
+    studentFilter = filteredStudents.map(s => s.id)
+    if (studentFilter.length === 0) {
+      return success(res, { records: [], total: 0, page, limit })
+    }
+  }
+
+  const studentCondition = studentFilter ? { studentId: { in: studentFilter } } : {}
+  const statusCondition = status ? { status: status as any } : {}
+
+  const shouldFetchReadAloud = !type || type === 'readAloud'
+  const shouldFetchDialogue = !type || type === 'dialogue'
+
+  // 获取总数
+  const [readAloudCount, dialogueCount] = await Promise.all([
+    shouldFetchReadAloud
+      ? prisma.readAloudRecord.count({ where: { ...studentCondition, ...statusCondition } })
+      : 0,
+    shouldFetchDialogue
+      ? prisma.practiceRecord.count({ where: { ...studentCondition, ...statusCondition } })
+      : 0,
+  ])
+  const total = readAloudCount + dialogueCount
+
+  // 合并查询：为了排序分页正确，先查所有记录的 id+createdAt，然后分页
+  const [readAloudRecords, dialogueRecords] = await Promise.all([
+    shouldFetchReadAloud
+      ? prisma.readAloudRecord.findMany({
+          where: { ...studentCondition, ...statusCondition },
+          include: {
+            student: { select: { id: true, name: true, studentNo: true, class: { select: { name: true } } } },
+            scene: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [],
+    shouldFetchDialogue
+      ? prisma.practiceRecord.findMany({
+          where: { ...studentCondition, ...statusCondition },
+          include: {
+            student: { select: { id: true, name: true, studentNo: true, class: { select: { name: true } } } },
+            scene: { select: { id: true, name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+      : [],
+  ])
+
+  // 合并 + 按时间排序
+  const merged = [
+    ...readAloudRecords.map(r => ({
+      id: r.id,
+      type: 'readAloud' as const,
+      studentId: r.studentId,
+      student: { ...r.student, className: r.student.class?.name || null },
+      scene: r.scene,
+      totalScore: r.totalScore,
+      status: r.status,
+      completedCount: r.completedCount,
+      totalCount: r.totalCount,
+      createdAt: r.createdAt,
+    })),
+    ...dialogueRecords.map(r => ({
+      id: r.id,
+      type: 'dialogue' as const,
+      studentId: r.studentId,
+      student: { ...r.student, className: r.student.class?.name || null },
+      scene: r.scene,
+      totalScore: r.totalScore,
+      status: r.status,
+      completedCount: r.roundsCompleted || 0,
+      totalCount: 0,
+      createdAt: r.createdAt,
+    })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  // 分页
+  const paged = merged.slice((page - 1) * limit, page * limit)
+
+  return success(res, { records: paged, total, page, limit })
+}))
+
 router.get('/read-aloud-records', asyncHandler(async (req: TeacherRequest, res) => {
   const { teacherId, isAdmin } = req.teacher!
   const page = parseInt(req.query.page as string) || 1
