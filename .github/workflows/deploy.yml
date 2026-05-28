@@ -3,12 +3,19 @@ name: Deploy to Server
 on:
   push:
     branches: [master]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: '镜像 Tag（默认 latest，填 sha-xxxxxxx 可回滚到历史版本）'
+        required: false
+        default: 'latest'
 
 env:
   # 修改为你的 Docker Hub 用户名
   DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}
   IMAGE_PREFIX: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}/word-teacher
+  SHORT_SHA: sha-${{ github.sha }}
+  DEPLOY_TAG: ${{ inputs.image_tag || 'latest' }}
 
 jobs:
   # 检测哪些服务需要重新构建
@@ -90,7 +97,9 @@ jobs:
           context: .
           file: ./Dockerfile.backend
           push: true
-          tags: ${{ env.IMAGE_PREFIX }}-backend:latest
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-backend:latest
+            ${{ env.IMAGE_PREFIX }}-backend:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -117,7 +126,9 @@ jobs:
           context: .
           file: ./Dockerfile.nginx
           push: true
-          tags: ${{ env.IMAGE_PREFIX }}-nginx:latest
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-nginx:latest
+            ${{ env.IMAGE_PREFIX }}-nginx:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -144,7 +155,9 @@ jobs:
           context: .
           file: ./Dockerfile.agent
           push: true
-          tags: ${{ env.IMAGE_PREFIX }}-agent:latest
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-agent:latest
+            ${{ env.IMAGE_PREFIX }}-agent:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -191,12 +204,13 @@ jobs:
           BUILD_BACKEND: ${{ needs.build-backend.result }}
           BUILD_FRONTEND: ${{ needs.build-frontend.result }}
           BUILD_AGENT: ${{ needs.build-agent.result }}
+          DEPLOY_TAG: ${{ env.DEPLOY_TAG }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
           command_timeout: 10m
-          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,XFYUN_APP_ID,XFYUN_API_KEY,XFYUN_API_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
+          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,XFYUN_APP_ID,XFYUN_API_KEY,XFYUN_API_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT,DEPLOY_TAG
           script: |
             set -e
 
@@ -204,6 +218,7 @@ jobs:
             echo "BUILD_BACKEND=$BUILD_BACKEND"
             echo "BUILD_FRONTEND=$BUILD_FRONTEND"
             echo "BUILD_AGENT=$BUILD_AGENT"
+            echo "DEPLOY_TAG=${DEPLOY_TAG:-latest}"
 
             # ============================================================
             # 0. 初始化项目目录（全新服务器兼容）
@@ -233,7 +248,7 @@ jobs:
             }
 
             {
-              printf 'IMAGE_TAG=latest\n'
+              printf 'IMAGE_TAG=%s\n' "${DEPLOY_TAG:-latest}"
               printf 'DOCKER_USERNAME=%s\n' "$(escape_dollar "$(get_value "$DOCKER_USERNAME" "your-dockerhub-username")")"
               printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_ROOT_PASSWORD" "WordTeacher2024!")")"
               printf 'MYSQL_PASSWORD=%s\n' "$(escape_dollar "$(get_value "$MYSQL_PASSWORD" "change_this_app_password_456")")"
@@ -396,7 +411,7 @@ jobs:
             # ============================================================
             # 9. 确保 Nginx 启动（依赖 backend + minio 都就绪）
             # ============================================================
-            if ! docker compose -f docker-compose.prod.yml ps nginx | grep -q "Up"; then
+            if ! docker compose -f docker-compose.prod.yml ps --format json nginx 2>/dev/null | grep -q '"State":"running"'; then
               echo "🌐 重启 Nginx..."
               docker compose -f docker-compose.prod.yml up -d nginx
               sleep 3
@@ -417,9 +432,10 @@ jobs:
 
             FAILED=""
             for svc in mysql minio backend nginx; do
-              if ! docker compose -f docker-compose.prod.yml ps $svc | grep -q "Up"; then
+              STATUS=$(docker compose -f docker-compose.prod.yml ps --format json $svc 2>/dev/null | grep -o '"State":"[^"]*"' | head -1 | cut -d'"' -f4)
+              if [ "$STATUS" != "running" ]; then
                 FAILED="$FAILED $svc"
-                echo "❌ 服务 $svc 未正常运行:"
+                echo "❌ 服务 $svc 状态异常 (state=$STATUS):"
                 docker compose -f docker-compose.prod.yml logs $svc --tail 5
               fi
             done
@@ -431,17 +447,41 @@ jobs:
 
             echo "✅ 部署完成! 所有服务运行正常 🎉"
 
-  # 部署后通知（可选）
+  # 部署结果通知
   notify:
     needs: deploy
     if: always() && needs.deploy.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - name: Deployment Status
+      - name: Notify deployment result
+        env:
+          DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
+          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          DEPLOY_TAG: ${{ env.DEPLOY_TAG }}
         run: |
-          if [ "${{ needs.deploy.result }}" == "success" ]; then
+          if [ "$DEPLOY_RESULT" == "success" ]; then
             echo "✅ 部署成功!"
+            TITLE="✅ Word Teacher 部署成功"
+            TEXT="**部署成功** 🎉\n\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 提交: ${GITHUB_SHA:0:7}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')"
           else
             echo "❌ 部署失败!"
+            TITLE="❌ Word Teacher 部署失败"
+            TEXT="**部署失败** ⚠️\n\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 提交: ${GITHUB_SHA:0:7}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')\n- [查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          fi
+
+          # 发送钉钉通知（如果配置了）
+          if [ -n "$DINGTALK_ACCESS_TOKEN" ] && [ -n "$DINGTALK_SECRET" ]; then
+            TIMESTAMP=$(date +%s%3N)
+            SIGN=$(printf "%s\n%s" "$TIMESTAMP" "$DINGTALK_SECRET" | openssl dgst -sha256 -hmac "$DINGTALK_SECRET" -binary | base64)
+            SIGN_ENCODED=$(printf '%s' "$SIGN" | python3 -c "import sys,urllib.parse;print(urllib.parse.quote(sys.stdin.read().strip()))")
+            WEBHOOK="https://oapi.dingtalk.com/robot/send?access_token=${DINGTALK_ACCESS_TOKEN}&timestamp=${TIMESTAMP}&sign=${SIGN_ENCODED}"
+            curl -s -X POST "$WEBHOOK" \
+              -H 'Content-Type: application/json' \
+              -d "{\"msgtype\":\"markdown\",\"markdown\":{\"title\":\"$TITLE\",\"text\":\"$TEXT\"}}" || true
+          fi
+
+          # 部署失败时让 workflow 标红
+          if [ "$DEPLOY_RESULT" != "success" ]; then
             exit 1
           fi

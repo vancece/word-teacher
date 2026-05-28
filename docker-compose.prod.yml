@@ -107,7 +107,7 @@ services:
 
   # ============ MinIO 对象存储 ============
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-10-29T16-01-48Z
     container_name: word-teacher-minio
     restart: always
     ports:
