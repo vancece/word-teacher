@@ -156,14 +156,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # 同步 docker-compose.prod.yml 到服务器（始终同步，确保配置一致）
-      - name: Sync docker-compose.prod.yml
+      # 同步部署所需配置文件到服务器（全新服务器兼容）
+      - name: Sync deployment files
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.prod.yml"
+          source: "docker-compose.prod.yml,deploy/"
           target: "/root/word-teacher/"
           overwrite: true
 
@@ -198,11 +198,7 @@ jobs:
           command_timeout: 10m
           envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,XFYUN_APP_ID,XFYUN_API_KEY,XFYUN_API_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT
           script: |
-            cd /root/word-teacher
-
-            # 确保日志目录和备份目录存在，并设置权限（UID 1001 = 容器内非 root 用户）
-            mkdir -p logs/backend logs/agent backups
-            chown -R 1001:1001 logs/
+            set -e
 
             echo "🚀 开始部署..."
             echo "BUILD_BACKEND=$BUILD_BACKEND"
@@ -210,7 +206,17 @@ jobs:
             echo "BUILD_AGENT=$BUILD_AGENT"
 
             # ============================================================
-            # 0. 从 GitHub Secrets 生成 .env 文件
+            # 0. 初始化项目目录（全新服务器兼容）
+            # ============================================================
+            mkdir -p /root/word-teacher
+            cd /root/word-teacher
+
+            # 确保日志目录、备份目录、SSL 目录存在
+            mkdir -p logs/backend logs/agent backups ssl
+            chown -R 1001:1001 logs/
+
+            # ============================================================
+            # 1. 从 GitHub Secrets 生成 .env 文件
             # ============================================================
             echo "🔑 生成 .env 配置文件..."
 
@@ -252,21 +258,20 @@ jobs:
             echo "✅ .env 配置文件已生成"
 
             # ============================================================
-            # 0.5 从 GitHub Secrets 写入 SSL 证书
+            # 2. 从 GitHub Secrets 写入 SSL 证书
             # ============================================================
             if [ -n "$SSL_FULLCHAIN" ] && [ -n "$SSL_PRIVKEY" ]; then
               echo "🔐 写入 SSL 证书..."
-              mkdir -p ssl
               printf '%s\n' "$SSL_FULLCHAIN" > ssl/fullchain.pem
               printf '%s\n' "$SSL_PRIVKEY" > ssl/privkey.pem
               chmod 600 ssl/privkey.pem
               echo "✅ SSL 证书已写入"
+            else
+              echo "⚠️ 未提供 SSL 证书，HTTPS 可能不可用"
             fi
 
             # ============================================================
-            # 1. 清除 shell 环境变量，避免覆盖 .env 文件
-            #    (appleboy/ssh-action 通过 envs 注入的变量优先级高于 .env 文件，
-            #     如果 secret 为空会导致 docker compose 读到空值)
+            # 3. 清除 shell 环境变量，避免覆盖 .env 文件
             # ============================================================
             unset MYSQL_ROOT_PASSWORD MYSQL_PASSWORD JWT_SECRET AGENT_API_KEY
             unset MINIO_ROOT_USER MINIO_ROOT_PASSWORD DOCKER_USERNAME
@@ -276,8 +281,13 @@ jobs:
             unset CORS_ORIGINS IMAGE_TAG
 
             # ============================================================
-            # 2. 配置 Docker 镜像加速（如果尚未配置）
+            # 4. 确保 docker compose 可用 + 镜像加速
             # ============================================================
+            if ! docker compose version >/dev/null 2>&1; then
+              echo "📦 安装 docker compose plugin..."
+              apt-get update -qq && apt-get install -y -qq docker-compose-plugin
+            fi
+
             if ! grep -q "registry-mirrors" /etc/docker/daemon.json 2>/dev/null; then
               echo "🚀 配置 Docker 镜像加速..."
               mkdir -p /etc/docker
@@ -289,43 +299,55 @@ jobs:
             fi
 
             # ============================================================
-            # 3. 拉取最新镜像
+            # 5. 拉取最新镜像
             # ============================================================
             echo "📥 拉取最新镜像..."
             docker compose -f docker-compose.prod.yml pull
 
             # ============================================================
-            # 4. 确保基础设施服务运行（mysql、minio）
+            # 6. 启动基础设施服务（mysql、minio）并等待就绪
             # ============================================================
-            echo "🛠️ 确保基础设施服务运行..."
+            echo "🛠️ 启动基础设施服务..."
             docker compose -f docker-compose.prod.yml up -d mysql minio
+
             echo "⏳ 等待 MySQL 就绪..."
-            for i in $(seq 1 30); do
+            MYSQL_READY=false
+            for i in $(seq 1 60); do
               if docker compose -f docker-compose.prod.yml exec -T mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
-                echo "✅ MySQL 已就绪"
+                echo "✅ MySQL 已就绪 (${i}s)"
+                MYSQL_READY=true
                 break
               fi
               sleep 2
             done
+            if [ "$MYSQL_READY" = "false" ]; then
+              echo "❌ MySQL 启动超时!"
+              docker compose -f docker-compose.prod.yml logs mysql --tail 20
+              exit 1
+            fi
+
             echo "⏳ 等待 MinIO 就绪..."
-            sleep 5
-            echo "✅ 基础设施服务已就绪"
+            MINIO_READY=false
+            for i in $(seq 1 30); do
+              if docker compose -f docker-compose.prod.yml exec -T minio mc ready local 2>/dev/null; then
+                echo "✅ MinIO 已就绪 (${i}s)"
+                MINIO_READY=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$MINIO_READY" = "false" ]; then
+              echo "⚠️ MinIO 健康检查未通过，但继续部署（MinIO 可能仍在启动）"
+              sleep 5
+            fi
 
             # ============================================================
-            # 5. 更新业务服务（根据构建结果判断）
+            # 7. 部署业务服务
             # ============================================================
-
-            # 手动触发时所有服务都会 build=success，确保全部重启
             if [ "$BUILD_BACKEND" = "success" ]; then
               echo "📦 更新 Backend 服务..."
               docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
               echo "✅ Backend 更新完成"
-
-              # 等待 backend 容器启动就绪
-              echo "🗄️ 同步数据库结构..."
-              sleep 5
-              docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --accept-data-loss --skip-generate
-              echo "✅ 数据库同步完成"
             fi
 
             if [ "$BUILD_AGENT" = "success" ]; then
@@ -340,34 +362,69 @@ jobs:
               echo "✅ Nginx 更新完成"
             fi
 
-            # 如果没有任何服务构建（仅配置变化），也重启 agent 使 .env 生效
+            # 如果没有任何服务单独构建（仅配置变化或全新部署），拉起全部服务
             if [ "$BUILD_BACKEND" != "success" ] && [ "$BUILD_AGENT" != "success" ] && [ "$BUILD_FRONTEND" != "success" ]; then
-              echo "🔄 仅配置变化，重启所有服务使 .env 生效..."
-              docker compose -f docker-compose.prod.yml up -d --force-recreate
-              echo "✅ 全部服务重启完成"
+              echo "🔄 全量启动所有服务..."
+              docker compose -f docker-compose.prod.yml up -d
+              echo "✅ 全部服务启动完成"
             fi
 
             # ============================================================
-            # 6. 清理旧镜像
+            # 8. 等待 Backend 就绪并同步数据库
+            # ============================================================
+            echo "🗄️ 等待 Backend 就绪并同步数据库结构..."
+            BACKEND_READY=false
+            for i in $(seq 1 30); do
+              if docker compose -f docker-compose.prod.yml exec -T backend wget -q --spider http://localhost:3001/api/health 2>/dev/null; then
+                BACKEND_READY=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$BACKEND_READY" = "true" ]; then
+              docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --accept-data-loss --skip-generate
+              echo "✅ 数据库结构同步完成"
+            else
+              echo "⚠️ Backend 未就绪，跳过数据库同步（容器可能仍在启动，prisma 会在下次部署补上）"
+            fi
+
+            # ============================================================
+            # 9. 确保 Nginx 启动（依赖 backend + minio 都就绪）
+            # ============================================================
+            if ! docker compose -f docker-compose.prod.yml ps nginx | grep -q "Up"; then
+              echo "🌐 重启 Nginx..."
+              docker compose -f docker-compose.prod.yml up -d nginx
+              sleep 3
+            fi
+
+            # ============================================================
+            # 10. 清理旧镜像
             # ============================================================
             echo "🧹 清理旧镜像..."
             docker image prune -f
 
             # ============================================================
-            # 7. 最终健康检查
+            # 11. 最终健康检查
             # ============================================================
             echo "🏥 最终健康检查..."
-            sleep 5
+            sleep 8
             docker compose -f docker-compose.prod.yml ps
-            # 确保核心服务都在运行
+
+            FAILED=""
             for svc in mysql minio backend nginx; do
               if ! docker compose -f docker-compose.prod.yml ps $svc | grep -q "Up"; then
-                echo "❌ 服务 $svc 未正常运行!"
-                docker compose -f docker-compose.prod.yml logs $svc --tail 10
-                exit 1
+                FAILED="$FAILED $svc"
+                echo "❌ 服务 $svc 未正常运行:"
+                docker compose -f docker-compose.prod.yml logs $svc --tail 5
               fi
             done
-            echo "✅ 部署完成! 所有服务运行正常"
+
+            if [ -n "$FAILED" ]; then
+              echo "❌ 以下服务未正常运行:$FAILED"
+              exit 1
+            fi
+
+            echo "✅ 部署完成! 所有服务运行正常 🎉"
 
   # 部署后通知（可选）
   notify:
