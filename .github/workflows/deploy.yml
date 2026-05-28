@@ -458,21 +458,29 @@ jobs:
     if: always() && needs.deploy.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
       - name: Notify deployment result
         env:
           DINGTALK_ACCESS_TOKEN: ${{ secrets.DINGTALK_ACCESS_TOKEN }}
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           DEPLOY_RESULT: ${{ needs.deploy.result }}
           DEPLOY_TAG: ${{ env.DEPLOY_TAG }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
+          # 取 commit message 第一行作为摘要
+          COMMIT_SUMMARY=$(echo "$COMMIT_MSG" | head -1)
+
           if [ "$DEPLOY_RESULT" == "success" ]; then
             echo "✅ 部署成功!"
             TITLE="✅ Word Teacher 部署成功"
-            TEXT="**部署成功** 🎉\n\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 提交: ${GITHUB_SHA:0:7}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')"
+            TEXT="**部署成功** 🎉\n\n- 提交: ${GITHUB_SHA:0:7} ${COMMIT_SUMMARY}\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')"
           else
             echo "❌ 部署失败!"
             TITLE="❌ Word Teacher 部署失败"
-            TEXT="**部署失败** ⚠️\n\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 提交: ${GITHUB_SHA:0:7}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')\n- [查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            TEXT="**部署失败** ⚠️\n\n- 提交: ${GITHUB_SHA:0:7} ${COMMIT_SUMMARY}\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')\n- [查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
 
           # 发送钉钉通知（如果配置了）
