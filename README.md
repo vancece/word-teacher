@@ -4,9 +4,9 @@
 
 [English](README_EN.md) | 中文
 
-通过 **AI 对话 + 跟读练习 + 语音识别 + 智能评分**，让英语口语练习更轻松高效。
+通过 **AI 对话 + 跟读练习 + 单词游戏 + 语音识别 + 智能评分**，让英语口语练习更轻松高效。
 
-Practice English speaking with **AI conversations + read-aloud + speech recognition + smart scoring**.
+Practice English speaking with **AI conversations + read-aloud + word games + speech recognition + smart scoring**.
 
 ## 📸 产品截图
 
@@ -107,6 +107,20 @@ AI 对话
 - **最佳成绩**：展示对话和跟读的最佳表现
 - **AI 学习评价**：智能分析学习情况，给出个性化建议
 
+#### 🎮 单词游戏
+通过 4 种趣味小游戏帮助学生记忆单词，寓教于乐：
+
+- **🎯 单词射击 (Word Shooter)**：射击飞行的单词气泡，锻炼反应和词汇辨识
+- **🍳 美食餐车 (Spell)**：NPC 顾客点单，学生拼写单词"出餐"，答对开心答错生气
+- **⛏️ 黄金矿工 (Miner)**：控制矿工挖取单词宝石，在游戏中积累词汇
+- **🃏 翻牌配对 (Match)**：4×3 翻牌记忆游戏，匹配英文单词和中文释义
+
+**游戏特色**：
+- 每种游戏都有专属背景音乐（Web Audio API 程序化生成）
+- 支持连击计分、错误追踪
+- 游戏结果自动保存 + 钉钉通知老师
+- 教师可在后台管理词包、查看游戏记录
+
 ### 👩‍🏫 教师管理后台
 
 #### 📊 数据仪表盘
@@ -146,6 +160,12 @@ AI 对话
 - 关键词(vocabulary)管理
 - 自定义 AI 提示词(prompt)
 
+#### 🎮 词包与游戏管理
+- **词包管理**：创建/编辑/删除单词包，按游戏类型分类
+- **单词编辑**：为词包添加英文、中文、音标、难度等级
+- **游戏记录**：查看学生各游戏的完成记录和得分
+- **错题追踪**：查看学生拼错的单词列表
+
 #### 📈 进步追踪
 - 班级整体学习趋势图表
 - 学生个人进步追踪
@@ -165,6 +185,7 @@ AI 对话
 ```
 word-teacher/
 ├── frontend/          # 学生端前端 (Vite + React + TypeScript + SCSS)
+│   └── src/games/     # 单词游戏模块 (shooter/spell/miner/match)
 ├── admin/             # 管理后台前端 (Vite + React + TypeScript + SCSS)
 ├── backend/           # Node.js 后端 (Express + Prisma + MySQL)
 ├── agent/             # AI Agent 服务 (Qwen + DashScope API)
@@ -176,8 +197,9 @@ word-teacher/
 - **Vite** 构建工具
 - **React Router** 路由管理
 - **SCSS** 样式
-- **Web Audio API** 录音功能
+- **Web Audio API** 录音功能 + 游戏音效/BGM 程序化生成
 - **SSE (Server-Sent Events)** 流式响应
+- **Canvas 2D** 游戏渲染（射击、矿工）
 
 ### 后端技术栈
 - **Node.js** + Express 5
@@ -310,6 +332,9 @@ cd agent && pnpm dev      # Agent http://localhost:8000
 | GET | /api/read-aloud/scenes/:id | 获取跟读场景详情 |
 | POST | /api/read-aloud/submit | 提交跟读录音评分 |
 | POST | /api/read-aloud/save-result | 保存评分结果 |
+| GET | /api/word-packs | 获取单词包列表 |
+| GET | /api/word-packs/:id | 获取单词包详情 |
+| POST | /api/word-game/result | 上报游戏结果 |
 
 ### 管理后台 API (需要 TEACHER/ADMIN 角色)
 
@@ -327,6 +352,11 @@ cd agent && pnpm dev      # Agent http://localhost:8000
 | POST | /api/admin/scenes | 创建对话场景 |
 | PUT | /api/admin/scenes/:id | 更新对话场景 |
 | DELETE | /api/admin/scenes/:id | 删除对话场景 |
+| GET | /api/admin/word-packs | 获取词包列表 |
+| POST | /api/admin/word-packs | 创建词包 |
+| PUT | /api/admin/word-packs/:id | 更新词包 |
+| DELETE | /api/admin/word-packs/:id | 删除词包 |
+| GET | /api/admin/word-game-records | 获取游戏记录 |
 
 ## 🎨 界面预览
 
@@ -417,6 +447,18 @@ pm2 start agent/dist/index.js --name agent
 - [CVM 部署指南](deploy/CVM-DEPLOYMENT.md) - 腾讯云 CVM Docker 部署
 
 ## 📋 更新日志
+
+### 2026-05-28
+- 🎮 **单词游戏系统**：全新上线 4 种单词小游戏
+  - 🎯 单词射击 (Word Shooter) - Canvas 射击游戏
+  - 🍳 美食餐车 (Spell) - NPC 互动拼写游戏
+  - ⛏️ 黄金矿工 (Miner) - 矿洞冒险挖词
+  - 🃏 翻牌配对 (Match) - 4×3 记忆翻牌
+- 🎵 各游戏专属背景音乐（Web Audio API 程序化生成，无需音频文件）
+- 📦 词包管理系统（后台 CRUD + 按游戏类型分类）
+- 📊 游戏记录追踪 + 错题统计
+- 🔔 钉钉通知集成游戏结果
+- 🗄️ CI/CD 流水线自动同步数据库结构
 
 ### 2026-03-03
 - ✨ **朗读评分系统优化**：评分维度从 7 个简化为 4 个核心维度

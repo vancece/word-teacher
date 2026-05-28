@@ -2,7 +2,7 @@
 
 English | [中文](README.md)
 
-An AI-powered English speaking practice application. Through **scenario-based AI conversations + read-aloud practice + real-time speech recognition + intelligent scoring feedback**, it helps students practice speaking English frequently in a relaxed environment.
+An AI-powered English speaking practice application. Through **scenario-based AI conversations + read-aloud practice + word games + real-time speech recognition + intelligent scoring feedback**, it helps students practice speaking English frequently in a relaxed environment.
 
 ## 📸 Screenshots
 
@@ -61,13 +61,31 @@ An AI-powered English speaking practice application. Through **scenario-based AI
 - **Student Management**: Student list, batch import via Excel, view records
 - **Read-Aloud Records**: View all student practice records with filtering
 - **Scene Management**: Create read-aloud and conversation scenarios
+- **Word Pack Management**: Create/edit word packs for games, categorized by game type
+- **Game Records**: View student game completion records and scores
 - **Progress Tracking**: Class trends, individual progress, leaderboards, AI reports
+
+### 🎮 Word Games
+
+Four fun mini-games to help students memorize vocabulary:
+
+- **🎯 Word Shooter**: Shoot flying word bubbles, train reaction speed and vocabulary recognition
+- **🍳 Food Truck (Spell)**: NPC customers order food, students spell words to "serve" dishes
+- **⛏️ Gold Miner**: Control a miner to dig word gems in an underground adventure
+- **🃏 Card Match**: 4×3 memory card game, match English words with Chinese meanings
+
+**Game Features**:
+- Unique background music for each game (procedurally generated via Web Audio API)
+- Combo scoring and wrong-word tracking
+- Auto-save results + DingTalk notifications to teachers
+- Teachers can manage word packs and view game records from admin panel
 
 ## 🛠️ Tech Stack
 
 ```
 word-teacher/
 ├── frontend/          # Student frontend (Vite + React + TypeScript + SCSS)
+│   └── src/games/     # Word game modules (shooter/spell/miner/match)
 ├── admin/             # Admin panel (Vite + React + TypeScript + SCSS)
 ├── backend/           # Node.js backend (Express + Prisma + MySQL)
 ├── agent/             # AI Agent service (Qwen + DashScope API)
@@ -79,7 +97,8 @@ word-teacher/
 - **Vite** build tool
 - **React Router** for routing
 - **SCSS** styling
-- **Web Audio API** for recording
+- **Web Audio API** for recording + procedural game music/SFX generation
+- **Canvas 2D** game rendering (Shooter, Miner)
 - **SSE** for streaming responses
 
 ### Backend
