@@ -110,9 +110,10 @@ export class ShooterScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale
 
-    // 背景图
+    // 背景图（cover 模式：保持比例填满画布）
     const bg = this.add.image(width / 2, height / 2, 'shooter-bg')
-    bg.setDisplaySize(width, height)
+    const bgScale = Math.max(width / bg.width, height / bg.height)
+    bg.setScale(bgScale)
 
     this.castleTopY = height - height * 0.2
     this.drawCastle(width, height)
