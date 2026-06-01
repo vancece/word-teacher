@@ -504,10 +504,10 @@ export class ShooterScene extends Phaser.Scene {
 
     if (bombType === 'poop') {
       this.drawPoopIcon(iconG)
-      iconG.setScale(2)
+      iconG.setScale(3)
     } else {
       this.drawBombIcon(iconG)
-      iconG.setScale(1.5)
+      iconG.setScale(2.25)
     }
 
     // 单词文字
@@ -516,6 +516,9 @@ export class ShooterScene extends Phaser.Scene {
       fontFamily: '"SF Pro Rounded", "Nunito", "PingFang SC", sans-serif',
       color: '#ffffff',
       fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 5,
+      shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 4, fill: true },
       padding: { x: 6, y: 4 },
     }).setOrigin(0.5)
 

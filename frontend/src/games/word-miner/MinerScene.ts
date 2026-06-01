@@ -108,10 +108,10 @@ export class MinerScene extends Phaser.Scene {
     // 矿工站在草地边缘（背景 SVG 中草地在 ~18% 位置）
     this.hookPivotY = height * 0.20
 
-    // 背景（cover 模式：保持比例填满画布，裁掉多余部分）
-    const bg = this.add.image(width / 2, height / 2, 'miner-bg')
-    const scale = Math.max(width / bg.width, height / bg.height)
-    bg.setScale(scale)
+    // 背景：按高度拉满，对齐顶部以显示草坪
+    const bg = this.add.image(width / 2, 0, 'miner-bg')
+    bg.setOrigin(0.5, 0)
+    bg.setDisplaySize(width, height)
 
     // 矿工角色 - 站在地面上，脚踩草地
     const minerH = 150

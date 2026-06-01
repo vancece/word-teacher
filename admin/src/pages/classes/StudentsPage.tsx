@@ -11,11 +11,29 @@ import './StudentsPage.scss'
 
 const { Search } = Input
 
+// 年级映射到数字编号
+const GRADE_MAP: Record<string, string> = {
+  '一年级': '1',
+  '二年级': '2',
+  '三年级': '3',
+  '四年级': '4',
+  '五年级': '5',
+  '六年级': '6',
+}
+
+// 根据班级信息生成账号前缀（年级编号 + 班级编号）
+function getAccountPrefix(cls: Class): string {
+  const gradeNo = GRADE_MAP[cls.grade] || '0'
+  // 从班级名称中提取数字（如 "1班" → "1"）
+  const classMatch = cls.name.match(/(\d+)/)
+  const classNo = classMatch ? classMatch[1] : '1'
+  return `${gradeNo}${classNo}`
+}
+
 interface ImportStudent {
-  studentNo: string  // 学号
+  studentNo: string  // 账号
   name: string
   password: string
-  seatNo?: number
 }
 
 export default function ClassStudentsPage() {
@@ -102,11 +120,13 @@ export default function ClassStudentsPage() {
   // 下载 Excel 模板
   const downloadTemplate = () => {
     const template = [
-      { 序号: 1, 学号: 'student001', 姓名: '张三', 密码: '123456' },
-      { 序号: 2, 学号: 'student002', 姓名: '李四', 密码: '123456' },
+      { 账号: 1, 姓名: '张三', 密码: '123456' },
+      { 账号: 2, 姓名: '李四', 密码: '123456' },
+      { 账号: 3, 姓名: '王五', 密码: '123456' },
+      { 账号: 4, 姓名: '赵六', 密码: '123456' },
     ]
     const ws = XLSX.utils.json_to_sheet(template)
-    ws['!cols'] = [{ wch: 8 }, { wch: 15 }, { wch: 10 }, { wch: 12 }]
+    ws['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 12 }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '学生导入模板')
     XLSX.writeFile(wb, `学生导入模板_${currentClass?.name || '班级'}.xlsx`)
@@ -130,21 +150,22 @@ export default function ClassStudentsPage() {
         console.log('Excel 原始数据:', json) // 调试用
 
         // 转换数据格式，支持多种列名格式
+        // 自动拼接年级+班级前缀
+        const prefix = currentClass ? getAccountPrefix(currentClass) : ''
         const students: ImportStudent[] = json.map((row, index) => {
           // 获取列值，支持多种可能的列名
-          const studentNo = String(row['学号'] || row['studentNo'] || row['username'] || row['Username'] || row['账号'] || '').trim()
+          const rawNo = String(row['账号'] || row['学号'] || row['studentNo'] || row['username'] || row['Username'] || '').trim()
           const name = String(row['姓名'] || row['name'] || row['Name'] || row['名字'] || '').trim()
           const password = String(row['密码'] || row['password'] || row['Password'] || '123456').trim()
-          const seatNoStr = String(row['序号'] || row['座位号'] || row['seatNo'] || row['SeatNo'] || '').trim()
-          const seatNo = seatNoStr ? parseInt(seatNoStr) : undefined
+          // 如果账号是1-2位纯数字（用户只填了编号），自动补零并拼接前缀
+          const studentNo = /^\d{1,2}$/.test(rawNo) && prefix ? `${prefix}${rawNo.padStart(2, '0')}` : rawNo
+          console.log(`第${index + 1}行:`, { rawNo, studentNo, name, password }) // 调试用
 
-          console.log(`第${index + 1}行:`, { studentNo, name, password, seatNo }) // 调试用
-
-          return { studentNo, name, password, seatNo: isNaN(seatNo as number) ? undefined : seatNo }
+          return { studentNo, name, password }
         }).filter(s => s.studentNo && s.name)
 
         if (students.length === 0) {
-          message.error('未找到有效的学生数据，请检查 Excel 列名是否为：学号、姓名、密码')
+          message.error('未找到有效的学生数据，请检查 Excel 列名是否为：账号、姓名、密码')
           return
         }
 
@@ -179,7 +200,7 @@ export default function ClassStudentsPage() {
         }
         message.success(msg)
       } else if (result.duplicates.length > 0) {
-        message.warning(`所有学号都已存在：${result.duplicates.join(', ')}`)
+        message.warning(`所有账号都已存在：${result.duplicates.join(', ')}`)
       } else {
         message.warning('没有有效数据可导入')
       }
@@ -222,7 +243,6 @@ export default function ClassStudentsPage() {
     setEditingStudent(student)
     editForm.setFieldsValue({
       name: student.name,
-      seatNo: student.seatNo || undefined,
     })
     setEditModalVisible(true)
   }
@@ -234,7 +254,6 @@ export default function ClassStudentsPage() {
       const values = await editForm.validateFields()
       await adminApi.updateStudent(editingStudent.id, {
         name: values.name,
-        seatNo: values.seatNo ? parseInt(values.seatNo) : null,
       })
       message.success('更新成功')
       setEditModalVisible(false)
@@ -253,12 +272,16 @@ export default function ClassStudentsPage() {
       const values = await addForm.validateFields()
       setAdding(true)
 
+      // 如果输入的是1-2位纯数字编号，自动补零并拼接年级+班级前缀
+      const prefix = currentClass ? getAccountPrefix(currentClass) : ''
+      const rawNo = String(values.studentNo).trim()
+      const studentNo = /^\d{1,2}$/.test(rawNo) && prefix ? `${prefix}${rawNo.padStart(2, '0')}` : rawNo
+
       const result = await adminApi.batchImportStudents({
         students: [{
-          studentNo: values.studentNo,
+          studentNo,
           name: values.name,
           password: values.password || '123456',
-          seatNo: values.seatNo ? parseInt(values.seatNo) : undefined,
         }],
         classId: parseInt(classId),
       })
@@ -269,7 +292,7 @@ export default function ClassStudentsPage() {
         addForm.resetFields()
         loadStudents()
       } else if (result.duplicates.length > 0) {
-        message.error(`学号 ${result.duplicates[0]} 已存在`)
+        message.error(`账号 ${result.duplicates[0]} 已存在`)
       } else {
         message.error('添加失败')
       }
@@ -283,14 +306,7 @@ export default function ClassStudentsPage() {
   }
 
   const columns: ColumnsType<Student> = [
-    {
-      title: '序号',
-      dataIndex: 'seatNo',
-      key: 'seatNo',
-      width: 70,
-      render: (seatNo) => seatNo || '-',
-    },
-    { title: '学号', dataIndex: 'studentNo', key: 'studentNo' },
+    { title: '账号', dataIndex: 'studentNo', key: 'studentNo' },
     {
       title: '姓名',
       dataIndex: 'name',
@@ -388,7 +404,7 @@ export default function ClassStudentsPage() {
               添加学生
             </Button>
             <Search
-              placeholder="搜索学生姓名、学号..."
+              placeholder="搜索学生姓名、账号..."
               allowClear
               style={{ width: 240 }}
               onSearch={handleSearch}
@@ -435,7 +451,7 @@ export default function ClassStudentsPage() {
       >
         <Alert
           message="请确认以下学生信息"
-          description="学号已存在的学生将被自动跳过"
+          description="账号已存在的学生将被自动跳过"
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -446,8 +462,7 @@ export default function ClassStudentsPage() {
           size="small"
           pagination={{ pageSize: 5 }}
           columns={[
-            { title: '序号', dataIndex: 'seatNo', key: 'seatNo', render: (v) => v || '-' },
-            { title: '学号', dataIndex: 'studentNo', key: 'studentNo' },
+            { title: '账号', dataIndex: 'studentNo', key: 'studentNo' },
             { title: '姓名', dataIndex: 'name', key: 'name' },
             { title: '密码', dataIndex: 'password', key: 'password', render: () => '******' },
           ]}
@@ -506,12 +521,6 @@ export default function ClassStudentsPage() {
       >
         <Form form={editForm} layout="vertical">
           <Form.Item
-            name="seatNo"
-            label="座位号/序号"
-          >
-            <Input type="number" placeholder="请输入座位号（用于班级内排序）" min={1} />
-          </Form.Item>
-          <Form.Item
             name="name"
             label="姓名"
             rules={[{ required: true, message: '请输入姓名' }]}
@@ -534,10 +543,14 @@ export default function ClassStudentsPage() {
         <Form form={addForm} layout="vertical" initialValues={{ password: '123456' }}>
           <Form.Item
             name="studentNo"
-            label="学号"
-            rules={[{ required: true, message: '请输入学号' }]}
+            label="账号"
+            tooltip="输入学生编号（1-99），系统自动拼接年级+班级前缀"
+            rules={[
+              { required: true, message: '请输入账号' },
+              { pattern: /^\d+$/, message: '账号只能包含数字' },
+            ]}
           >
-            <Input placeholder="请输入学号" />
+            <Input placeholder={`输入编号，如 1 → ${currentClass ? getAccountPrefix(currentClass) + '01' : '1011'}`} />
           </Form.Item>
           <Form.Item
             name="name"
@@ -545,13 +558,6 @@ export default function ClassStudentsPage() {
             rules={[{ required: true, message: '请输入姓名' }]}
           >
             <Input placeholder="请输入姓名" />
-          </Form.Item>
-          <Form.Item
-            name="seatNo"
-            label="座位号/序号"
-            tooltip="可选，用于班级内排序"
-          >
-            <Input type="number" placeholder="可选" min={1} />
           </Form.Item>
           <Form.Item
             name="password"

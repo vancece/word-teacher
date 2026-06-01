@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Table, Button, Modal, Form, Input, Select, Popconfirm, message, Space, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Space, Tag } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined } from '@ant-design/icons'
 import { useRequest } from 'ahooks'
 import type { ColumnsType } from 'antd/es/table'
@@ -32,8 +32,10 @@ export default function ClassesPage() {
   const openModal = (cls?: Class) => {
     if (cls) {
       setEditingClass(cls)
+      const numMatch = cls.name.match(/(\d+)/)
       form.setFieldsValue({
         ...cls,
+        name: numMatch ? Number(numMatch[1]) : undefined,
         teacherIds: cls.teachers?.map(t => t.id) || [],
       })
     } else {
@@ -47,11 +49,12 @@ export default function ClassesPage() {
   const handleSave = async () => {
     try {
       const values = await form.validateFields()
+      const submitData = { ...values, name: `${values.name}班` }
       if (editingClass) {
-        await adminApi.updateClass(editingClass.id, values)
+        await adminApi.updateClass(editingClass.id, submitData)
         message.success('班级更新成功')
       } else {
-        await adminApi.createClass(values)
+        await adminApi.createClass(submitData)
         message.success('班级创建成功')
       }
       setModalOpen(false)
@@ -190,11 +193,11 @@ export default function ClassesPage() {
         cancelText="取消"
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="班级名称" rules={[{ required: true, message: '请输入班级名称' }]}>
-            <Input placeholder="如：三年级1班" />
-          </Form.Item>
           <Form.Item name="grade" label="年级" rules={[{ required: true, message: '请选择年级' }]}>
             <Select placeholder="请选择年级" options={gradeOptions} />
+          </Form.Item>
+          <Form.Item name="name" label="班级" rules={[{ required: true, message: '请输入班级编号' }]}>
+            <InputNumber min={0} max={100} precision={0} placeholder="输入数字" addonAfter="班" style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="description" label="班级描述">
             <Input.TextArea placeholder="可选，班级备注信息" rows={3} />
