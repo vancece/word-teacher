@@ -7,12 +7,18 @@ An AI-powered English speaking practice application. Through **scenario-based AI
 ## 📸 Screenshots
 
 ![Login](docs/images/login.png)
+![Notification](docs/images/dingding.png)
 ![Scenes](docs/images/scenes.png)
 ![Dialogue](docs/images/dialogue.png)
 ![Read Aloud](docs/images/readAndAloud.png)
 ![Scoring](docs/images/exam.png)
 ![User Profile](docs/images/user.png)
 ![Admin Dashboard](docs/images/admin.png)
+![对话](docs/images/playground.png)
+![对话](docs/images/protectCastle.png)
+![对话](docs/images/deliciousFoodCar.png)
+![对话](docs/images/magicMatch.png)
+![对话](docs/images/dingdingGameNotification.png)
 
 ---
 

@@ -10,8 +10,6 @@ Practice English speaking with **AI conversations + read-aloud + word games + sp
 
 ## 📸 产品截图
 
-<!-- 请将截图放到 docs/images/ 目录下，然后取消下面的注释 -->
-
 学生登录
 ![登录](docs/images/login.png)
 
@@ -26,6 +24,9 @@ AI 对话
 
 评分反馈
 ![对话](docs/images/exam.png)
+
+钉钉反馈通知
+![对话](docs/images/dingding.png)
 
 学生个人主页
 ![对话](docs/images/user.png)
@@ -50,6 +51,21 @@ AI 对话
 
 学生进度分析
 ![对话](docs/images/adminAnalyze.png)
+
+有趣的单词游戏
+![对话](docs/images/playground.png)
+
+保卫城堡
+![对话](docs/images/protectCastle.png)
+
+美食餐车
+![对话](docs/images/deliciousFoodCar.png)
+
+魔法配对
+![对话](docs/images/magicMatch.png)
+
+钉钉游戏通知
+![对话](docs/images/dingdingGameNotification.png)
 
 ---
 
