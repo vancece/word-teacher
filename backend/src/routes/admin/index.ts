@@ -172,6 +172,7 @@ router.get('/learning-records', asyncHandler(async (req: TeacherRequest, res) =>
       status: r.status,
       completedCount: r.completedCount,
       totalCount: r.totalCount,
+      feedback: r.feedback || null,
       createdAt: r.createdAt,
     })),
     ...dialogueRecords.map(r => ({
@@ -184,6 +185,7 @@ router.get('/learning-records', asyncHandler(async (req: TeacherRequest, res) =>
       status: r.status,
       completedCount: r.roundsCompleted || 0,
       totalCount: 0,
+      feedback: r.feedbackText || null,
       createdAt: r.createdAt,
     })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

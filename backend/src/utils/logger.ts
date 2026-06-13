@@ -17,9 +17,11 @@ const LOG_DIR = join(__dirname, '../../logs')
 mkdirSync(LOG_DIR, { recursive: true })
 
 // 构建 transport targets
-const targets: pino.TransportTargetOptions[] = [
-  // 文件输出（按天切割）
-  {
+const targets: pino.TransportTargetOptions[] = []
+
+// 文件输出（按天切割）- 仅生产环境或显式启用
+if (!env.isDev) {
+  targets.push({
     target: 'pino-roll',
     options: {
       file: join(LOG_DIR, 'backend'),
@@ -29,8 +31,8 @@ const targets: pino.TransportTargetOptions[] = [
       mkdir: true,
     },
     level: 'debug',
-  },
-]
+  })
+}
 
 // 开发环境加 console 美化
 if (env.isDev) {
