@@ -8,6 +8,7 @@ import pino from 'pino'
 import { mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { createRequire } from 'module'
 import { env } from '../config/env.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -16,13 +17,17 @@ const LOG_DIR = join(__dirname, '../../logs')
 // 确保日志目录存在
 mkdirSync(LOG_DIR, { recursive: true })
 
+// 使用 createRequire 解析 pino-roll 的绝对路径，避免 pino transport worker 解析失败
+const require = createRequire(import.meta.url)
+const pinoRollPath = require.resolve('pino-roll')
+
 // 构建 transport targets
 const targets: pino.TransportTargetOptions[] = []
 
 // 文件输出（按天切割）- 仅生产环境或显式启用
 if (!env.isDev) {
   targets.push({
-    target: 'pino-roll',
+    target: pinoRollPath,
     options: {
       file: join(LOG_DIR, 'backend'),
       frequency: 'daily',
