@@ -292,6 +292,7 @@ export default function LearningRecordsPage() {
             icon={<DownloadOutlined />}
             onClick={handleExport}
             loading={exporting}
+            title="导出当前筛选结果为 Excel 文件"
           >
             导出 Excel
           </Button>
