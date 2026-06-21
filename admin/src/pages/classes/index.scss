@@ -15,6 +15,18 @@
     }
   }
 
+  .filter-bar {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+
+    .anticon-filter {
+      color: #8c8c8c;
+    }
+  }
+
   .ant-table-wrapper {
     background: white;
     border-radius: 12px;
