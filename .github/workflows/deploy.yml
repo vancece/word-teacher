@@ -273,16 +273,34 @@ jobs:
             echo "✅ .env 配置文件已生成"
 
             # ============================================================
-            # 2. 从 GitHub Secrets 写入 SSL 证书
+            # 2. SSL 证书处理（优先使用 Let's Encrypt 有效证书）
             # ============================================================
-            if [ -n "$SSL_FULLCHAIN" ] && [ -n "$SSL_PRIVKEY" ]; then
-              echo "🔐 写入 SSL 证书..."
-              printf '%s\n' "$SSL_FULLCHAIN" > ssl/fullchain.pem
-              printf '%s\n' "$SSL_PRIVKEY" > ssl/privkey.pem
-              chmod 600 ssl/privkey.pem
-              echo "✅ SSL 证书已写入"
-            else
-              echo "⚠️ 未提供 SSL 证书，HTTPS 可能不可用"
+            SSL_UPDATED=false
+
+            # 优先检查 Let's Encrypt 是否有有效证书
+            if [ -f /etc/letsencrypt/live/workly.cloud/fullchain.pem ]; then
+              LE_EXPIRY=$(openssl x509 -in /etc/letsencrypt/live/workly.cloud/fullchain.pem -noout -enddate 2>/dev/null | cut -d= -f2)
+              if [ -n "$LE_EXPIRY" ] && [ "$(date -d "$LE_EXPIRY" +%s 2>/dev/null || date -j -f "%b %d %H:%M:%S %Y %Z" "$LE_EXPIRY" +%s 2>/dev/null)" -gt "$(date +%s)" ]; then
+                echo "🔐 使用 Let's Encrypt 有效证书（到期: $LE_EXPIRY）"
+                cp /etc/letsencrypt/live/workly.cloud/fullchain.pem ssl/fullchain.pem
+                cp /etc/letsencrypt/live/workly.cloud/privkey.pem ssl/privkey.pem
+                chmod 600 ssl/privkey.pem
+                SSL_UPDATED=true
+                echo "✅ SSL 证书已从 Let's Encrypt 更新"
+              fi
+            fi
+
+            # 如果 Let's Encrypt 无有效证书，回退到 GitHub Secrets
+            if [ "$SSL_UPDATED" = "false" ]; then
+              if [ -n "$SSL_FULLCHAIN" ] && [ -n "$SSL_PRIVKEY" ]; then
+                echo "🔐 写入 GitHub Secrets 中的 SSL 证书..."
+                printf '%s\n' "$SSL_FULLCHAIN" > ssl/fullchain.pem
+                printf '%s\n' "$SSL_PRIVKEY" > ssl/privkey.pem
+                chmod 600 ssl/privkey.pem
+                echo "✅ SSL 证书已从 Secrets 写入"
+              else
+                echo "⚠️ 未提供 SSL 证书，HTTPS 可能不可用"
+              fi
             fi
 
             # 保存镜像前缀（后续 docker pull 需要用）
