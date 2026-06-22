@@ -12,6 +12,8 @@ import ScenesPage from './pages/ScenesPage'
 import ProgressPage from './pages/ProgressPage'
 import WordPacksPage from './pages/WordPacksPage'
 import WordGameRecordsPage from './pages/WordGameRecordsPage'
+import AssistantPage from './pages/AssistantPage'
+
 
 function App() {
   return (
@@ -38,6 +40,7 @@ function App() {
             <Route path="word-packs" element={<WordPacksPage />} />
             <Route path="game-records" element={<WordGameRecordsPage />} />
             <Route path="progress" element={<ProgressPage />} />
+            <Route path="assistant" element={<AssistantPage />} />
           </Route>
         </Routes>
       </HashRouter>

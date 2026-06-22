@@ -14,8 +14,31 @@ import uploadRoutes from './upload.routes.js'
 import adminRoutes from './admin/index.js'
 import wordPacksRoutes from './word-packs.routes.js'
 import wordGameRoutes from './word-game.routes.js'
+import dingtalkBotRoutes from './dingtalk-bot.routes.js'
+import internalRoutes from './internal.routes.js'
+import path from 'path'
+import fs from 'fs'
 
 const router = Router()
+
+// 导出文件下载（公开路由，文件名含随机 hash + 30 分钟过期，无需认证）
+const EXPORT_DIR = path.resolve(process.cwd(), 'tmp/exports')
+router.get('/admin/export/download/:filename', (req, res) => {
+  const filename = decodeURIComponent(req.params.filename as string)
+  if (filename.includes('..') || filename.includes('/')) {
+    return res.status(400).json({ success: false, message: '无效文件名' })
+  }
+  const filepath = path.join(EXPORT_DIR, filename)
+  if (!fs.existsSync(filepath)) {
+    return res.status(404).json({ success: false, message: '文件不存在或已过期' })
+  }
+  const stat = fs.statSync(filepath)
+  if (Date.now() - stat.mtimeMs > 30 * 60 * 1000) {
+    fs.unlinkSync(filepath)
+    return res.status(410).json({ success: false, message: '文件已过期，请重新导出' })
+  }
+  res.download(filepath, filename)
+})
 
 // 健康检查 - 简单版本（负载均衡器使用）
 router.get('/health', (_req, res) => {
@@ -78,6 +101,8 @@ router.use('/upload', uploadRoutes)
 router.use('/word-packs', wordPacksRoutes)
 router.use('/word-game', wordGameRoutes)
 router.use('/admin', adminRoutes)
+router.use('/internal', internalRoutes)  // Agent 回调专用，API Key 认证
+router.use('/dingtalk-bot', dingtalkBotRoutes)
 
 export default router
 

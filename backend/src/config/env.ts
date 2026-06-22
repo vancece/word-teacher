@@ -14,6 +14,7 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(), // 允许的前端域名，逗号分隔
   AI_API_KEY: z.string().optional(),
   AI_API_URL: z.string().optional(),
+  ASSISTANT_BOT_USERNAME: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)
@@ -61,6 +62,9 @@ export const env = {
   ai: {
     apiKey: parsed.data.AI_API_KEY,
     apiUrl: parsed.data.AI_API_URL,
+  },
+  assistantBot: {
+    username: parsed.data.ASSISTANT_BOT_USERNAME || '',
   },
 }
 

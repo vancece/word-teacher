@@ -6,6 +6,7 @@ import dialogueRoutes from './routes/dialogue.routes.js'
 import readAloudRoutes from './routes/read-aloud.routes.js'
 import summaryRoutes from './routes/summary.routes.js'
 import sceneSupplementRoutes from './routes/scene-supplement.routes.js'
+import assistantRoutes from './routes/assistant.routes.js'
 
 // 开发环境：禁用 SSL 证书验证（解决阿里云 API 调用问题）
 if (process.env.NODE_ENV !== 'production') {
@@ -29,6 +30,7 @@ app.use('/api/agent', dialogueRoutes)
 app.use('/api/agent/read-aloud', readAloudRoutes)
 app.use('/api/agent/summary', summaryRoutes)
 app.use('/api/agent/scene', sceneSupplementRoutes)
+app.use('/api/agent/assistant', assistantRoutes)
 
 // Root endpoint
 app.get('/', (_req, res) => {

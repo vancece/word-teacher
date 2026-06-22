@@ -139,11 +139,19 @@ AI 对话
 
 ### 👩‍🏫 教师管理后台
 
+#### 🤖 AI 智能助手
+- **自然语言查数据**：直接用中文提问，如"查看各班学生数量"、"哪些学生最近没练习？"
+- **Excel 导出**：对话式导出，如"导出本月学习记录"，AI 自动生成 Excel 并提供下载链接
+- **数据可视化**：AI 自动将查询结果用图表（柱状图、折线图、饼图）展示
+- **系统使用问答**：不知道怎么操作？直接问 AI，如"怎么创建跟读场景？"、"怎么批量导入学生？"
+- **知识库驱动**：基于向量搜索的知识库系统，管理员可维护操作指引和 FAQ
+- **MCP 工具集成**：内置数据库查询、知识搜索、班级分析、密码重置等 10+ 个智能工具
+
 #### 📊 数据仪表盘
 - 学生总数、教师总数、班级总数统计
 - 今日/本周练习数量统计
 - 跟读完成情况和平均分
-- 快速操作入口
+- 快速操作入口（含 AI 助手入口）
 
 #### 👥 教师管理（仅管理员）
 - 添加/编辑/删除教师账号
@@ -306,8 +314,23 @@ cp backend/.env.example backend/.env
 
 # agent/.env (参考 agent/.env.example)
 cp agent/.env.example agent/.env
-# 修改 DASHSCOPE_API_KEY 为你的阿里云 API Key
 ```
+
+**必须修改的变量**：
+
+| 文件 | 变量 | 说明 |
+|------|------|------|
+| `agent/.env` | `DASHSCOPE_API_KEY` | 阿里云百炼 API Key（AI 对话核心） |
+| `backend/.env` | `AI_API_KEY` | 同上，用于 AI 助手知识库向量化 |
+
+**可选变量**（按需启用）：
+
+| 文件 | 变量 | 说明 |
+|------|------|------|
+| `agent/.env` | `XFYUN_APP_ID` / `XFYUN_API_KEY` / `XFYUN_API_SECRET` | 科大讯飞语音评测（跟读评分） |
+| `agent/.env` | `ALIYUN_STT_APPKEY` / `ALIYUN_AK_ID` / `ALIYUN_AK_SECRET` | 阿里云语音识别（对话输入） |
+| `backend/.env` | `DINGTALK_BOT_APP_KEY` / `DINGTALK_BOT_APP_SECRET` | 钉钉 AI 客服机器人 |
+| `backend/.env` | `DINGTALK_ACCESS_TOKEN` / `DINGTALK_SECRET` | 钉钉通知机器人 |
 
 ### 5. 启动开发服务器
 
@@ -383,7 +406,8 @@ cd agent && pnpm dev      # Agent http://localhost:8000
 - **评分页**：星级评分 + 分项得分 + 鼓励评语
 
 ### 管理后台
-- **仪表盘**：数据统计卡片 + 快速操作入口
+- **仪表盘**：数据统计卡片 + 快速操作入口 + AI 助手入口
+- **AI 助手**：自然语言对话 + 数据查询 + Excel 导出 + 图表可视化
 - **学生管理**：学生列表 + 详情弹窗 + 进步追踪
 - **跟读记录**：练习记录表格 + 筛选过滤
 - **场景管理**：跟读/对话场景卡片 + 编辑操作
@@ -438,18 +462,33 @@ pm2 start agent/dist/index.js --name agent
 1. Fork 本仓库
 2. 在 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
 
-| Secret | 说明 |
-|--------|------|
-| `SERVER_HOST` | 服务器 IP |
-| `SERVER_SSH_KEY` | SSH 私钥 |
-| `DOCKER_PASSWORD` | Docker Hub Token |
-| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 |
-| `MYSQL_PASSWORD` | MySQL 应用密码 |
-| `JWT_SECRET` | JWT 签名密钥 |
-| `AGENT_API_KEY` | Agent API 密钥 |
-| `DASHSCOPE_API_KEY` | 阿里云 AI API Key |
+| Secret | 说明 | 必须 |
+|--------|------|------|
+| `SERVER_HOST` | 服务器 IP | ✅ |
+| `SERVER_SSH_KEY` | SSH 私钥 | ✅ |
+| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | ✅ |
+| `MYSQL_PASSWORD` | MySQL 应用密码 | ✅ |
+| `JWT_SECRET` | JWT 签名密钥 | ✅ |
+| `AGENT_API_KEY` | Agent API 密钥 | ✅ |
+| `DASHSCOPE_API_KEY` | 阿里云 AI API Key（对话 + Embedding） | ✅ |
+| `MINIO_ROOT_PASSWORD` | MinIO 管理员密码 | ✅ |
+| `ALIYUN_AK_ID` | 阿里云 AccessKey ID（语音识别） | 可选 |
+| `ALIYUN_AK_SECRET` | 阿里云 AccessKey Secret | 可选 |
+| `XFYUN_API_KEY` | 科大讯飞 API Key（语音评测） | 可选 |
+| `XFYUN_API_SECRET` | 科大讯飞 API Secret | 可选 |
+| `DINGTALK_ACCESS_TOKEN` | 钉钉通知机器人 Token | 可选 |
+| `DINGTALK_SECRET` | 钉钉通知机器人签名密钥 | 可选 |
+| `DINGTALK_BOT_APP_KEY` | 钉钉 AI 客服机器人 AppKey | 可选 |
+| `DINGTALK_BOT_APP_SECRET` | 钉钉 AI 客服机器人 AppSecret | 可选 |
 
-3. 在 **Variables** 中添加 `DOCKER_USERNAME`（你的 Docker Hub 用户名）
+3. 在 **Variables** 中添加：
+
+| Variable | 说明 |
+|----------|------|
+| `DOCKER_USERNAME` | Docker Hub 用户名 |
+| `ALIYUN_STT_APPKEY` | 阿里云语音识别 AppKey |
+| `XFYUN_APP_ID` | 科大讯飞应用 ID |
+
 4. 推送代码到 `master` 分支即可自动部署 🚀
 
 👉 **完整配置指南**：[deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md#-github-actions-自动部署cicd)
@@ -463,6 +502,15 @@ pm2 start agent/dist/index.js --name agent
 - [CVM 部署指南](deploy/CVM-DEPLOYMENT.md) - 腾讯云 CVM Docker 部署
 
 ## 📋 更新日志
+
+### 2026-06-22
+- 🤖 **AI 智能助手**：管理后台新增 AI 助手功能
+  - 自然语言查数据（AI 自动生成 SQL 查询）
+  - 对话式 Excel 导出（一句话生成报表并提供下载链接）
+  - ECharts 数据可视化（AI 自动选择合适的图表类型）
+  - 系统使用问答（基于向量知识库的智能检索）
+  - MCP 工具测试台（管理员可调试 AI 工具调用）
+  - 10+ 内置工具：数据库查询、知识搜索、班级分析、密码重置等
 
 ### 2026-05-28
 - 🎮 **单词游戏系统**：全新上线 4 种单词小游戏

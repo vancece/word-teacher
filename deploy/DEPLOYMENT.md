@@ -386,22 +386,24 @@ vim .env  # 填写实际的密钥
 
 ### 必需的 Secrets（敏感密钥）
 
-| Secret 名称 | 说明 | 示例值 |
-|------------|------|--------|
-| `SERVER_HOST` | 服务器 IP 地址 | `123.45.67.89` |
-| `SERVER_SSH_KEY` | SSH 私钥（完整内容） | `-----BEGIN RSA PRIVATE KEY-----...` |
-| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | `YourSecureRootPassword123!` |
-| `MYSQL_PASSWORD` | MySQL 应用用户密码 | `YourSecureAppPassword456!` |
-| `JWT_SECRET` | JWT 签名密钥（64+ 字符） | `openssl rand -base64 48` 生成 |
-| `AGENT_API_KEY` | Agent 服务 API 密钥 | `openssl rand -hex 32` 生成 |
-| `DASHSCOPE_API_KEY` | 阿里云百炼 API Key | `sk-xxxxxxxxxxxxxxxx` |
-| `MINIO_ROOT_PASSWORD` | MinIO 管理员密码 | `openssl rand -base64 16` 生成 |
-| `ALIYUN_AK_ID` | 阿里云 AccessKey ID | `LTAI5txxxxxxxx` |
-| `ALIYUN_AK_SECRET` | 阿里云 AccessKey Secret | `LljJkhrXPxxxxxx` |
-| `XFYUN_API_KEY` | 科大讯飞 API Key | `c1ed35b5xxxxxxxx` |
-| `XFYUN_API_SECRET` | 科大讯飞 API Secret | `YTE5OWMxxxxxxxx` |
-| `DINGTALK_ACCESS_TOKEN` | 钉钉机器人 Token（部署通知） | `xxxxxxxx` |
-| `DINGTALK_SECRET` | 钉钉机器人签名密钥 | `SECxxxxxxxx` |
+| Secret 名称 | 说明 | 示例值 | 必须 |
+|------------|------|--------|------|
+| `SERVER_HOST` | 服务器 IP 地址 | `123.45.67.89` | ✅ |
+| `SERVER_SSH_KEY` | SSH 私钥（完整内容） | `-----BEGIN RSA PRIVATE KEY-----...` | ✅ |
+| `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | `YourSecureRootPassword123!` | ✅ |
+| `MYSQL_PASSWORD` | MySQL 应用用户密码 | `YourSecureAppPassword456!` | ✅ |
+| `JWT_SECRET` | JWT 签名密钥（64+ 字符） | `openssl rand -base64 48` 生成 | ✅ |
+| `AGENT_API_KEY` | Agent 服务 API 密钥 | `openssl rand -hex 32` 生成 | ✅ |
+| `DASHSCOPE_API_KEY` | 阿里云百炼 API Key（AI 对话+Embedding） | `sk-xxxxxxxxxxxxxxxx` | ✅ |
+| `MINIO_ROOT_PASSWORD` | MinIO 管理员密码 | `openssl rand -base64 16` 生成 | ✅ |
+| `ALIYUN_AK_ID` | 阿里云 AccessKey ID（语音识别） | `LTAI5txxxxxxxx` | 可选 |
+| `ALIYUN_AK_SECRET` | 阿里云 AccessKey Secret | `LljJkhrXPxxxxxx` | 可选 |
+| `XFYUN_API_KEY` | 科大讯飞 API Key（语音评测） | `c1ed35b5xxxxxxxx` | 可选 |
+| `XFYUN_API_SECRET` | 科大讯飞 API Secret | `YTE5OWMxxxxxxxx` | 可选 |
+| `DINGTALK_ACCESS_TOKEN` | 钉钉通知机器人 Token | `xxxxxxxx` | 可选 |
+| `DINGTALK_SECRET` | 钉钉通知机器人签名密钥 | `SECxxxxxxxx` | 可选 |
+| `DINGTALK_BOT_APP_KEY` | 钉钉 AI 客服机器人 AppKey | `dingxxxxxxxx` | 可选 |
+| `DINGTALK_BOT_APP_SECRET` | 钉钉 AI 客服机器人 AppSecret | `xxxxxxxxxxxx` | 可选 |
 
 ### 可选的 Secrets
 
@@ -471,9 +473,14 @@ openssl rand -hex 32
 # 1. 安装 Docker
 curl -fsSL https://get.docker.com | sh
 
-# 2. 创建项目目录
+# 2. 创建项目目录和数据目录
 mkdir -p /root/word-teacher
+cd /root/word-teacher
+mkdir -p logs/backend logs/agent data/lancedb
+chown -R 1001:1001 logs/ data/
 ```
+
+> 💡 `data/lancedb` 是 AI 助手知识库的向量搜索索引目录，由 Backend 容器自动管理。
 
 > 💡 当前部署方式为**镜像直传**（本地构建 → gzip 压缩 → SCP 传到服务器 → docker load），不需要 Docker Hub。
 

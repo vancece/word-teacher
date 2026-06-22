@@ -42,6 +42,7 @@ model Teacher {
   createdScenes          Scene[]          @relation("SceneCreator")
   createdReadAloudScenes ReadAloudScene[] @relation("ReadAloudSceneCreator")
   createdWordPacks       WordPack[]       @relation("WordPackCreator")
+  assistantConversations AssistantConversation[]
 
   @@map("teachers")
 }
@@ -253,5 +254,24 @@ model WordGameRecord {
   @@index([gameType])
   @@index([studentId, createdAt])
   @@map("word_game_records")
+}
+
+// AI 助手对话记录
+model AssistantConversation {
+  id         Int      @id @default(autoincrement())
+  teacherId  Int?     @map("teacher_id")
+  channel    String   @db.VarChar(20)       // "dingtalk" | "admin_web"
+  externalId String?  @map("external_id") @db.VarChar(100)
+  title      String?  @db.VarChar(200)
+  messages   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([channel])
+  @@index([createdAt])
+  @@map("assistant_conversations")
 }
 

@@ -13,6 +13,7 @@ import scenesRoutes from './scenes.routes.js'
 import progressRoutes from './progress.routes.js'
 import teachersRoutes from './teachers.routes.js'
 import wordPacksRoutes from './word-packs.routes.js'
+import assistantRoutes from './assistant.routes.js'
 
 const router = Router()
 
@@ -27,6 +28,9 @@ router.use('/scenes', scenesRoutes)           // 对话场景 CRUD
 router.use('/progress', progressRoutes)       // GET /progress/overview, /progress/student/:id
 router.use('/teachers', teachersRoutes)       // GET/POST/PUT/DELETE /teachers
 router.use('/word-packs', wordPacksRoutes)    // 单词包 CRUD
+router.use('/assistant', assistantRoutes)    // AI 助手 + 知识库管理
+
+// 导出文件下载已移到 routes/index.ts 作为公开路由（浏览器直接打开链接无法携带 JWT）
 
 // 向后兼容：旧路径映射
 // /read-aloud-records -> /read-aloud/records

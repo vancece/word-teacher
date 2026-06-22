@@ -120,6 +120,16 @@
         font-weight: 500;
         font-size: 14px;
       }
+
+      &.ai-btn {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+        color: #667eea;
+
+        &:hover {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+      }
     }
   }
 

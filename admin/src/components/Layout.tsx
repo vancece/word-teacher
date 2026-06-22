@@ -10,7 +10,8 @@ import {
   Users,
   Shield,
   Gamepad2,
-  Trophy
+  Trophy,
+  Bot,
 } from 'lucide-react'
 import './Layout.scss'
 
@@ -49,13 +50,14 @@ export default function Layout() {
     { path: '/scenes', icon: Mic2, label: '场景管理' },
     { path: '/word-packs', icon: Gamepad2, label: '游戏管理' },
     { path: '/progress', icon: TrendingUp, label: '进步情况' },
+    { path: '/assistant', icon: Bot, label: 'AI 助手' },
   ]
 
   // 根据权限组合菜单
   const navItems: NavItem[] = [
     ...baseNavItems,
     ...(isAdmin ? adminOnlyItems : []),
-    ...commonNavItems,
+    ...commonNavItems.filter(item => !item.adminOnly || isAdmin),
   ]
 
   // 检查是否在班级相关页面（包括学生管理子页面）

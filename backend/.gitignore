@@ -27,3 +27,6 @@ npm-debug.log*
 # Prisma
 prisma/migrations/*_migration_lock.toml
 
+# LanceDB local data
+data/
+

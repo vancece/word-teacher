@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, School } from 'lucide-react'
+import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, School, Bot } from 'lucide-react'
 import { Card, Spin } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
@@ -133,6 +133,10 @@ export default function DashboardPage() {
               <div className="action-btn" onClick={() => navigate('/progress')}>
                 <TrendingUp size={20} />
                 <span>进步情况</span>
+              </div>
+              <div className="action-btn ai-btn" onClick={() => navigate('/assistant')}>
+                <Bot size={20} />
+                <span>AI 助手</span>
               </div>
             </div>
           </Card>

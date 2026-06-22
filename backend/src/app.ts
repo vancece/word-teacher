@@ -64,6 +64,8 @@ app.use(timeoutMiddleware(30000))
 app.use('/api/dialogue', timeoutMiddleware(120000))
 app.use('/api/read-aloud', timeoutMiddleware(120000))
 app.use('/api/admin/students/:id/summary', timeoutMiddleware(120000))
+app.use('/api/admin/assistant/chat', timeoutMiddleware(120000))
+app.use('/api/dingtalk-bot', timeoutMiddleware(120000))
 
 // API 路由
 app.use('/api', routes)

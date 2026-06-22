@@ -43,6 +43,7 @@ services:
         condition: service_started
     volumes:
       - ./logs/backend:/app/logs
+      - ./data/lancedb:/app/data/lancedb
     environment:
       NODE_ENV: production
       PORT: 3001
@@ -51,6 +52,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS}
       AGENT_URL: http://agent:3002/api/agent
       AGENT_API_KEY: ${AGENT_API_KEY}
+      LANCEDB_PATH: /app/data/lancedb
       # MinIO 配置 - 使用相对路径，不依赖域名
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
@@ -58,6 +60,9 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio123456}
       MINIO_BUCKET: ${MINIO_BUCKET:-covers}
       MINIO_PUBLIC_PATH: ${MINIO_PUBLIC_PATH:-/minio}
+      # AI/Embedding 配置
+      AI_API_KEY: ${DASHSCOPE_API_KEY}
+      AI_API_URL: ${AI_API_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       # 钉钉通知（可选）
       DINGTALK_ACCESS_TOKEN: ${DINGTALK_ACCESS_TOKEN:-}
       DINGTALK_SECRET: ${DINGTALK_SECRET:-}
@@ -176,6 +181,53 @@ services:
         done
     networks:
       - word-teacher-network
+
+  # ============ LanceDB 自动备份 ============
+  lancedb-backup:
+    image: alpine:3.19
+    container_name: word-teacher-lancedb-backup
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data/lancedb:/data/lancedb:ro
+      - ./backups:/backups
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "LanceDB backup service started"
+        while true; do
+          # 计算距离下次凌晨3:30的秒数（比 MySQL 备份晚30分钟）
+          now=$$(date +%s)
+          today_target=$$(date -d "03:30" +%s 2>/dev/null || date +%s)
+          if [ "$$now" -ge "$$today_target" ]; then
+            target=$$(( $$today_target + 86400 ))
+          else
+            target=$$today_target
+          fi
+          wait_seconds=$$(( $$target - $$now ))
+          echo "[lancedb-backup] Next backup in $${wait_seconds}s"
+          sleep $$wait_seconds
+
+          # 执行备份（tar 打包 lancedb 目录）
+          TIMESTAMP=$$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="/backups/lancedb_$$TIMESTAMP.tar.gz"
+          echo "[lancedb-backup] Starting backup: $$BACKUP_FILE"
+          if tar -czf "$$BACKUP_FILE" -C /data lancedb 2>/dev/null; then
+            SIZE=$$(du -h "$$BACKUP_FILE" | cut -f1)
+            echo "[lancedb-backup] ✅ Backup completed: $$BACKUP_FILE ($$SIZE)"
+          else
+            echo "[lancedb-backup] ❌ Backup failed!"
+            rm -f "$$BACKUP_FILE"
+          fi
+
+          # 清理7天前的备份
+          deleted=$$(find /backups -name "lancedb_*.tar.gz" -mtime +7 -delete -print | wc -l)
+          if [ "$$deleted" -gt 0 ]; then
+            echo "[lancedb-backup] 🧹 Cleaned $$deleted old backup(s)"
+          fi
+        done
 
   # ============ Nginx 前端 + 反向代理 ============
   nginx:

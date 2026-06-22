@@ -8,9 +8,9 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "dev-docker": "./scripts/dev-start.sh",
-    "dev-web": "pnpm -r --parallel run dev",
-    "stop": "docker compose -f docker-compose.dev.yml down",
+    "dev": "./scripts/dev-start.sh",
+    "stop": "./scripts/dev-start.sh --stop",
+    "seed": "./scripts/seed-dev.sh",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "db:studio": "pnpm --filter backend db:studio",

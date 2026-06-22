@@ -57,12 +57,18 @@ cp agent/.env.example agent/.env
 # DASHSCOPE_API_KEY=your-dashscope-api-key
 ```
 
-**最小配置**（只需改这一个）：
+**最小配置**（只需改两处）：
 
 ```bash
 # agent/.env
 DASHSCOPE_API_KEY=sk-你的真实apikey
+
+# backend/.env（AI 助手知识库向量化需要）
+AI_API_KEY=sk-你的真实apikey
+AI_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
+
+> 💡 两处用同一个 API Key 即可（都是阿里云 DashScope）
 
 ## 🐳 第四步：启动数据库
 

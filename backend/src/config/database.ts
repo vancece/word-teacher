@@ -28,13 +28,23 @@ if (env.isDev) {
   globalForPrisma.prisma = prisma
 }
 
-export async function connectDatabase() {
-  try {
-    await prisma.$connect()
-    dbLogger.info('Database connected successfully')
-  } catch (error) {
-    dbLogger.error({ error }, 'Database connection failed')
-    process.exit(1)
+export async function connectDatabase(maxRetries = 5) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.$connect()
+      dbLogger.info('Database connected successfully')
+      return
+    } catch (error) {
+      if (attempt === maxRetries) {
+        dbLogger.error({ error }, 'Database connection failed after all retries')
+        process.exit(1)
+      }
+      dbLogger.warn(
+        { attempt, maxRetries },
+        `Database connection failed, retrying in ${attempt}s...`
+      )
+      await new Promise((r) => setTimeout(r, attempt * 1000))
+    }
   }
 }
 

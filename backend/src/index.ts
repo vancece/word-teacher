@@ -2,6 +2,7 @@ import app from './app.js'
 import { env } from './config/env.js'
 import { connectDatabase, disconnectDatabase } from './config/database.js'
 import { initMinio } from './services/minio.service.js'
+import { knowledgeVectorService } from './services/knowledge-vector.service.js'
 import { logger } from './utils/logger.js'
 
 async function main() {
@@ -11,6 +12,14 @@ async function main() {
   // 初始化 MinIO（异步，不阻塞启动）
   initMinio().catch((err) => {
     logger.warn({ error: err }, '[MinIO] Initialization failed, will retry on first use')
+  })
+
+  // 预加载 LanceDB 知识库索引（异步，不阻塞启动）
+  knowledgeVectorService.init().then(async () => {
+    const count = await knowledgeVectorService.getCount()
+    logger.info({ count }, '[VectorDB] Knowledge vectors loaded')
+  }).catch((err) => {
+    logger.warn({ error: err }, '[VectorDB] Init failed, will retry on first search')
   })
 
   // 启动服务器
@@ -48,4 +57,6 @@ main().catch((error) => {
   logger.fatal({ error }, 'Failed to start server')
   process.exit(1)
 })
+
+
 
