@@ -83,6 +83,7 @@ export interface LearningRecord {
   status: string
   completedCount: number
   totalCount: number
+  feedback?: string | null
   createdAt: string
 }
 

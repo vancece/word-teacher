@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Select, Table, Tag, Progress, Button, Input, Popconfirm, message } from 'antd'
+import { DownloadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import * as XLSX from 'xlsx'
 import { adminApi, learningRecordsApi, type LearningRecord, type Class } from '../api'
 import AdminTip from '../components/AdminTip'
 import ReadAloudDetailModal from '../components/ReadAloudDetailModal'
@@ -19,6 +21,7 @@ export default function LearningRecordsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [classes, setClasses] = useState<Class[]>([])
   const [detailRecord, setDetailRecord] = useState<LearningRecord | null>(null)
+  const [exporting, setExporting] = useState(false)
   const limit = 15
 
   useEffect(() => {
@@ -84,6 +87,71 @@ export default function LearningRecordsPage() {
       loadRecords()
     } catch {
       message.error('删除失败')
+    }
+  }
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      // 用当前筛选条件获取所有记录（不分页）
+      const data = await adminApi.getLearningRecords({
+        page: 1,
+        limit: 10000,
+        status: status || undefined,
+        type: type || undefined,
+        classId: classId || undefined,
+        search: search || undefined,
+      })
+
+      if (data.records.length === 0) {
+        message.warning('当前筛选条件下没有数据可导出')
+        return
+      }
+
+      // 构建 Excel 数据
+      const exportData = data.records.map((record) => ({
+        '学生姓名': record.student?.name || '-',
+        '学号': record.student?.studentNo || '-',
+        '班级': record.student?.className || '-',
+        '类型': record.type === 'readAloud' ? '跟读' : '对话',
+        '场景': record.scene?.name || '-',
+        '得分': record.totalScore != null ? record.totalScore : '-',
+        '完成度': record.type === 'dialogue'
+          ? (record.completedCount > 0 ? `${record.completedCount} 轮` : '-')
+          : (record.totalCount > 0 ? `${record.completedCount}/${record.totalCount}` : '-'),
+        '状态': record.status === 'COMPLETED' ? '已完成' : record.status === 'IN_PROGRESS' ? '未完成' : record.status === 'ABANDONED' ? '已放弃' : record.status,
+        '评价': record.feedback || '-',
+        '时间': new Date(record.createdAt).toLocaleString('zh-CN'),
+      }))
+
+      // 生成 Excel 文件
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, '学习记录')
+
+      // 设置列宽
+      worksheet['!cols'] = [
+        { wch: 10 }, // 学生姓名
+        { wch: 14 }, // 学号
+        { wch: 12 }, // 班级
+        { wch: 6 },  // 类型
+        { wch: 20 }, // 场景
+        { wch: 6 },  // 得分
+        { wch: 10 }, // 完成度
+        { wch: 8 },  // 状态
+        { wch: 40 }, // 评价
+        { wch: 20 }, // 时间
+      ]
+
+      // 下载
+      const fileName = `学习记录_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      message.success(`已导出 ${data.records.length} 条记录`)
+    } catch (err) {
+      console.error('Export failed:', err)
+      message.error('导出失败')
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -219,6 +287,15 @@ export default function LearningRecordsPage() {
               { label: '未完成', value: 'IN_PROGRESS' },
             ]}
           />
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExport}
+            loading={exporting}
+            title="导出当前筛选结果为 Excel 文件"
+          >
+            导出 Excel
+          </Button>
         </div>
       </div>
 

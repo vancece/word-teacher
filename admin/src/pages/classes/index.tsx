@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Space, Tag } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, TeamOutlined, FilterOutlined } from '@ant-design/icons'
 import { useRequest } from 'ahooks'
 import type { ColumnsType } from 'antd/es/table'
 import { adminApi, type Class, type Teacher } from '../../api'
@@ -16,10 +16,17 @@ export default function ClassesPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingClass, setEditingClass] = useState<Class | null>(null)
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [filterGrade, setFilterGrade] = useState<string | undefined>(undefined)
 
   // 获取班级列表
   const { data, loading, refresh } = useRequest(adminApi.getClasses)
   const classes = data?.classes || []
+
+  // 按年级筛选
+  const filteredClasses = useMemo(() => {
+    if (!filterGrade) return classes
+    return classes.filter(c => c.grade === filterGrade)
+  }, [classes, filterGrade])
 
   // 管理员获取教师列表用于分配
   useEffect(() => {
@@ -176,9 +183,23 @@ export default function ClassesPage() {
         showForTeacher
       />
 
+      <div className="filter-bar">
+        <Space>
+          <FilterOutlined />
+          <Select
+            placeholder="按年级筛选"
+            value={filterGrade}
+            onChange={setFilterGrade}
+            allowClear
+            style={{ width: 150 }}
+            options={gradeOptions}
+          />
+        </Space>
+      </div>
+
       <Table
         columns={columns}
-        dataSource={classes}
+        dataSource={filteredClasses}
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 个班级` }}
