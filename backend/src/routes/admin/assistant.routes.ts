@@ -23,23 +23,25 @@ router.get('/knowledge/search', asyncHandler(async (req: any, res) => {
 
 // POST /api/admin/assistant/chat - AI 问答（SSE 流式）
 router.post('/chat', asyncHandler(async (req: TeacherRequest, res) => {
-  const { question, conversationId } = req.body
+  const { question, history: clientHistory, conversationId } = req.body
   const { teacherId } = req.teacher!
 
   if (!question || typeof question !== 'string') {
     return error(res, 'question is required')
   }
 
-  // 1. 获取对话历史
+  // 1. 获取对话历史：优先用前端传来的最近几轮，否则从数据库查
   let history: { role: 'user' | 'assistant'; content: string }[] = []
 
-  if (conversationId) {
+  if (Array.isArray(clientHistory) && clientHistory.length > 0) {
+    history = clientHistory.slice(-6) // 最多保留 3 轮（6 条消息）
+  } else if (conversationId) {
     const conversation = await prisma.assistantConversation.findUnique({
       where: { id: conversationId },
     })
     if (conversation) {
       const msgs = conversation.messages as any[]
-      history = msgs.slice(-10)
+      history = msgs.slice(-6)
     }
   }
 

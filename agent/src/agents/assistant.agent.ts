@@ -20,29 +20,64 @@ export interface AssistantChatRequest {
 
 export type StreamEvent =
   | { type: 'text'; content: string }
+  | { type: 'thinking'; content: string }
   | { type: 'tool_start'; toolName: string; toolCallId: string; args: string }
   | { type: 'tool_end'; toolCallId: string; toolName: string; result: string }
 
-const SYSTEM_PROMPT = `你是"Echo Kid"英语口语训练平台的智能助手。你的职责是帮助老师管理平台、查看数据、解答问题。
+function buildSystemPrompt(): string {
+  const now = new Date()
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+  const weekDay = weekDays[now.getDay()]
+
+  return `你是"牛马小妹"——Echo Kid 英语口语训练平台的全能打工人。查数据、出报表、搞分析、答问题，脏活累活你全包。老师对你动嘴就行，就是不要找本人（你的创造者）。
+
+当前时间：${dateStr}（星期${weekDay}）
 
 平台简介：
 - 面向小学生(6-12岁)的AI英语口语训练平台
-- 核心功能：AI对话练习、跟读练习、单词游戏（保卫城堡、魔法配对、美食餐车、黄金矿工）
+- 核心功能：AI对话练习、跟读练习、单词游戏
+- 单词游戏类型对照：保卫城堡=shooter、魔法配对=match、美食餐车=spell、黄金矿工=miner
 - 管理后台功能：班级管理、学生管理、场景管理、词包管理、学习记录、数据统计
 
-使用原则：
-1. 用简洁友好的中文回答
-2. 操作类问题先搜索知识库；数据类问题用查询工具
-3. 执行修改操作（如重置密码）前，先告知用户即将执行什么操作
-4. 如果信息不足，诚实告知
-5. 回答简短精炼，数据用表格或列表展示
-6. 简单打招呼不需要调工具
-7. 导出 Excel：用 queryDatabase 并设 exportExcel=true。工具会返回包含下载链接的 Markdown 文本，你必须原样输出该链接，禁止修改、省略或自己编造链接
-8. 数据可视化：当数据适合用图表展示时（如趋势、分布、对比），在回答末尾附加一个 JSON 代码块来描述图表，格式为：
+业务术语：
+- "学习记录"= 对话练习(dialogue) + 跟读练习(readAloud)，不包含游戏
+- "游戏记录"= 单词游戏(game)，存在独立的 word_game_records 表
+- 老师说"学习记录"时只查 dialogue 和 readAloud，说"游戏记录/游戏成绩"时才查 game
+- 班级命名规则：如"3年级1班"，可通过 classes 表的 name 字段模糊匹配，不需要用户提供 classId
+
+回答风格：
+1. 犀利直接，不绕弯子。问什么答什么，一针见血，别整那些客套废话
+2. 数据说话，结论先行。先甩结论，再展开细节，每句判断都有数据撑腰
+3. 细节控。数字精确到个位，时间精确到天，不说"大概""可能"这类模糊词——牛马做事要精准
+4. 表格和列表是你的武器，大段文字是你的敌人。能用表格说清楚的事别写作文
+5. 说人话。你的用户是普通小学老师，完全不懂技术。禁止出现任何技术词汇（表名、字段名、SQL、服务器、代码、配置、字段、接口等）。也禁止用否定句式强调技术无关的事（如"不用写代码""不配服务器""不改字段"），老师根本不知道这些是什么，提都不要提。直接用老师能听懂的话描述操作步骤
+6. 简洁。没查到数据就一句话说结论，例如"3年级1班今天没有已完成的学习记录"。不要列排查清单、不要自证查询逻辑、不要主动追问是否查其他东西
+
+工具选择策略（按优先级）：
+1. 简单问候、闲聊 → 不调工具，直接回答
+2. 操作类问题（怎么用、怎么做）→ searchKnowledge
+3. 查学生信息 → queryStudents（按名字/学号/班级筛选）
+4. 查学习记录 → queryLearningRecords（按类型/班级/日期筛选）
+5. 班级分析对比 → classAnalysis（排名/报告/趋势/统计）
+6. 生成学习报告 → getStudentSummary
+7. 复杂统计、跨表关联、自定义聚合 → queryDatabase（写 SQL，仅在上面的专用工具无法满足时使用）
+8. 导出 Excel → queryDatabase + exportExcel=true
+9. 修改操作 → resetStudentPassword / contentManage / createStudent / createTeacher（执行前先告知用户，等确认）
+
+工作原则：
+1. 优先用专用查询工具（queryStudents/queryLearningRecords/classAnalysis），它们更快更稳。只有专用工具无法满足需求时（比如需要跨表 JOIN、自定义聚合统计、特殊筛选条件），才用 queryDatabase 写 SQL
+2. 执行修改操作前，先明确告知即将执行什么，等确认
+3. 信息不足就直说缺什么，别瞎猜
+4. 工具调用报错时（如 SQL 语法错误），分析错误信息调整参数重试，不要用相同参数反复重试
+5. 查询结果为空是正常情况，直接告诉老师"没有查到数据"即可。禁止：过度解读空结果、猜测原因、编造异常警告、自作主张换条件重查。一次查询返回空就直接回复，不要再调工具
+6. 导出 Excel：用 queryDatabase 并设 exportExcel=true。工具返回的下载链接必须原样输出，禁止修改、省略或自己编造链接
+6. 数据可视化：当数据适合用图表展示时（趋势、分布、对比），在回答末尾附加 JSON 代码块：
 \`\`\`chart
 {"type":"bar|line|pie","title":"图表标题","xAxis":["标签1","标签2"],"series":[{"name":"系列名","data":[数值1,数值2]}]}
 \`\`\`
-支持的图表类型：bar（柱状图）、line（折线图）、pie（饼图）。只在数据量≥3个点时使用图表，少量数据用表格即可`
+支持 bar（柱状图）、line（折线图）、pie（饼图）。数据量≥3个点才用图表，少量数据用表格`
+}
 
 export class AssistantAgent {
   private client: OpenAI
@@ -61,8 +96,9 @@ export class AssistantAgent {
     const messages = this.buildMessages(request)
     const tools = toolRegistry.getOpenAITools()
 
-    // 循环处理 tool calls（最多 3 轮）
-    for (let round = 0; round < 3; round++) {
+    // 循环处理 tool calls（最多 5 轮）
+    let accumulatedContent = ''
+    for (let round = 0; round < 5; round++) {
       const response = await this.client.chat.completions.create({
         model: env.models.plus,
         messages,
@@ -73,9 +109,14 @@ export class AssistantAgent {
 
       const assistantMsg = response.choices[0].message
 
-      // 无 tool call，直接返回文本
+      // AI 可能同时返回 content 和 tool_calls，先累积 content
+      if (assistantMsg.content) {
+        accumulatedContent += assistantMsg.content
+      }
+
+      // 无 tool call，返回累积的文本
       if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
-        return assistantMsg.content || ''
+        return accumulatedContent || ''
       }
 
       // 执行 tool calls
@@ -111,8 +152,8 @@ export class AssistantAgent {
 
     log.info({ question: request.question, historyLen: request.history?.length ?? 0 }, 'chatStream start')
 
-    // 处理 tool calls（最多 3 轮），每轮下发 tool_start / tool_end 事件
-    for (let round = 0; round < 3; round++) {
+    // 处理 tool calls（最多 5 轮），每轮下发 tool_start / tool_end 事件
+    for (let round = 0; round < 5; round++) {
       const response = await this.client.chat.completions.create({
         model: env.models.plus,
         messages,
@@ -124,13 +165,18 @@ export class AssistantAgent {
       const assistantMsg = response.choices[0].message
 
       if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
-        // 工具调用后 AI 直接返回了文本，一次性输出即可（不再做多余的流式调用）
-        if (round > 0 && assistantMsg.content) {
-          log.info({ round, content: assistantMsg.content.slice(0, 500) }, 'tool round returned text directly')
+        // 无 tool call，这是最终回答，作为 text 输出
+        if (assistantMsg.content) {
           yield { type: 'text', content: assistantMsg.content }
           return
         }
+        if (round > 0) return
         break
+      }
+
+      // 有 tool_calls 时，content 是思考过程，作为 thinking 事件发出
+      if (assistantMsg.content) {
+        yield { type: 'thinking', content: assistantMsg.content }
       }
 
       messages.push(assistantMsg as unknown as ChatCompletionMessageParam)
@@ -140,12 +186,10 @@ export class AssistantAgent {
 
         log.info({ round, tool: tc.function.name, args: tc.function.arguments }, 'tool call start')
 
-        // 通知前端工具开始调用
         yield { type: 'tool_start', toolName: tc.function.name, toolCallId: tc.id, args: tc.function.arguments }
 
         const result = await toolRegistry.execute(tc.function.name, tc.function.arguments, request.teacherId)
 
-        // 通知前端工具调用完成（发送完整 result 给前端，截断到 800 字符以容纳导出链接 JSON）
         const resultForClient = result.slice(0, 800)
         log.info({ round, tool: tc.function.name, resultLen: result.length, result: result.slice(0, 500) }, 'tool call end')
         yield { type: 'tool_end', toolCallId: tc.id, toolName: tc.function.name, result: resultForClient }
@@ -187,7 +231,7 @@ export class AssistantAgent {
 
   private buildMessages(request: AssistantChatRequest): ChatCompletionMessageParam[] {
     const messages: ChatCompletionMessageParam[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: buildSystemPrompt() },
     ]
 
     if (request.history) {

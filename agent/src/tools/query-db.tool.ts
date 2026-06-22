@@ -8,6 +8,7 @@ import { toolOk, toolError } from './types.js'
 export const queryDatabaseTool: McpTool = {
   name: 'queryDatabase',
   description: `直接查询数据库，获取任意学生/成绩/内容数据。只允许 SELECT 查询。
+数据库类型：MySQL 8.0，必须使用 MySQL 语法，禁止使用 PostgreSQL 语法（如 ::date、ILIKE、interval '7 days' 等）。
 权限：管理员可查所有数据；普通教师只能查所属班级的学生数据。
 
 可用表及字段（注意字段名大小写）：
@@ -22,6 +23,12 @@ export const queryDatabaseTool: McpTool = {
 - read_aloud_scenes: id, name, description, grade, visible, creator_id, created_at
 - word_packs: id, name, game_type, grade, visible, sort_order, creator_id, created_at
 - words: id, pack_id, english, chinese, phonetic, difficulty, sort_order
+
+MySQL 常用函数提示：
+- 今天: CURDATE()  昨天: CURDATE() - INTERVAL 1 DAY
+- 取日期部分: DATE(created_at)  本周: YEARWEEK(created_at) = YEARWEEK(CURDATE())
+- 本月: YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())
+- 模糊匹配: LIKE（MySQL 不支持 ILIKE，默认不区分大小写）
 
 注意：
 - status 枚举值: IN_PROGRESS, COMPLETED, ABANDONED
@@ -71,12 +78,22 @@ export const queryDatabaseTool: McpTool = {
     const data = await res.json() as { data: any }
 
     // 导出模式：直接返回可用的 Markdown 链接，AI 原样输出即可
-    if (args.exportExcel) {
+    if (args.exportExcel && data.data?.downloadUrl) {
       const { downloadUrl, filename, message } = data.data
       const baseUrl = context.backendUrl.replace('/api', '')
       const adminPath = downloadUrl.replace('/api/internal/export/', '/api/admin/export/')
       const fullUrl = `${baseUrl}${adminPath}`
       return toolOk(`${message}\n\n[📥 点击下载 ${filename}](${fullUrl})`)
+    }
+
+    // 导出模式但后端返回空结果（无数据可导出）
+    if (args.exportExcel && !data.data?.downloadUrl) {
+      const rows = data.data?.rows
+      if (!rows || rows.length === 0) {
+        return toolOk('查询结果为空，没有数据可以导出。')
+      }
+      // 后端返回了数据但没走导出分支（不应该发生，降级为返回数据）
+      return toolOk(JSON.stringify(rows, null, 2))
     }
 
     // 普通查询返回数据

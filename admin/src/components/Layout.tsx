@@ -11,7 +11,8 @@ import {
   Shield,
   Gamepad2,
   Trophy,
-  Bot,
+  Sparkles,
+  Wrench,
 } from 'lucide-react'
 import './Layout.scss'
 
@@ -35,6 +36,7 @@ export default function Layout() {
   // 基础菜单项
   const baseNavItems: NavItem[] = [
     { path: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
+    { path: '/assistant', icon: Sparkles, label: '牛马小妹' },
   ]
 
   // 管理员专属菜单
@@ -50,7 +52,11 @@ export default function Layout() {
     { path: '/scenes', icon: Mic2, label: '场景管理' },
     { path: '/word-packs', icon: Gamepad2, label: '游戏管理' },
     { path: '/progress', icon: TrendingUp, label: '进步情况' },
-    { path: '/assistant', icon: Bot, label: 'AI 助手' },
+  ]
+
+  // 管理员底部菜单
+  const adminBottomItems: NavItem[] = [
+    { path: '/devtools', icon: Wrench, label: '开发调试', adminOnly: true },
   ]
 
   // 根据权限组合菜单
@@ -58,6 +64,7 @@ export default function Layout() {
     ...baseNavItems,
     ...(isAdmin ? adminOnlyItems : []),
     ...commonNavItems.filter(item => !item.adminOnly || isAdmin),
+    ...(isAdmin ? adminBottomItems : []),
   ]
 
   // 检查是否在班级相关页面（包括学生管理子页面）

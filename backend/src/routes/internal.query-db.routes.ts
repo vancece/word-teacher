@@ -204,6 +204,12 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     logger.info({ rowCount: serialized.length, exportExcel, explanation }, '[QueryDB] Success')
 
     // 导出 Excel 模式
+    if (exportExcel && serialized.length === 0) {
+      return res.json({
+        success: true,
+        data: { rows: [], rowCount: 0, truncated: false, message: '查询结果为空，没有数据可以导出' },
+      })
+    }
     if (exportExcel && serialized.length > 0) {
       const workbook = new ExcelJS.Workbook()
       workbook.creator = 'Echo Kid AI 助手'

@@ -439,6 +439,18 @@ jobs:
             fi
 
             # ============================================================
+            # 8.5 同步知识库到 LanceDB 向量数据库
+            # ============================================================
+            if [ "$BACKEND_READY" = "true" ]; then
+              echo "📚 同步知识库数据..."
+              if docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-knowledge.js 2>&1; then
+                echo "✅ 知识库同步完成"
+              else
+                echo "⚠️ 知识库同步失败，但不阻塞部署"
+              fi
+            fi
+
+            # ============================================================
             # 9. 确保 Nginx 启动（依赖 backend + minio 都就绪）
             # ============================================================
             if ! docker compose -f docker-compose.prod.yml ps --format json nginx 2>/dev/null | grep -q '"State":"running"'; then
