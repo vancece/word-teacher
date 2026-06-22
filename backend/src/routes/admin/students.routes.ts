@@ -65,7 +65,7 @@ router.get('/', asyncHandler(async (req: TeacherRequest, res) => {
           select: { practiceRecords: true, readAloudRecords: true },
         },
       },
-      orderBy: [{ seatNo: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ studentNo: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
     }),
