@@ -508,6 +508,36 @@ GitHub Actions 构建镜像 → 推送到腾讯云 TCR → 服务器内网拉取
 
 ## 📋 更新日志
 
+### 2026-06-23
+- 🚀 **CI/CD 全面升级**
+  - 蓝绿部署：新增 canary 容器验证机制，新镜像先冒烟测试再切换，失败自动回退保留旧容器
+  - 镜像分发迁移至腾讯云 TCR，服务器内网拉取秒级完成（去掉 Docker Hub 公网推送）
+  - 部署脚本新增分步耗时统计，每次部署自动打印各阶段耗时（初始化、SSL、拉镜像、蓝绿部署、DB 同步等）
+  - Docker pull 添加重试机制，应对国内网络波动
+  - 部署超时从 10 分钟调整到 20 分钟
+  - workflow/compose 文件变更时自动触发全量构建
+- 📊 **管理后台仪表盘增强**
+  - 新增 AI 服务连通性检查面板（DashScope、阿里云语音识别、讯飞语音评测、MinIO 一目了然）
+  - 新增服务器指标监控（CPU、内存、磁盘）
+  - 新增更新日志页面（自动从 Git 提交历史读取）
+  - 新增在线人数实时统计
+- 🎙️ **讯飞 ISE 账号池管理**
+  - 支持多账号轮转（`XFYUN_ISE_ACCOUNTS` 环境变量配置多组凭证）
+  - 仪表盘展示各账号实时状态和用量
+- 🛠️ **AI 助手工具增强**
+  - 新增 `modifyExcel` 工具：支持修改已导出的 Excel（改列名、删列、排序、筛选、合并 Sheet 等 10 种操作）
+  - 完整测试覆盖（18 个测试用例）
+- 📝 **日志系统优化**
+  - Backend/Agent 日志模块化分类
+  - Admin 后台新增日志查询页面
+- 🐛 **Bug 修复**
+  - 修复 Nginx rewrite break 导致 backend upstream 未初始化返回 500
+  - 修复 backend 容器缺少 AI 服务凭证导致健康检查面板全红
+  - 修复 canary 容器缺少硬编码环境变量（AGENT_URL、MINIO_ENDPOINT 等）
+  - 修复 Dockerfile.backend 缺少 openssl + /app/tmp 目录
+  - 修复 agent health 端点认证拦截问题
+  - 添加 husky pre-commit hook（tsc 类型检查）
+
 ### 2026-06-22
 - 🤖 **AI 智能助手**：管理后台新增 AI 助手功能
   - 自然语言查数据（AI 自动生成 SQL 查询）

@@ -2,13 +2,34 @@
 
 ## 🚀 自动部署 (GitHub Actions)
 
-**推送到 `main` 分支会自动触发部署！**
+**推送到 `master` 分支会自动触发部署！** 日常开发在 `main` 分支上进行。
 
 ```bash
-git add .
-git commit -m "feat: your changes"
+# 日常开发
 git push origin main
-# 自动触发: 构建 → 推送 Docker Hub → 部署到服务器
+
+# 发布部署
+git checkout master && git merge main --no-edit && git push origin master && git checkout main
+# 自动触发: 构建镜像 → 推送腾讯云 TCR → 服务器内网拉取 → 蓝绿部署
+```
+
+### 部署流程
+
+```
+GitHub Actions:
+  build-backend  → 构建 backend 镜像 → push 腾讯云 TCR
+  build-frontend → 构建 nginx 镜像   → push 腾讯云 TCR
+  build-agent    → 构建 agent 镜像   → push 腾讯云 TCR
+       ↓
+  deploy (SSH):
+    1. 生成 .env
+    2. SSL 证书处理
+    3. TCR 内网拉取镜像
+    4. 基础设施启动 (MySQL + MinIO)
+    5. 蓝绿部署 (canary 验证 → 切换)
+    6. Prisma db push
+    7. 知识库同步
+    8. 健康检查
 ```
 
 ### 配置 GitHub Secrets
@@ -17,9 +38,10 @@ git push origin main
 
 | Secret 名称 | 说明 |
 |------------|------|
-| `DOCKER_PASSWORD` | Docker Hub Token |
-| `SERVER_HOST` | 服务器 IP (你的服务器地址) |
-| `SERVER_SSH_KEY` | SSH 私钥内容（word-teacher.pem 的内容） |
+| `TCR_USERNAME` | 腾讯云 TCR 用户名 |
+| `TCR_PASSWORD` | 腾讯云 TCR 密码 |
+| `SERVER_HOST` | 服务器 IP |
+| `SERVER_SSH_KEY` | SSH 私钥内容 |
 
 ### 查看部署状态
 

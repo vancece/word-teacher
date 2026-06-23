@@ -6,6 +6,7 @@
 |------------|------|
 | [word-teacher-dev.md](./word-teacher-dev.md) | **项目开发 SOP**（快速命令、结构、工作流） |
 | [troubleshooting.md](./troubleshooting.md) | **问题排查 SOP**（日志定位、错误速查、决策树） |
+| [server-troubleshooting.md](./server-troubleshooting.md) | **服务器排查 SOP**（容器管理、流水线调试、蓝绿部署） |
 | [local-dev.md](./local-dev.md) | 本地开发详细指南 |
 | [deploy.md](./deploy.md) | 部署流程 |
 | [online-test.md](./online-test.md) | 线上测试 |
