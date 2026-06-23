@@ -1,9 +1,16 @@
 # Word Teacher Backend - Docker 镜像
 # 多阶段构建，减小最终镜像体积
+# 注意：使用 Debian slim 而非 Alpine，因为 LanceDB native 模块
+# 在 Alpine (musl) 上需要 AVX-512 指令集，而服务器 CPU 不支持
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# 安装构建依赖（python3/make/g++ 用于 native 模块编译）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # 安装 pnpm
 RUN npm install -g pnpm
@@ -26,12 +33,13 @@ RUN pnpm db:generate
 RUN pnpm build
 
 # ============ 生产镜像 ============
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# 安装 pnpm（用于运行 start 命令）
-RUN npm install -g pnpm
+# 安装运行时依赖（wget 用于健康检查）
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # 只复制必要的文件
 COPY --from=builder /app/dist ./dist
@@ -43,13 +51,13 @@ COPY --from=builder /app/package.json ./
 RUN mkdir -p /app/logs /app/data/lancedb
 
 # 创建非 root 用户，并赋予目录权限
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 backend
+RUN groupadd --system --gid 1001 nodejs
+RUN useradd --system --uid 1001 --gid nodejs backend
 RUN chown -R backend:nodejs /app/logs /app/data
 USER backend
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
 
 EXPOSE 3001

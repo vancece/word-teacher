@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, School, Bot, Activity, CheckCircle, AlertTriangle, XCircle, UserCheck } from 'lucide-react'
+import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, Activity, CheckCircle, AlertTriangle, XCircle, UserCheck, Wifi, Bell } from 'lucide-react'
 import { Card, Spin, Tag, Tooltip } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
-import { adminApi } from '../api'
+import { adminApi, dashboardApi } from '../api'
+import type { AiConnectivityResponse, ServerMetrics, RecentError, TrendDay } from '../api/admin'
 
 import './DashboardPage.scss'
 
@@ -17,6 +18,26 @@ export default function DashboardPage() {
   // 系统状态 30 秒自动刷新
   const { data: systemStatus, loading: statusLoading } = useRequest(
     () => adminApi.getSystemStatus(),
+    { pollingInterval: 30000 }
+  )
+
+  // 近 7 天趋势
+  const { data: trendsData } = useRequest(() => dashboardApi.getTrends())
+
+  // 服务器资源 — 10 秒自动轮询
+  const { data: serverMetrics } = useRequest(
+    () => dashboardApi.getServerMetrics(),
+    { pollingInterval: 10000 }
+  )
+
+  // 最近异常
+  const { data: errorsData } = useRequest(() => dashboardApi.getRecentErrors())
+
+
+
+  // AI 连通性 — 30 秒自动轮询（不消耗 token，只是健康检查）
+  const { data: aiTestResult, loading: aiTesting, run: handleAiTest } = useRequest(
+    () => dashboardApi.testAiConnectivity(),
     { pollingInterval: 30000 }
   )
 
@@ -69,6 +90,30 @@ export default function DashboardPage() {
       data: [{ value: Math.round(stats?.averageScore || 0) }],
     }],
   }), [stats])
+
+  // 趋势折线图配置
+  const trendChartOption = useMemo(() => {
+    const days = trendsData?.days || []
+    return {
+      tooltip: { trigger: 'axis' },
+      legend: { bottom: 0, data: ['跟读', '对话', '单词游戏'] },
+      grid: { left: 40, right: 20, top: 20, bottom: 40 },
+      xAxis: {
+        type: 'category',
+        data: days.map(d => {
+          const date = new Date(d.date)
+          return `${date.getMonth() + 1}/${date.getDate()}`
+        }),
+        axisLabel: { fontSize: 11 },
+      },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [
+        { name: '跟读', type: 'line', smooth: true, data: days.map(d => d.readAloud), itemStyle: { color: '#10b981' } },
+        { name: '对话', type: 'line', smooth: true, data: days.map(d => d.dialogue), itemStyle: { color: '#8b5cf6' } },
+        { name: '单词游戏', type: 'line', smooth: true, data: days.map(d => d.wordGame), itemStyle: { color: '#f59e0b' } },
+      ],
+    }
+  }, [trendsData])
 
   const statCards = [
     { icon: Users, label: '学生总数', value: stats?.totalStudents || 0, color: '#3b82f6' },
@@ -133,6 +178,19 @@ export default function DashboardPage() {
                     </Tooltip>
                   </>
                 )}
+                {aiTestResult?.services && (() => {
+                  const minio = aiTestResult.services.find(s => s.name.includes('MinIO'))
+                  if (!minio) return null
+                  const ok = minio.status === 'ok'
+                  return (
+                    <Tooltip title={ok ? '正常' : minio.message}>
+                      <span className="status-check" style={{ color: ok ? '#10b981' : '#ef4444' }}>
+                        <span className="status-dot" style={{ background: ok ? '#10b981' : '#ef4444' }} />
+                        MinIO
+                      </span>
+                    </Tooltip>
+                  )
+                })()}
                 <span className="status-divider" />
                 <span className="status-online">
                   <UserCheck size={14} />
@@ -163,11 +221,49 @@ export default function DashboardPage() {
         </div>
 
         <div className="dashboard-sections">
+          {/* 近 7 天趋势 */}
+          <Card className="section-card section-card-wide">
+            <h3><TrendingUp size={18} style={{ marginRight: 8 }} />近 7 天学习趋势</h3>
+            {trendsData?.days?.length ? (
+              <ReactECharts option={trendChartOption} style={{ height: 220 }} />
+            ) : (
+              <div className="empty-hint">暂无数据</div>
+            )}
+          </Card>
+
+          {/* AI 连通性测试 */}
+          <Card className="section-card">
+            <h3><Wifi size={18} style={{ marginRight: 8 }} />AI 服务连通性</h3>
+            {aiTestResult?.services ? (
+              <div className="ai-services-list">
+                {aiTestResult.services.map((svc, i) => (
+                  <div key={i} className="ai-service-item">
+                    <span className="ai-service-dot" style={{ background: svc.status === 'ok' ? '#10b981' : '#ef4444' }} />
+                    <span className="ai-service-name">{svc.name}</span>
+                    <span className="ai-service-status">
+                      {svc.status === 'ok' ? (
+                        <Tag color="success">{svc.latency}ms</Tag>
+                      ) : (
+                        <Tooltip title={svc.message}>
+                          <Tag color="error">异常</Tag>
+                        </Tooltip>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-hint">检测中...</div>
+            )}
+          </Card>
+
+          {/* 练习分布 */}
           <Card className="section-card">
             <h3>练习分布</h3>
             <ReactECharts option={pieChartOption} style={{ height: 220 }} />
           </Card>
 
+          {/* 平均成绩 */}
           <Card className="section-card">
             <h3>平均成绩</h3>
             <ReactECharts option={gaugeOption} style={{ height: 180 }} />
@@ -183,31 +279,75 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="section-card quick-actions-card">
-            <h3>快速操作</h3>
-            <div className="quick-actions">
-              <div className="action-btn" onClick={() => navigate('/classes')}>
-                <School size={20} />
-                <span>班级管理</span>
+          {/* 最近异常 */}
+          <Card className="section-card">
+            <h3><Bell size={18} style={{ marginRight: 8 }} />最近异常</h3>
+            {errorsData?.errors?.length ? (
+              <div className="errors-list">
+                {errorsData.errors.slice(0, 8).map((err, i) => (
+                  <div key={i} className="error-item">
+                    <Tag color={err.level === 'fatal' ? 'red' : 'orange'} className="error-tag">
+                      {err.level}
+                    </Tag>
+                    <span className="error-module">[{err.module}]</span>
+                    <span className="error-message">{err.message}</span>
+                    <span className="error-time">{formatErrorTime(err.time)}</span>
+                  </div>
+                ))}
+                {errorsData.total > 8 && (
+                  <div className="errors-more" onClick={() => navigate('/logs')}>
+                    查看全部 {errorsData.total} 条 →
+                  </div>
+                )}
               </div>
-              <div className="action-btn" onClick={() => navigate('/read-aloud-records')}>
-                <Mic2 size={20} />
-                <span>跟读记录</span>
+            ) : (
+              <div className="empty-hint success-hint">
+                <CheckCircle size={16} />
+                暂无异常，系统运行正常
               </div>
-              <div className="action-btn" onClick={() => navigate('/scenes')}>
-                <MessageSquare size={20} />
-                <span>场景管理</span>
-              </div>
-              <div className="action-btn" onClick={() => navigate('/progress')}>
-                <TrendingUp size={20} />
-                <span>进步情况</span>
-              </div>
-              <div className="action-btn ai-btn" onClick={() => navigate('/assistant')}>
-                <Bot size={20} />
-                <span>AI 助手</span>
-              </div>
-            </div>
+            )}
           </Card>
+
+          {/* 服务器资源 */}
+          <Card className="section-card">
+            <h3><Activity size={18} style={{ marginRight: 8 }} />服务器资源</h3>
+            {serverMetrics ? (
+              <div className="server-metrics">
+                <div className="metric-item">
+                  <div className="metric-header">
+                    <span className="metric-label">CPU</span>
+                    <span className="metric-value">{serverMetrics.cpu.usage.toFixed(1)}%</span>
+                  </div>
+                  <div className="metric-bar">
+                    <div className="metric-bar-fill" style={{ width: `${serverMetrics.cpu.usage}%`, background: serverMetrics.cpu.usage > 80 ? '#ef4444' : '#10b981' }} />
+                  </div>
+                  <span className="metric-detail">{serverMetrics.cpu.cores} 核</span>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-header">
+                    <span className="metric-label">内存</span>
+                    <span className="metric-value">{serverMetrics.memory.usedPercent.toFixed(1)}%</span>
+                  </div>
+                  <div className="metric-bar">
+                    <div className="metric-bar-fill" style={{ width: `${serverMetrics.memory.usedPercent}%`, background: serverMetrics.memory.usedPercent > 80 ? '#ef4444' : '#3b82f6' }} />
+                  </div>
+                  <span className="metric-detail">{serverMetrics.memory.used} / {serverMetrics.memory.total}</span>
+                </div>
+                <div className="metric-item">
+                  <div className="metric-header">
+                    <span className="metric-label">网络</span>
+                  </div>
+                  <div className="metric-network">
+                    <span>↑ {serverMetrics.network.txRate}</span>
+                    <span>↓ {serverMetrics.network.rxRate}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="empty-hint">加载中...</div>
+            )}
+          </Card>
+
         </div>
       </div>
     </Spin>
@@ -223,3 +363,12 @@ function formatUptime(seconds: number): string {
   return `${minutes}分钟`
 }
 
+function formatErrorTime(time: string): string {
+  if (!time) return ''
+  try {
+    const d = new Date(time)
+    return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
+  } catch {
+    return time
+  }
+}

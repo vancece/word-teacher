@@ -14,6 +14,7 @@ import {
   Sparkles,
   Wrench,
   ScrollText,
+  GitCommit,
 } from 'lucide-react'
 import './Layout.scss'
 
@@ -61,12 +62,18 @@ export default function Layout() {
     { path: '/devtools', icon: Wrench, label: '开发调试', adminOnly: true },
   ]
 
+  // 所有用户可见的底部菜单
+  const bottomItems: NavItem[] = [
+    { path: '/changelog', icon: GitCommit, label: '更新日志' },
+  ]
+
   // 根据权限组合菜单
   const navItems: NavItem[] = [
     ...baseNavItems,
     ...(isAdmin ? adminOnlyItems : []),
     ...commonNavItems.filter(item => !item.adminOnly || isAdmin),
     ...(isAdmin ? adminBottomItems : []),
+    ...bottomItems,
   ]
 
   // 检查是否在班级相关页面（包括学生管理子页面）

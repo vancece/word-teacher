@@ -647,5 +647,70 @@ export const learningRecordsApi = {
   },
 }
 
+// 仪表盘增强 API
+export interface AiServiceResult {
+  name: string
+  status: 'ok' | 'error'
+  latency: number
+  message?: string
+}
+
+export interface AiConnectivityResponse {
+  summary: 'healthy' | 'degraded' | 'unhealthy'
+  services: AiServiceResult[]
+  timestamp: string
+}
+
+export interface TrendDay {
+  date: string
+  readAloud: number
+  dialogue: number
+  wordGame: number
+}
+
+export interface ServerMetrics {
+  cpu: { usage: number; cores: number }
+  memory: { total: string; used: string; usedPercent: number }
+  network: { rxRate: string; txRate: string }
+}
+
+export interface GitCommit {
+  hash: string
+  shortHash: string
+  message: string
+  author: string
+  date: string
+  refs: string
+}
+
+export interface RecentError {
+  time: string
+  level: string
+  module: string
+  message: string
+}
+
+export const dashboardApi = {
+  testAiConnectivity: async (): Promise<AiConnectivityResponse> => {
+    return apiClient.post('/admin/dashboard/ai-connectivity') as unknown as AiConnectivityResponse
+  },
+
+  getTrends: async (): Promise<{ days: TrendDay[] }> => {
+    return apiClient.get('/admin/dashboard/trends') as unknown as { days: TrendDay[] }
+  },
+
+  getServerMetrics: async (): Promise<ServerMetrics> => {
+    return apiClient.get('/admin/dashboard/server-metrics') as unknown as ServerMetrics
+  },
+
+  getRecentErrors: async (): Promise<{ errors: RecentError[]; total: number }> => {
+    return apiClient.get('/admin/dashboard/recent-errors') as unknown as { errors: RecentError[]; total: number }
+  },
+
+  getChangelog: async (page = 1, limit = 30): Promise<{ commits: GitCommit[]; total: number; page: number; limit: number }> => {
+    return apiClient.get(`/admin/dashboard/changelog?page=${page}&limit=${limit}`) as unknown as { commits: GitCommit[]; total: number; page: number; limit: number }
+  },
+}
+
 
 

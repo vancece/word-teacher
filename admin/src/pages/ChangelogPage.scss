@@ -1,0 +1,127 @@
+.changelog-page {
+  .page-header {
+    margin-bottom: 24px;
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 8px;
+    }
+
+    p {
+      color: #64748b;
+      font-size: 14px;
+      margin: 0;
+    }
+  }
+
+  .changelog-card {
+    border-radius: 12px;
+  }
+
+  .changelog-day {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .day-header {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 12px;
+  }
+
+  .day-commits {
+    padding-left: 12px;
+    border-left: 2px solid #e2e8f0;
+  }
+
+  .commit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    position: relative;
+
+    .commit-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #3b82f6;
+      flex-shrink: 0;
+      margin-top: 6px;
+      margin-left: -16px;
+    }
+
+    .commit-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .commit-message-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .commit-type-tag {
+      font-size: 11px;
+      line-height: 18px;
+      padding: 0 6px;
+      border-radius: 4px;
+      margin: 0;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .commit-message {
+      font-size: 14px;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .commit-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .commit-hash {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      margin: 0;
+      background: #f1f5f9;
+      border: none;
+      color: #64748b;
+    }
+
+    .commit-author {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .commit-time {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .commit-ref {
+      font-size: 11px;
+      margin: 0;
+    }
+  }
+
+  .changelog-pagination {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+  }
+}
