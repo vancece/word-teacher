@@ -153,10 +153,30 @@ export default function LogsPage() {
     fetchQuery()
   }
 
-  const handleDownload = (filename: string) => {
-    const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : ''
-    const token = localStorage.getItem('admin_token')
-    window.open(`${baseUrl}/api/admin/logs/download/${filename}?token=${token}`, '_blank')
+  const handleDownload = async (filename: string) => {
+    try {
+      const baseUrl = import.meta.env.DEV ? 'http://localhost:3001' : ''
+      const token = localStorage.getItem('admin_token')
+      const res = await fetch(`${baseUrl}/api/admin/logs/download/${filename}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: '下载失败' }))
+        Modal.error({ title: '下载失败', content: err.message })
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      Modal.error({ title: '下载失败', content: '网络错误，请稍后重试' })
+    }
   }
 
   // 日志表格列
