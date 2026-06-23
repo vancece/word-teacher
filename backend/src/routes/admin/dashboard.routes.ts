@@ -318,15 +318,40 @@ router.get('/server-metrics', asyncHandler(async (_req: TeacherRequest, res) => 
 /**
  * GET /api/admin/dashboard/changelog
  * 从 git 提交历史获取版本更新日志
+ * 优先从构建时导出的文件读取（Docker 部署），fallback 到 git 命令（本地开发）
  */
 router.get('/changelog', asyncHandler(async (req: TeacherRequest, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 30, 100)
   const page = parseInt(req.query.page as string) || 1
 
+  const parseLogLines = (raw: string) => {
+    if (!raw.trim()) return []
+    return raw.trim().split('\n').map(line => {
+      const [hash, shortHash, message, author, date, refs] = line.split('||')
+      return { hash, shortHash, message, author, date, refs: refs || '' }
+    })
+  }
+
+  // 方式 1: 从构建时导出的文件读取（Docker 环境）
+  const logFile = path.join(process.cwd(), 'data', 'git-log.txt')
+  const countFile = path.join(process.cwd(), 'data', 'git-count.txt')
+  if (fs.existsSync(logFile)) {
+    try {
+      const allCommits = parseLogLines(fs.readFileSync(logFile, 'utf-8'))
+      const totalFromFile = fs.existsSync(countFile)
+        ? parseInt(fs.readFileSync(countFile, 'utf-8').trim()) || allCommits.length
+        : allCommits.length
+      const offset = (page - 1) * limit
+      const commits = allCommits.slice(offset, offset + limit)
+      return success(res, { commits, total: totalFromFile, page, limit })
+    } catch {
+      // 文件读取失败，fall through 到 git 命令
+    }
+  }
+
+  // 方式 2: 直接执行 git 命令（本地开发环境）
   try {
-    // 找到 git 仓库根目录
     const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8', timeout: 5000 }).trim()
-    // 获取 git log
     const offset = (page - 1) * limit
     const format = '%H||%h||%s||%an||%ai||%D'
     const raw = execSync(
@@ -334,16 +359,7 @@ router.get('/changelog', asyncHandler(async (req: TeacherRequest, res) => {
       { encoding: 'utf-8', cwd: gitRoot, timeout: 10000 }
     ).trim()
 
-    if (!raw) {
-      return success(res, { commits: [], total: 0, page, limit })
-    }
-
-    const commits = raw.split('\n').map(line => {
-      const [hash, shortHash, message, author, date, refs] = line.split('||')
-      return { hash, shortHash, message, author, date, refs: refs || '' }
-    })
-
-    // 获取总提交数
+    const commits = parseLogLines(raw)
     const totalStr = execSync('git rev-list --count HEAD', { encoding: 'utf-8', cwd: gitRoot, timeout: 5000 }).trim()
     const total = parseInt(totalStr) || 0
 

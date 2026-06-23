@@ -63,6 +63,13 @@ services:
       # AI/Embedding 配置
       AI_API_KEY: ${DASHSCOPE_API_KEY}
       AI_API_URL: ${AI_API_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      # AI 服务连通性检查需要的凭证（健康检查面板用）
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY}
+      ALIYUN_AK_ID: ${ALIYUN_AK_ID:-}
+      ALIYUN_AK_SECRET: ${ALIYUN_AK_SECRET:-}
+      XFYUN_APP_ID: ${XFYUN_APP_ID:-}
+      XFYUN_API_KEY: ${XFYUN_API_KEY:-}
+      XFYUN_API_SECRET: ${XFYUN_API_SECRET:-}
       # 钉钉通知（可选）
       DINGTALK_ACCESS_TOKEN: ${DINGTALK_ACCESS_TOKEN:-}
       DINGTALK_SECRET: ${DINGTALK_SECRET:-}

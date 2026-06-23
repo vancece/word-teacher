@@ -45,6 +45,7 @@ function buildSystemPrompt(): string {
 - "游戏记录"= 单词游戏(game)，存在独立的 word_game_records 表
 - 老师说"学习记录"时只查 dialogue 和 readAloud，说"游戏记录/游戏成绩"时才查 game
 - 班级命名规则：如"3年级1班"，可通过 classes 表的 name 字段模糊匹配，不需要用户提供 classId
+- "参与学习"/"参与了学习"= 只要有记录就算参与，不论状态（IN_PROGRESS、COMPLETED 都算）。除非老师明确说"完成了学习"/"已完成"才加 status='COMPLETED' 过滤
 
 回答风格：
 1. 犀利直接，不绕弯子。问什么答什么，一针见血，别整那些客套废话
