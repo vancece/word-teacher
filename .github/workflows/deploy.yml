@@ -387,24 +387,86 @@ jobs:
             fi
 
             # ============================================================
-            # 7. 部署业务服务
+            # 7. 蓝绿部署 — canary 验证后再切换
             # ============================================================
+            DOCKER_NETWORK="word-teacher_word-teacher-network"
+            DEPLOY_FAILED=""
+
+            # 清理上次可能残留的 canary 容器
+            docker rm -f word-teacher-backend-canary word-teacher-agent-canary word-teacher-nginx-canary 2>/dev/null || true
+
+            # --- 蓝绿部署函数 ---
+            deploy_with_canary() {
+              local SERVICE="$1"
+              local HEALTH_CMD="$2"
+              local IMAGE="$3"
+              local ENV_ARGS="$4"
+              local CANARY_NAME="word-teacher-${SERVICE}-canary"
+
+              echo "🔵 [${SERVICE}] 启动 canary 容器验证新镜像..."
+
+              # 启动 canary（连入同一网络，不映射外部端口）
+              docker run -d --name "$CANARY_NAME" \
+                --network "$DOCKER_NETWORK" \
+                --env-file .env \
+                $ENV_ARGS \
+                "$IMAGE" >/dev/null 2>&1
+
+              # 健康检查（最多等 40 秒）
+              local HEALTHY=false
+              for i in $(seq 1 20); do
+                if docker exec "$CANARY_NAME" $HEALTH_CMD 2>/dev/null; then
+                  HEALTHY=true
+                  echo "✅ [${SERVICE}] canary 健康检查通过 (${i}x2s)"
+                  break
+                fi
+                sleep 2
+              done
+
+              # 打印 canary 日志用于诊断
+              if [ "$HEALTHY" = "false" ]; then
+                echo "❌ [${SERVICE}] canary 健康检查失败！保留旧容器，跳过部署"
+                echo "--- canary 日志 ---"
+                docker logs "$CANARY_NAME" --tail 30 2>&1 || true
+                echo "--- end ---"
+              fi
+
+              # 清理 canary 容器
+              docker rm -f "$CANARY_NAME" >/dev/null 2>&1
+
+              if [ "$HEALTHY" = "true" ]; then
+                echo "🟢 [${SERVICE}] 切换到新版本..."
+                docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate "$SERVICE"
+                echo "✅ [${SERVICE}] 部署完成"
+                return 0
+              else
+                DEPLOY_FAILED="${DEPLOY_FAILED} ${SERVICE}"
+                return 1
+              fi
+            }
+
+            # --- Backend 蓝绿部署 ---
             if [ "$BUILD_BACKEND" = "success" ]; then
-              echo "📦 更新 Backend 服务..."
-              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate backend
-              echo "✅ Backend 更新完成"
+              deploy_with_canary "backend" \
+                "wget -q --spider http://localhost:3001/api/health" \
+                "${IMAGE_PREFIX}-backend:latest" \
+                "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:\$(grep MYSQL_PASSWORD .env | cut -d= -f2)@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb"
             fi
 
+            # --- Agent 蓝绿部署 ---
             if [ "$BUILD_AGENT" = "success" ]; then
-              echo "🤖 更新 Agent 服务..."
-              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate agent
-              echo "✅ Agent 更新完成"
+              deploy_with_canary "agent" \
+                "wget -q --spider http://localhost:3002/api/agent/health" \
+                "${IMAGE_PREFIX}-agent:latest" \
+                "-e NODE_ENV=production -e PORT=3002"
             fi
 
+            # --- Nginx 蓝绿部署 ---
             if [ "$BUILD_FRONTEND" = "success" ]; then
-              echo "🌐 更新 Nginx 服务..."
-              docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
-              echo "✅ Nginx 更新完成"
+              deploy_with_canary "nginx" \
+                "wget -q --spider http://localhost:8080/health" \
+                "${IMAGE_PREFIX}-nginx:latest" \
+                ""
             fi
 
             # 如果没有任何服务单独构建（仅配置变化或全新部署），拉起全部服务
@@ -427,8 +489,6 @@ jobs:
               sleep 2
             done
             if [ "$BACKEND_READY" = "true" ]; then
-              # 注意：不使用 --accept-data-loss，这样如果 schema 变更会删列/改类型，命令会失败而不是静默丢数据
-              # 只会创建新表、新增列，不会删除已有的表/列
               if docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --skip-generate 2>&1; then
                 echo "✅ 数据库结构同步完成"
               else
@@ -460,13 +520,13 @@ jobs:
             fi
 
             # ============================================================
-            # 10. 清理旧镜像
+            # 10. 清理旧镜像（保留最近 7 天，不再全量 prune）
             # ============================================================
-            echo "🧹 清理旧镜像..."
-            docker image prune -f
+            echo "🧹 清理悬空镜像..."
+            docker image prune -f --filter "until=168h"
 
             # ============================================================
-            # 11. 最终健康检查
+            # 11. 最终状态检查
             # ============================================================
             echo "🏥 最终健康检查..."
             sleep 8
@@ -481,6 +541,14 @@ jobs:
                 docker compose -f docker-compose.prod.yml logs $svc --tail 5
               fi
             done
+
+            # canary 验证失败的服务（旧容器仍在运行，但新版本未部署）
+            if [ -n "$DEPLOY_FAILED" ]; then
+              echo ""
+              echo "⚠️ 以下服务 canary 验证失败，已保留旧版本运行:${DEPLOY_FAILED}"
+              echo "⚠️ 请检查新镜像问题后重新触发部署"
+              exit 1
+            fi
 
             if [ -n "$FAILED" ]; then
               echo "❌ 以下服务未正常运行:$FAILED"
@@ -516,8 +584,8 @@ jobs:
             TEXT="**部署成功** 🎉\n\n- 提交: ${GITHUB_SHA:0:7} ${COMMIT_SUMMARY}\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')"
           else
             echo "❌ 部署失败!"
-            TITLE="❌ Word Teacher 部署失败"
-            TEXT="**部署失败** ⚠️\n\n- 提交: ${GITHUB_SHA:0:7} ${COMMIT_SUMMARY}\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 触发: ${{ github.event_name }}\n- 分支: ${{ github.ref_name }}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')\n- [查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            TITLE="❌ Word Teacher 部署失败（旧版本仍在运行）"
+            TEXT="**部署失败（已自动保护）** ⚠️\n\n- 提交: ${GITHUB_SHA:0:7} ${COMMIT_SUMMARY}\n- 镜像版本: ${DEPLOY_TAG:-latest}\n- 当前状态: 🟢 旧版本仍在正常运行，线上无影响\n- 失败原因: 新镜像 canary 健康检查未通过\n- 触发: ${{ github.event_name }}\n- 时间: $(date '+%Y-%m-%d %H:%M:%S')\n- [查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
 
           # 发送钉钉通知（如果配置了）
