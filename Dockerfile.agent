@@ -10,10 +10,10 @@ RUN npm install -g pnpm
 
 # 先复制依赖文件（利用 Docker 层缓存，依赖不变就不重装）
 COPY agent/package.json ./
-COPY agent/pnpm-lock.yaml ./
+COPY pnpm-lock.yaml ./
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile
+# 安装依赖（monorepo 共用根目录 lockfile，用 --no-frozen-lockfile 兼容子包单独安装）
+RUN pnpm install --no-frozen-lockfile
 
 # 再复制源码（源码变了只重新 build，不重装依赖）
 COPY agent/src ./src/
