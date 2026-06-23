@@ -3,6 +3,7 @@
  * 输出 WAV 格式以兼容 Qwen-Omni
  */
 import { useState, useRef, useCallback } from 'react'
+import { clientLogger } from '../utils/client-logger'
 
 export interface UseAudioRecorderReturn {
   isRecording: boolean
@@ -73,8 +74,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         setRecordingTime(prev => prev + 1)
       }, 1000)
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to start recording:', err)
+      clientLogger.error('mic_access_failed', {
+        errorName: err?.name,
+        errorMessage: err?.message,
+      })
       setError('无法访问麦克风，请检查权限设置')
       throw err
     }

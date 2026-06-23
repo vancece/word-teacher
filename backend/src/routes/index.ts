@@ -16,6 +16,7 @@ import wordPacksRoutes from './word-packs.routes.js'
 import wordGameRoutes from './word-game.routes.js'
 import dingtalkBotRoutes from './dingtalk-bot.routes.js'
 import internalRoutes from './internal.routes.js'
+import clientLogsRoutes from './client-logs.routes.js'
 import { authenticateStudent } from '../middleware/auth.js'
 import { recordHeartbeat, getActiveStudentCount } from '../services/presence.service.js'
 import { getHealthStatus } from '../services/health-monitor.service.js'
@@ -122,6 +123,7 @@ router.use('/word-packs', wordPacksRoutes)
 router.use('/word-game', wordGameRoutes)
 router.use('/admin', adminRoutes)
 router.use('/internal', internalRoutes)  // Agent 回调专用，API Key 认证
+router.use('/client-logs', clientLogsRoutes)  // 前端日志收集（无需认证，日志中记录 studentId）
 router.use('/dingtalk-bot', dingtalkBotRoutes)
 
 export default router

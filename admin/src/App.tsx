@@ -16,6 +16,7 @@ import AssistantPage from './pages/AssistantPage'
 import DevToolsPage from './pages/DevToolsPage'
 import LogsPage from './pages/LogsPage'
 import ChangelogPage from './pages/ChangelogPage'
+import IseAccountsPage from './pages/IseAccountsPage'
 
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
             <Route path="progress" element={<ProgressPage />} />
             <Route path="assistant" element={<AssistantPage />} />
             <Route path="devtools" element={<DevToolsPage />} />
+            <Route path="ise-accounts" element={<IseAccountsPage />} />
             <Route path="logs" element={<LogsPage />} />
             <Route path="changelog" element={<ChangelogPage />} />
           </Route>

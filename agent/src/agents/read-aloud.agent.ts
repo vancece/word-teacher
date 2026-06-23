@@ -31,6 +31,165 @@ export interface ReadAloudResult {
 
 export class ReadAloudAgent {
   /**
+   * 批量评测 — 篇章拼接模式（多句合并为一次 ISE 调用）
+   * @param sentences 每句的 { text, audioBase64 }
+   * @returns 每句的独立评测结果
+   */
+  async evaluateBatch(
+    sentences: Array<{ text: string; audioBase64: string }>
+  ): Promise<ReadAloudResult[]> {
+    log.info({ count: sentences.length }, 'Batch evaluate start')
+
+    if (!xfyunIseService.isConfigured()) {
+      log.error('❌ 讯飞 ISE 未配置')
+      return sentences.map(s => this.makeEmptyResult(s.text, '评测服务未配置，请联系管理员！'))
+    }
+
+    // 提取每句的 PCM buffer，逐句诊断
+    const pcmBuffers: Buffer[] = []
+    const validIndices: number[] = []
+    const silentIndices: number[] = []
+    const results: ReadAloudResult[] = new Array(sentences.length)
+
+    for (let i = 0; i < sentences.length; i++) {
+      const { text, audioBase64 } = sentences[i]
+      const pcm = this.extractPCM(audioBase64)
+      const durationSec = pcm.length / (16000 * 2)
+      const maxAmp = this.getMaxAmplitude(pcm)
+
+      log.info({
+        index: i,
+        text: text.slice(0, 40),
+        pcmBytes: pcm.length,
+        durationSec: durationSec.toFixed(2),
+        maxAmplitude: maxAmp,
+      }, 'Batch: audio diagnosis per sentence')
+
+      // 静音检测 - RMS 过低的标记为未作答
+      if (this.isSilent(pcm)) {
+        log.warn({ index: i, text, maxAmplitude: maxAmp, durationSec: durationSec.toFixed(2) }, 'Batch: silent audio detected, marking as unanswered')
+        results[i] = this.makeEmptyResult(text, '没有检测到语音，请确认麦克风正常并大声朗读哦！🎤')
+        silentIndices.push(i)
+      } else {
+        pcmBuffers.push(pcm)
+        validIndices.push(i)
+      }
+    }
+
+    // 汇总诊断
+    log.info({
+      total: sentences.length,
+      valid: validIndices.length,
+      silent: silentIndices.length,
+      silentIndices,
+      validIndices,
+    }, 'Batch: pre-evaluation summary')
+
+    if (pcmBuffers.length === 0) {
+      log.warn('Batch: all audio is silent, no sentences to evaluate')
+      return results
+    }
+
+    // 调用篇章评测
+    const validTexts = validIndices.map(i => sentences[i].text)
+
+    try {
+      const iseResults = await xfyunIseService.evaluateChapter(validTexts, pcmBuffers)
+
+      // 检查返回的句子数是否匹配
+      if (iseResults.length !== validIndices.length) {
+        log.warn({
+          expected: validIndices.length,
+          got: iseResults.length,
+        }, 'Batch: ISE returned sentence count mismatch')
+      }
+
+      for (let j = 0; j < validIndices.length; j++) {
+        const originalIndex = validIndices[j]
+        const iseResult = iseResults[j]
+
+        if (iseResult.success && iseResult.data) {
+          const d = iseResult.data
+          log.info({
+            index: originalIndex,
+            text: sentences[originalIndex].text.slice(0, 30),
+            accuracy: d.accuracy,
+            fluency: d.fluency,
+            completeness: d.completeness,
+            suggestedScore: d.suggestedScore,
+            wordCount: d.words.length,
+            missingWords: d.words.filter(w => w.matchTag === 'missing').map(w => w.word),
+          }, 'Batch: sentence result')
+          results[originalIndex] = this.formatISEResult(sentences[originalIndex].text, iseResult)
+        } else {
+          log.warn({ index: originalIndex, error: iseResult.error }, 'Batch: sentence evaluate failed, falling back to per-sentence')
+          const fallback = await this.evaluateAudio(sentences[originalIndex].text, sentences[originalIndex].audioBase64)
+          results[originalIndex] = fallback
+        }
+      }
+
+      // 最终汇总
+      log.info({
+        results: results.map((r, i) => ({
+          index: i,
+          accuracy: r?.accuracy ?? null,
+          completeness: r?.completeness ?? null,
+          missingWords: r?.words?.filter(w => w.matchTag === 'missing').length ?? 0,
+        })),
+      }, 'Batch: final results summary')
+    } catch (err) {
+      log.error({ err }, 'Batch: chapter evaluate failed entirely, falling back to per-sentence for all')
+      for (const i of validIndices) {
+        log.info({ index: i, text: sentences[i].text.slice(0, 30) }, 'Batch: fallback evaluating sentence individually')
+        results[i] = await this.evaluateAudio(sentences[i].text, sentences[i].audioBase64)
+      }
+    }
+
+    return results
+  }
+
+  private extractPCM(audioBase64: string): Buffer {
+    let cleanBase64 = audioBase64
+    if (cleanBase64.includes(',')) {
+      cleanBase64 = cleanBase64.split(',')[1]
+    }
+    cleanBase64 = cleanBase64.replace(/^data:audio\/\w+;base64,/, '')
+    const buf = Buffer.from(cleanBase64, 'base64')
+    // WAV: strip 44-byte header
+    if (buf.length > 44 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46) {
+      return buf.slice(44)
+    }
+    return buf
+  }
+
+  private getMaxAmplitude(pcm: Buffer): number {
+    let max = 0
+    for (let i = 0; i < pcm.length - 1; i += 2) {
+      const sample = Math.abs(pcm.readInt16LE(i))
+      if (sample > max) max = sample
+    }
+    return max
+  }
+
+  private isSilent(pcm: Buffer): boolean {
+    if (pcm.length < 3200) return true // < 100ms
+    return this.getMaxAmplitude(pcm) < 100 // 非常安静
+  }
+
+  private makeEmptyResult(text: string, feedback: string): ReadAloudResult {
+    const words = text.split(/\s+/).filter(w => w.length > 0)
+    return {
+      words: words.map(w => ({ text: w, status: 'missing' as const, accuracy: 0, matchTag: 'missing' as const })),
+      accuracy: 0,
+      feedback,
+      fluency: 0,
+      completeness: 0,
+      suggestedScore: 0,
+      evaluationMethod: 'ise',
+    }
+  }
+
+  /**
    * 评估音频 - 使用科大讯飞 ISE
    */
   async evaluateAudio(originalSentence: string, audioBase64: string): Promise<ReadAloudResult> {

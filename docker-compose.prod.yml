@@ -99,6 +99,7 @@ services:
       XFYUN_APP_ID: ${XFYUN_APP_ID:-}
       XFYUN_API_KEY: ${XFYUN_API_KEY:-}
       XFYUN_API_SECRET: ${XFYUN_API_SECRET:-}
+      XFYUN_ISE_ACCOUNTS: ${XFYUN_ISE_ACCOUNTS:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3002/api/agent/health"]
       interval: 30s
