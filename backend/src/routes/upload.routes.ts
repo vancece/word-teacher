@@ -3,7 +3,7 @@ import multer from 'multer'
 import { authenticate } from '../middleware/auth.js'
 import { uploadFile, uploadBase64Image, isMinioAvailable } from '../services/minio.service.js'
 import { success, error } from '../utils/response.js'
-import { logger } from '../utils/logger.js'
+import { uploadLogger as logger } from '../utils/logger.js'
 
 const router = Router()
 
@@ -41,7 +41,7 @@ router.post('/image', authenticate, upload.single('image'), async (req: Request,
 
     return success(res, { url })
   } catch (err) {
-    logger.error({ error: err }, '[Upload] Failed to upload image')
+    logger.error({ error: err }, 'Failed to upload image')
     return error(res, '图片上传失败', 500)
   }
 })
@@ -62,7 +62,7 @@ router.post('/base64', authenticate, async (req: Request, res: Response) => {
 
     return success(res, { url })
   } catch (err) {
-    logger.error({ error: err }, '[Upload] Failed to upload base64 image')
+    logger.error({ error: err }, 'Failed to upload base64 image')
     return error(res, '图片上传失败', 500)
   }
 })

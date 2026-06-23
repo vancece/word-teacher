@@ -6,7 +6,7 @@
  */
 import { prisma } from '../config/database.js'
 import { env } from '../config/env.js'
-import { logger } from '../utils/logger.js'
+import { healthLogger as logger } from '../utils/logger.js'
 import crypto from 'crypto'
 
 const ACCESS_TOKEN = process.env.DINGTALK_ACCESS_TOKEN || ''
@@ -90,7 +90,7 @@ async function sendDingtalkAlert(title: string, text: string) {
       }),
     })
   } catch (err) {
-    logger.error({ err }, '[HealthMonitor] Failed to send DingTalk alert')
+    logger.error({ err }, 'Failed to send DingTalk alert')
   }
 }
 
@@ -110,13 +110,13 @@ async function runHealthCheck() {
           '⚠️ 系统告警',
           `### ⚠️ Echo Kid 系统异常\n\n**状态**: ${result.status}\n**时间**: ${new Date().toLocaleString('zh-CN')}\n\n**异常组件**:\n${failedChecks}`,
         )
-        logger.warn({ checks: result.checks }, '[HealthMonitor] System status changed to: ' + result.status)
+        logger.warn({ checks: result.checks }, 'System status changed to: ' + result.status)
       } else if (lastStatus !== 'healthy' && result.status === 'healthy') {
         await sendDingtalkAlert(
           '✅ 系统恢复',
           `### ✅ Echo Kid 系统已恢复\n\n**状态**: healthy\n**时间**: ${new Date().toLocaleString('zh-CN')}\n**运行时长**: ${Math.floor(result.uptime / 60)} 分钟`,
         )
-        logger.info('[HealthMonitor] System recovered to healthy')
+        logger.info('System recovered to healthy')
       }
 
       lastStatus = result.status
@@ -125,7 +125,7 @@ async function runHealthCheck() {
     // 缓存最新状态
     currentHealthStatus = result
   } catch (err) {
-    logger.error({ err }, '[HealthMonitor] Health check failed')
+    logger.error({ err }, 'Health check failed')
   }
 }
 

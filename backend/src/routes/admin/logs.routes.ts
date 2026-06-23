@@ -227,7 +227,7 @@ router.get('/stats', asyncHandler(async (req: TeacherRequest, res) => {
  * 下载日志文件
  */
 router.get('/download/:filename', asyncHandler(async (req: TeacherRequest, res) => {
-  const { filename } = req.params
+  const filename = req.params.filename as string
   // 安全检查：防止路径穿越
   if (filename.includes('..') || filename.includes('/')) {
     return res.status(400).json({ success: false, message: '无效的文件名' })
@@ -272,11 +272,23 @@ const LEVEL_NAME_MAP: Record<number, string> = {
 function parseLine(line: string): LogEntry | null {
   try {
     const obj = JSON.parse(line)
+    let module = obj.module || undefined
+    let msg = obj.msg || ''
+
+    // 兼容老日志：从消息前缀 [xxx] 中提取 module
+    if (!module && msg) {
+      const prefixMatch = msg.match(/^\[([^\]]+)\]\s*(.*)$/)
+      if (prefixMatch) {
+        module = prefixMatch[1].toLowerCase()
+        msg = prefixMatch[2]
+      }
+    }
+
     return {
       level: obj.level || 30,
       time: obj.time ? new Date(obj.time).toISOString() : '',
-      msg: obj.msg || '',
-      module: obj.module || undefined,
+      msg,
+      module,
       raw: line,
       // 保留额外字段（如 err, req 等）
       ...(obj.err && { err: typeof obj.err === 'object' ? { message: obj.err.message, stack: obj.err.stack } : obj.err }),

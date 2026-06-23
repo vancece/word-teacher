@@ -7,7 +7,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js'
 import { prisma } from '../../config/database.js'
 import { success, error } from '../../utils/response.js'
 import { env } from '../../config/env.js'
-import { logger } from '../../utils/logger.js'
+import { assistantLogger as logger } from '../../utils/logger.js'
 import { knowledgeVectorService } from '../../services/knowledge-vector.service.js'
 import type { TeacherRequest } from '../../types/index.js'
 
@@ -58,7 +58,7 @@ router.post('/chat', asyncHandler(async (req: TeacherRequest, res) => {
   })
 
   if (!agentRes.ok) {
-    logger.error({ status: agentRes.status }, '[Assistant] Agent request failed')
+    logger.error({ status: agentRes.status }, 'Agent request failed')
     return error(res, 'AI 服务暂时不可用', 503)
   }
 
@@ -104,7 +104,7 @@ router.post('/chat', asyncHandler(async (req: TeacherRequest, res) => {
 
   // 5. 保存对话记录（异步，不阻塞响应）
   saveConversation(teacherId, conversationId, question, fullAnswer, 'admin_web').catch(err => {
-    logger.error({ error: err }, '[Assistant] Failed to save conversation')
+    logger.error({ error: err }, 'Failed to save conversation')
   })
 }))
 
@@ -241,7 +241,7 @@ router.get('/knowledge/vector-status', asyncHandler(async (req: TeacherRequest, 
 async function searchKnowledge(question: string) {
   const results = await knowledgeVectorService.search(question, undefined, 5)
   if (results.length > 0) {
-    logger.info({ query: question, count: results.length, topScore: results[0].score }, '[Assistant] Vector search hit')
+    logger.info({ query: question, count: results.length, topScore: results[0].score }, 'Vector search hit')
   }
   return results.map(r => ({
     category: r.category,

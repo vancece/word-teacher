@@ -6,7 +6,7 @@
 import * as lancedb from '@lancedb/lancedb'
 import OpenAI from 'openai'
 import path from 'path'
-import { logger } from '../utils/logger.js'
+import { vectorLogger as logger } from '../utils/logger.js'
 import { env } from '../config/env.js'
 
 const EMBEDDING_MODEL = 'text-embedding-v3'
@@ -73,14 +73,14 @@ class KnowledgeVectorService {
       if (tableNames.includes(TABLE_NAME)) {
         this.table = await this.db.openTable(TABLE_NAME)
         const count = await this.table.countRows()
-        logger.info({ count, path: LANCEDB_PATH }, '[VectorDB] LanceDB table loaded')
+        logger.info({ count, path: LANCEDB_PATH }, 'LanceDB table loaded')
       } else {
-        logger.info('[VectorDB] No existing table, will create on first sync')
+        logger.info('No existing table, will create on first sync')
       }
 
       this.ready = true
     } catch (err) {
-      logger.error({ error: err }, '[VectorDB] Failed to initialize LanceDB')
+      logger.error({ error: err }, 'Failed to initialize LanceDB')
       // 不阻塞应用启动，降级为 MySQL 搜索
       this.ready = false
     }
@@ -94,7 +94,7 @@ class KnowledgeVectorService {
     await this.init()
 
     if (!this.table) {
-      logger.warn({ ready: this.ready, hasDb: !!this.db }, '[VectorDB] Table not ready, returning empty')
+      logger.warn({ ready: this.ready, hasDb: !!this.db }, 'Table not ready, returning empty')
       return []
     }
 
@@ -102,7 +102,7 @@ class KnowledgeVectorService {
       // 1. 生成 query 向量
       const queryVector = await this.getEmbedding(query)
       if (!queryVector) {
-        logger.warn({ query }, '[VectorDB] Failed to generate embedding for query')
+        logger.warn({ query }, 'Failed to generate embedding for query')
         return []
       }
 
@@ -116,7 +116,7 @@ class KnowledgeVectorService {
 
       const results = await searchQuery.toArray()
 
-      logger.info({ query, category, resultCount: results.length }, '[VectorDB] Search completed')
+      logger.info({ query, category, resultCount: results.length }, 'Search completed')
       return results.map((row: any) => ({
         id: row.id,
         category: row.category,
@@ -125,7 +125,7 @@ class KnowledgeVectorService {
         score: 1 - (row._distance || 0), // LanceDB 返回的是距离，转换为相似度
       }))
     } catch (err) {
-      logger.error({ error: err, query }, '[VectorDB] Search failed')
+      logger.error({ error: err, query }, 'Search failed')
       return []
     }
   }
@@ -137,22 +137,22 @@ class KnowledgeVectorService {
   async syncAll(items: { id: number; category: string; title: string; content: string; keywords: string }[]): Promise<number> {
     await this.init()
     if (!this.db) {
-      logger.error('[VectorDB] DB not connected, cannot sync')
+      logger.error('DB not connected, cannot sync')
       return 0
     }
 
     if (items.length === 0) {
-      logger.info('[VectorDB] No items to sync')
+      logger.info('No items to sync')
       return 0
     }
 
-    logger.info({ count: items.length }, '[VectorDB] Starting full sync...')
+    logger.info({ count: items.length }, 'Starting full sync...')
 
     // 批量生成 embedding
     const vectors = await this.batchEmbedding(items.map(item => this.buildEmbeddingText(item)))
 
     if (vectors.length !== items.length) {
-      logger.error('[VectorDB] Embedding count mismatch, aborting sync')
+      logger.error('Embedding count mismatch, aborting sync')
       return 0
     }
 
@@ -172,7 +172,7 @@ class KnowledgeVectorService {
 
     this.table = await this.db.createTable(TABLE_NAME, data)
     const count = await this.table.countRows()
-    logger.info({ count }, '[VectorDB] Full sync completed')
+    logger.info({ count }, 'Full sync completed')
     return count
   }
 
@@ -200,9 +200,9 @@ class KnowledgeVectorService {
         } catch {} // 不存在也没关系
         await this.table.add([row])
       }
-      logger.info({ id: item.id, title: item.title }, '[VectorDB] Upserted item')
+      logger.info({ id: item.id, title: item.title }, 'Upserted item')
     } catch (err) {
-      logger.error({ error: err, id: item.id }, '[VectorDB] Failed to upsert item')
+      logger.error({ error: err, id: item.id }, 'Failed to upsert item')
     }
   }
 
@@ -215,9 +215,9 @@ class KnowledgeVectorService {
 
     try {
       await this.table.delete(`id = ${id}`)
-      logger.info({ id }, '[VectorDB] Deleted item')
+      logger.info({ id }, 'Deleted item')
     } catch (err) {
-      logger.error({ error: err, id }, '[VectorDB] Failed to delete item')
+      logger.error({ error: err, id }, 'Failed to delete item')
     }
   }
 
@@ -245,7 +245,7 @@ class KnowledgeVectorService {
       })
       return response.data[0].embedding
     } catch (err) {
-      logger.error({ error: err }, '[VectorDB] Embedding failed')
+      logger.error({ error: err }, 'Embedding failed')
       return null
     }
   }
@@ -268,7 +268,7 @@ class KnowledgeVectorService {
           .map(d => d.embedding)
         allVectors.push(...vectors)
       } catch (err) {
-        logger.error({ error: err, batchStart: i }, '[VectorDB] Batch embedding failed')
+        logger.error({ error: err, batchStart: i }, 'Batch embedding failed')
         // 填充空向量避免索引对不上
         allVectors.push(...batch.map(() => new Array(EMBEDDING_DIMENSIONS).fill(0)))
       }

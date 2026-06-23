@@ -4,7 +4,7 @@
  */
 import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
-import { logger } from '../utils/logger.js'
+import { internalLogger as logger } from '../utils/logger.js'
 import ExcelJS from 'exceljs'
 import path from 'path'
 import fs from 'fs'
@@ -90,7 +90,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const newFilepath = path.join(EXPORT_DIR, newFilename)
   await workbook.xlsx.writeFile(newFilepath)
 
-  logger.info({ originalFile: filename, newFile: newFilename, operations: operations.map((o: ModifyOperation) => o.type) }, '[Export] Excel modified')
+  logger.info({ originalFile: filename, newFile: newFilename, operations: operations.map((o: ModifyOperation) => o.type) }, 'Excel modified')
 
   const newDownloadUrl = `/api/internal/export/download/${encodeURIComponent(newFilename)}`
   res.json({

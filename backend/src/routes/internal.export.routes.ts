@@ -7,7 +7,7 @@
 import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { prisma } from '../config/database.js'
-import { logger } from '../utils/logger.js'
+import { internalLogger as logger } from '../utils/logger.js'
 import ExcelJS from 'exceljs'
 import path from 'path'
 import fs from 'fs'
@@ -52,7 +52,7 @@ router.post('/excel', asyncHandler(async (req: Request, res: Response) => {
   // 写入文件
   const filepath = path.join(EXPORT_DIR, filename)
   await workbook.xlsx.writeFile(filepath)
-  logger.info({ filename, source }, '[Export] Excel generated')
+  logger.info({ filename, source }, 'Excel generated')
 
   const downloadUrl = `/api/internal/export/download/${encodeURIComponent(filename)}`
   res.json({ success: true, data: { downloadUrl, filename, message } })
@@ -478,11 +478,11 @@ setInterval(() => {
       const stat = fs.statSync(filepath)
       if (Date.now() - stat.mtimeMs > FILE_EXPIRY_MS) {
         fs.unlinkSync(filepath)
-        logger.info({ file }, '[Export] Cleaned expired file')
+        logger.info({ file }, 'Cleaned expired file')
       }
     }
   } catch (err) {
-    logger.error({ err }, '[Export] Cleanup error')
+    logger.error({ err }, 'Cleanup error')
   }
 }, 10 * 60 * 1000)
 

@@ -6,7 +6,7 @@ import { prisma } from '../../config/database.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { success } from '../../utils/response.js'
 import { uploadBase64Image, isMinioAvailable } from '../../services/minio.service.js'
-import { logger } from '../../utils/logger.js'
+import { sceneLogger as logger } from '../../utils/logger.js'
 import type { TeacherRequest } from '../../types/index.js'
 
 const router = Router()
@@ -29,15 +29,15 @@ async function processCoverImage(coverImage: string | undefined, sceneId: string
     try {
       const available = await isMinioAvailable()
       if (!available) {
-        logger.warn('[Scenes] MinIO not available, storing base64 directly')
+        logger.warn('MinIO not available, storing base64 directly')
         return coverImage  // MinIO 不可用时，仍存储 base64
       }
 
       const url = await uploadBase64Image(coverImage, `scene_${sceneId}`)
-      logger.info({ sceneId, url }, '[Scenes] Cover image uploaded to MinIO')
+      logger.info({ sceneId, url }, 'Cover image uploaded to MinIO')
       return url
     } catch (error) {
-      logger.error({ error }, '[Scenes] Failed to upload cover image')
+      logger.error({ error }, 'Failed to upload cover image')
       return coverImage  // 上传失败时，仍存储 base64
     }
   }

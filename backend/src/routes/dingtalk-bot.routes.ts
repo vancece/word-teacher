@@ -4,7 +4,7 @@
  */
 import { Router } from 'express'
 import { handleDingTalkBotMessage, verifyDingTalkSign, isDingTalkBotConfigured } from '../services/dingtalk-bot.service.js'
-import { logger } from '../utils/logger.js'
+import { dingtalkLogger as logger } from '../utils/logger.js'
 
 const router = Router()
 
@@ -14,7 +14,7 @@ router.post('/webhook', async (req, res) => {
   res.json({ success: true })
 
   if (!isDingTalkBotConfigured()) {
-    logger.warn('[DingTalkBot] Bot not configured, skipping message')
+    logger.warn('Bot not configured, skipping message')
     return
   }
 
@@ -24,14 +24,14 @@ router.post('/webhook', async (req, res) => {
 
   if (timestamp && sign) {
     if (!verifyDingTalkSign(timestamp, sign)) {
-      logger.warn('[DingTalkBot] Invalid signature, ignoring message')
+      logger.warn('Invalid signature, ignoring message')
       return
     }
   }
 
   // 异步处理消息
   handleDingTalkBotMessage(req.body).catch(err => {
-    logger.error({ error: err }, '[DingTalkBot] Unhandled error in message handler')
+    logger.error({ error: err }, 'Unhandled error in message handler')
   })
 })
 

@@ -8,7 +8,7 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { prisma } from '../config/database.js'
 import { env } from '../config/env.js'
 import { knowledgeVectorService } from '../services/knowledge-vector.service.js'
-import { logger } from '../utils/logger.js'
+import { internalLogger as logger } from '../utils/logger.js'
 import bcrypt from 'bcryptjs'
 import exportRoutes from './internal.export.routes.js'
 import modifyExcelRoutes from './internal.modify-excel.routes.js'
@@ -760,7 +760,7 @@ router.get('/progress/student/:id/summary', asyncHandler(async (req, res) => {
     const result = await response.json() as { success: boolean; data: any }
     res.json({ success: true, data: result.data })
   } catch (error: any) {
-    logger.error({ err: error }, '[Internal] Summary generation failed')
+    logger.error({ err: error }, 'Summary generation failed')
     res.json({
       success: true,
       data: {

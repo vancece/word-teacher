@@ -5,7 +5,7 @@
 import crypto from 'crypto'
 import { prisma } from '../config/database.js'
 import { env } from '../config/env.js'
-import { logger } from '../utils/logger.js'
+import { dingtalkLogger as logger } from '../utils/logger.js'
 
 // 钉钉机器人配置
 const BOT_APP_KEY = process.env.DINGTALK_BOT_APP_KEY || ''
@@ -84,7 +84,7 @@ async function replyMessage(
 
   if (!res.ok) {
     const errText = await res.text()
-    logger.error({ status: res.status, body: errText }, '[DingTalkBot] Reply failed')
+    logger.error({ status: res.status, body: errText }, 'Reply failed')
   }
 }
 
@@ -102,17 +102,17 @@ async function getBotTeacherId(): Promise<number | undefined> {
     const teacher = await prisma.teacher.findFirst({ where: { username }, select: { id: true } })
     if (teacher) {
       cachedBotTeacherId = teacher.id
-      logger.info({ teacherId: teacher.id, username }, '[DingTalkBot] Using configured bot teacher')
+      logger.info({ teacherId: teacher.id, username }, 'Using configured bot teacher')
       return cachedBotTeacherId
     }
-    logger.warn({ username }, '[DingTalkBot] Configured ASSISTANT_BOT_USERNAME not found, falling back to admin')
+    logger.warn({ username }, 'Configured ASSISTANT_BOT_USERNAME not found, falling back to admin')
   }
 
   // 兜底：第一个管理员
   const admin = await prisma.teacher.findFirst({ where: { isAdmin: true }, select: { id: true } })
   if (admin) {
     cachedBotTeacherId = admin.id
-    logger.info({ teacherId: admin.id }, '[DingTalkBot] Using first admin as bot teacher')
+    logger.info({ teacherId: admin.id }, 'Using first admin as bot teacher')
   }
   return cachedBotTeacherId
 }
@@ -139,7 +139,7 @@ async function getAIAnswer(question: string, history: { role: string; content: s
   })
 
   if (!agentRes.ok) {
-    logger.error({ status: agentRes.status }, '[DingTalkBot] Agent request failed')
+    logger.error({ status: agentRes.status }, 'Agent request failed')
     return '抱歉，AI 服务暂时不可用，请稍后再试或联系技术支持。'
   }
 
@@ -178,7 +178,7 @@ export async function handleDingTalkBotMessage(body: any): Promise<void> {
       senderNick,
       question,
       conversationType, // 1=单聊 2=群聊
-    }, '[DingTalkBot] Received message')
+    }, 'Received message')
 
     // 获取对话历史
     const existingConversation = await prisma.assistantConversation.findFirst({
@@ -222,9 +222,9 @@ export async function handleDingTalkBotMessage(body: any): Promise<void> {
       })
     }
 
-    logger.info({ senderNick, questionLen: question.length, answerLen: answer.length }, '[DingTalkBot] Replied')
+    logger.info({ senderNick, questionLen: question.length, answerLen: answer.length }, 'Replied')
   } catch (err) {
-    logger.error({ error: err }, '[DingTalkBot] Handle message error')
+    logger.error({ error: err }, 'Handle message error')
   }
 }
 

@@ -6,7 +6,7 @@ import { prisma } from '../../config/database.js'
 import { env } from '../../config/env.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { success } from '../../utils/response.js'
-import { logger } from '../../utils/logger.js'
+import { apiLogger as logger } from '../../utils/logger.js'
 import type { TeacherRequest } from '../../types/index.js'
 
 const router = Router()
@@ -386,7 +386,7 @@ router.get('/student/:id/summary', asyncHandler(async (req: TeacherRequest, res)
     const result = await response.json() as { success: boolean; data: any }
     return success(res, result.data)
   } catch (error: any) {
-    logger.error({ err: error }, '[Admin] Summary generation failed')
+    logger.error({ err: error }, 'Summary generation failed')
     return success(res, {
       strengths: ['积极参与英语学习'],
       weaknesses: ['需要更多练习机会'],

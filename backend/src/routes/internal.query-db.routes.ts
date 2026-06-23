@@ -11,7 +11,7 @@
 import { Router } from 'express'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { prisma } from '../config/database.js'
-import { logger } from '../utils/logger.js'
+import { internalLogger as logger } from '../utils/logger.js'
 import ExcelJS from 'exceljs'
 import path from 'path'
 import fs from 'fs'
@@ -191,7 +191,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   // 7. 执行查询
-  logger.info({ sql: finalSql, originalSql: trimmedSql, explanation, teacherId: teacherIdStr }, '[QueryDB] Executing')
+  logger.info({ sql: finalSql, originalSql: trimmedSql, explanation, teacherId: teacherIdStr }, 'Executing')
 
   try {
     const rows: any[] = await prisma.$queryRawUnsafe(finalSql)
@@ -201,7 +201,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
       typeof v === 'bigint' ? Number(v) : v
     ))
 
-    logger.info({ rowCount: serialized.length, exportExcel, explanation }, '[QueryDB] Success')
+    logger.info({ rowCount: serialized.length, exportExcel, explanation }, 'Success')
 
     // 导出 Excel 模式
     if (exportExcel && serialized.length === 0) {
@@ -251,7 +251,7 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
       data: { rows: serialized, rowCount: serialized.length, truncated },
     })
   } catch (err: any) {
-    logger.warn({ error: err.message, sql: finalSql }, '[QueryDB] Query failed')
+    logger.warn({ error: err.message, sql: finalSql }, 'Query failed')
     res.status(400).json({
       success: false,
       message: `SQL 执行失败: ${err.message?.replace(/[\r\n]+/g, ' ').slice(0, 200)}`,

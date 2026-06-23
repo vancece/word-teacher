@@ -41,7 +41,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js'
 import { prisma } from '../../config/database.js'
 import { success } from '../../utils/response.js'
 import { uploadBase64Image, isMinioAvailable } from '../../services/minio.service.js'
-import { logger } from '../../utils/logger.js'
+import { sceneLogger as logger } from '../../utils/logger.js'
 import type { TeacherRequest } from '../../types/index.js'
 
 /**
@@ -53,14 +53,14 @@ async function processCoverImage(coverImage: string | undefined, sceneId: string
   if (coverImage.startsWith('data:image/') || coverImage.length > 1000) {
     try {
       if (!await isMinioAvailable()) {
-        logger.warn('[ReadAloudScenes] MinIO not available, storing base64 directly')
+        logger.warn('MinIO not available, storing base64 directly')
         return coverImage
       }
       const url = await uploadBase64Image(coverImage, `read_aloud_${sceneId}`)
-      logger.info({ sceneId, url }, '[ReadAloudScenes] Cover image uploaded to MinIO')
+      logger.info({ sceneId, url }, 'Cover image uploaded to MinIO')
       return url
     } catch (error) {
-      logger.error({ error }, '[ReadAloudScenes] Failed to upload cover image')
+      logger.error({ error }, 'Failed to upload cover image')
       return coverImage
     }
   }

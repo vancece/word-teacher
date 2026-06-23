@@ -1,5 +1,5 @@
 import { Client } from 'minio'
-import { logger } from '../utils/logger.js'
+import { minioLogger as logger } from '../utils/logger.js'
 
 // MinIO 配置
 const config = {
@@ -37,7 +37,7 @@ export async function initMinio(): Promise<void> {
     
     if (!exists) {
       await client.makeBucket(bucketName)
-      logger.info({ bucket: bucketName }, '[MinIO] Bucket created')
+      logger.info({ bucket: bucketName }, 'Bucket created')
       
       // 设置 bucket 为公开读取
       const policy = {
@@ -52,12 +52,12 @@ export async function initMinio(): Promise<void> {
         ],
       }
       await client.setBucketPolicy(bucketName, JSON.stringify(policy))
-      logger.info({ bucket: bucketName }, '[MinIO] Bucket policy set to public read')
+      logger.info({ bucket: bucketName }, 'Bucket policy set to public read')
     } else {
-      logger.info({ bucket: bucketName }, '[MinIO] Bucket already exists')
+      logger.info({ bucket: bucketName }, 'Bucket already exists')
     }
   } catch (error) {
-    logger.error({ error }, '[MinIO] Failed to initialize')
+    logger.error({ error }, 'Failed to initialize')
     // 不抛出错误，允许服务继续启动（可能 MinIO 还未就绪）
   }
 }
@@ -84,7 +84,7 @@ export async function uploadFile(
     'Content-Type': contentType,
   })
   
-  logger.info({ filename: uniqueName, size: buffer.length }, '[MinIO] File uploaded')
+  logger.info({ filename: uniqueName, size: buffer.length }, 'File uploaded')
   
   // 返回公开 URL
   return `${publicUrl}/${bucketName}/${uniqueName}`
@@ -122,7 +122,7 @@ export async function uploadBase64Image(base64Data: string, filename: string): P
 export async function deleteFile(filename: string): Promise<void> {
   const client = getClient()
   await client.removeObject(bucketName, filename)
-  logger.info({ filename }, '[MinIO] File deleted')
+  logger.info({ filename }, 'File deleted')
 }
 
 /**

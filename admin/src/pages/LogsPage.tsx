@@ -387,12 +387,21 @@ export default function LogsPage() {
             allowClear
             value={module}
             onChange={setModule}
-            style={{ width: 120 }}
+            style={{ width: 150 }}
           >
+            <Option value="server">server</Option>
             <Option value="database">database</Option>
-            <Option value="auth">auth</Option>
             <Option value="api">api</Option>
+            <Option value="auth">auth</Option>
             <Option value="agent">agent</Option>
+            <Option value="minio">minio</Option>
+            <Option value="vector-db">vector-db</Option>
+            <Option value="health-monitor">health-monitor</Option>
+            <Option value="dingtalk">dingtalk</Option>
+            <Option value="upload">upload</Option>
+            <Option value="internal">internal</Option>
+            <Option value="scene">scene</Option>
+            <Option value="assistant">assistant</Option>
           </Select>
           <Search
             placeholder="关键词搜索"
