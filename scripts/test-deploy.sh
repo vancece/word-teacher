@@ -66,6 +66,9 @@ if [ "$ONLY_CANARY" = "true" ] || [ "$DRY_RUN" = "true" ]; then
       -e NODE_ENV=production -e PORT=3001 \
       -e DATABASE_URL=mysql://wordteacher:\${MYSQL_PW}@mysql:3306/word_teacher \
       -e LANCEDB_PATH=/app/data/lancedb \
+      -e AGENT_URL=http://agent:3002/api/agent \
+      -e MINIO_ENDPOINT=minio \
+      -e MINIO_PORT=9000 \
       \${IMAGE_PREFIX}-backend:latest
     RC=\$?
     echo \"   docker run exit code: \$RC\"
@@ -93,11 +96,13 @@ if [ "$ONLY_CANARY" = "true" ] || [ "$DRY_RUN" = "true" ]; then
 
     # 测试 agent canary
     echo ''
+    DASHSCOPE_KEY=\$(grep '^DASHSCOPE_API_KEY=' .env | cut -d= -f2)
     echo '🔵 [agent] 启动 canary...'
     docker run -d --name word-teacher-agent-canary \
       --network \$DOCKER_NETWORK \
       --env-file .env \
       -e NODE_ENV=production -e PORT=3002 \
+      -e OPENAI_API_KEY=\${DASHSCOPE_KEY} \
       \${IMAGE_PREFIX}-agent:latest
     RC=\$?
     echo \"   docker run exit code: \$RC\"

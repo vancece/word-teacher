@@ -242,7 +242,17 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 开始部署..."
+            DEPLOY_START=$(date +%s)
+            step_timer() {
+              local STEP_NAME="$1"
+              local STEP_START="$2"
+              local STEP_END=$(date +%s)
+              local ELAPSED=$((STEP_END - STEP_START))
+              echo "⏱️  [${STEP_NAME}] 耗时 ${ELAPSED}s"
+              echo ""
+            }
+
+            echo "🚀 开始部署... $(date '+%H:%M:%S')"
             echo "BUILD_BACKEND=$BUILD_BACKEND"
             echo "BUILD_FRONTEND=$BUILD_FRONTEND"
             echo "BUILD_AGENT=$BUILD_AGENT"
@@ -251,6 +261,7 @@ jobs:
             # ============================================================
             # 0. 初始化项目目录（全新服务器兼容）
             # ============================================================
+            STEP_START=$(date +%s)
             mkdir -p /root/word-teacher
             cd /root/word-teacher
 
@@ -299,9 +310,11 @@ jobs:
             } > .env
 
             echo "✅ .env 配置文件已生成"
+            step_timer "初始化+生成.env" "$STEP_START"
 
             # ============================================================
             # 2. SSL 证书处理（优先使用 Let's Encrypt 有效证书）
+            STEP_START=$(date +%s)
             # ============================================================
             SSL_UPDATED=false
 
@@ -333,6 +346,7 @@ jobs:
 
             # 保存镜像前缀（后续 docker pull 需要用）
             IMAGE_PREFIX="${DOCKER_USERNAME}/word-teacher"
+            step_timer "SSL证书处理" "$STEP_START"
 
             # ============================================================
             # 3. 清除 shell 环境变量，避免覆盖 .env 文件
@@ -355,6 +369,7 @@ jobs:
             # ============================================================
             # 5. 从腾讯云 TCR 拉取镜像（同地域内网，速度飞快）
             # ============================================================
+            STEP_START=$(date +%s)
             echo "📥 从腾讯云 TCR 拉取最新镜像..."
 
             # 登录 TCR
@@ -388,10 +403,12 @@ jobs:
             [ "$BUILD_BACKEND" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-backend:latest" "${IMAGE_PREFIX}-backend:latest"
             [ "$BUILD_FRONTEND" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-nginx:latest" "${IMAGE_PREFIX}-nginx:latest"
             [ "$BUILD_AGENT" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-agent:latest" "${IMAGE_PREFIX}-agent:latest"
+            step_timer "拉取镜像" "$STEP_START"
 
             # ============================================================
             # 6. 启动基础设施服务（mysql、minio）并等待就绪
             # ============================================================
+            STEP_START=$(date +%s)
             echo "🛠️ 启动基础设施服务..."
             docker compose -f docker-compose.prod.yml up -d mysql minio
 
@@ -425,6 +442,7 @@ jobs:
               echo "⚠️ MinIO 健康检查未通过，但继续部署（MinIO 可能仍在启动）"
               sleep 5
             fi
+            step_timer "基础设施启动(MySQL+MinIO)" "$STEP_START"
 
             # ============================================================
             # 7. 蓝绿部署 — canary 验证后再切换
@@ -432,6 +450,7 @@ jobs:
             DOCKER_NETWORK="word-teacher_word-teacher-network"
             DEPLOY_FAILED=""
 
+            STEP_START=$(date +%s)
             # 清理上次可能残留的 canary 容器
             docker rm -f word-teacher-backend-canary word-teacher-agent-canary word-teacher-nginx-canary 2>/dev/null || true
 
@@ -442,22 +461,26 @@ jobs:
               local IMAGE="$3"
               local ENV_ARGS="$4"
               local CANARY_NAME="word-teacher-${SERVICE}-canary"
+              local SVC_START=$(date +%s)
 
               echo "🔵 [${SERVICE}] 启动 canary 容器验证新镜像..."
 
               # 启动 canary（连入同一网络，不映射外部端口）
+              local RUN_START=$(date +%s)
               docker run -d --name "$CANARY_NAME" \
                 --network "$DOCKER_NETWORK" \
                 --env-file .env \
                 $ENV_ARGS \
                 "$IMAGE"
+              echo "   [${SERVICE}] 容器创建耗时 $(($(date +%s) - RUN_START))s"
 
               # 健康检查（最多等 40 秒）
               local HEALTHY=false
+              local HC_START=$(date +%s)
               for i in $(seq 1 20); do
                 if docker exec "$CANARY_NAME" $HEALTH_CMD; then
                   HEALTHY=true
-                  echo "✅ [${SERVICE}] canary 健康检查通过 (${i}x2s)"
+                  echo "✅ [${SERVICE}] canary 健康检查通过 (等待 $(($(date +%s) - HC_START))s)"
                   break
                 fi
                 sleep 2
@@ -465,7 +488,7 @@ jobs:
 
               # 打印 canary 日志用于诊断
               if [ "$HEALTHY" = "false" ]; then
-                echo "❌ [${SERVICE}] canary 健康检查失败！保留旧容器，跳过部署"
+                echo "❌ [${SERVICE}] canary 健康检查失败 (等待 $(($(date +%s) - HC_START))s)！保留旧容器，跳过部署"
                 echo "--- canary 日志 ---"
                 docker logs "$CANARY_NAME" --tail 30 2>&1 || true
                 echo "--- end ---"
@@ -476,10 +499,13 @@ jobs:
 
               if [ "$HEALTHY" = "true" ]; then
                 echo "🟢 [${SERVICE}] 切换到新版本..."
+                local SWITCH_START=$(date +%s)
                 docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate "$SERVICE"
-                echo "✅ [${SERVICE}] 部署完成"
+                echo "   [${SERVICE}] compose recreate 耗时 $(($(date +%s) - SWITCH_START))s"
+                step_timer "${SERVICE} 蓝绿部署" "$SVC_START"
                 return 0
               else
+                step_timer "${SERVICE} 蓝绿部署(失败)" "$SVC_START"
                 DEPLOY_FAILED="${DEPLOY_FAILED} ${SERVICE}"
                 return 1
               fi
@@ -491,7 +517,7 @@ jobs:
               deploy_with_canary "backend" \
                 "wget -q -O /dev/null http://localhost:3001/api/health" \
                 "${IMAGE_PREFIX}-backend:latest" \
-                "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:${MYSQL_PW}@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb"
+                "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:${MYSQL_PW}@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb -e AGENT_URL=http://agent:3002/api/agent -e MINIO_ENDPOINT=minio -e MINIO_PORT=9000"
             fi
 
             # --- Agent 蓝绿部署 ---
@@ -499,7 +525,7 @@ jobs:
               deploy_with_canary "agent" \
                 "wget -q -O /dev/null http://localhost:3002/api/agent/health" \
                 "${IMAGE_PREFIX}-agent:latest" \
-                "-e NODE_ENV=production -e PORT=3002"
+                "-e NODE_ENV=production -e PORT=3002 -e OPENAI_API_KEY=$(grep '^DASHSCOPE_API_KEY=' .env | cut -d= -f2)"
             fi
 
             # --- Nginx 蓝绿部署 ---
@@ -516,10 +542,12 @@ jobs:
               docker compose -f docker-compose.prod.yml up -d
               echo "✅ 全部服务启动完成"
             fi
+            step_timer "蓝绿部署(总计)" "$STEP_START"
 
             # ============================================================
             # 8. 等待 Backend 就绪并同步数据库
             # ============================================================
+            STEP_START=$(date +%s)
             echo "🗄️ 等待 Backend 就绪并同步数据库结构..."
             BACKEND_READY=false
             for i in $(seq 1 30); do
@@ -538,10 +566,12 @@ jobs:
             else
               echo "⚠️ Backend 未就绪，跳过数据库同步（容器可能仍在启动，prisma 会在下次部署补上）"
             fi
+            step_timer "数据库同步(prisma db push)" "$STEP_START"
 
             # ============================================================
             # 8.5 同步知识库到 LanceDB 向量数据库
             # ============================================================
+            STEP_START=$(date +%s)
             if [ "$BACKEND_READY" = "true" ]; then
               echo "📚 同步知识库数据..."
               if docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-knowledge.js 2>&1; then
@@ -550,6 +580,7 @@ jobs:
                 echo "⚠️ 知识库同步失败，但不阻塞部署"
               fi
             fi
+            step_timer "知识库同步(LanceDB)" "$STEP_START"
 
             # ============================================================
             # 9. 确保 Nginx 启动（依赖 backend + minio 都就绪）
@@ -596,7 +627,13 @@ jobs:
               exit 1
             fi
 
+            DEPLOY_END=$(date +%s)
+            TOTAL=$((DEPLOY_END - DEPLOY_START))
+            echo ""
+            echo "============================================"
             echo "✅ 部署完成! 所有服务运行正常 🎉"
+            echo "⏱️  部署总耗时: ${TOTAL}s ($((TOTAL/60))m$((TOTAL%60))s)"
+            echo "============================================"
 
   # 部署结果通知
   notify:
