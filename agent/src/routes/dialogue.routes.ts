@@ -284,10 +284,5 @@ router.post('/workflow/stream', async (req, res) => {
   }
 })
 
-// GET /api/agent/health - Health check
-router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'word-teacher-agent' })
-})
-
 export default router
 
