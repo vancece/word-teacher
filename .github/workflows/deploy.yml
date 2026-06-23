@@ -471,7 +471,7 @@ jobs:
               # 健康检查（最多等 40 秒）
               local HEALTHY=false
               for i in $(seq 1 20); do
-                if docker exec "$CANARY_NAME" $HEALTH_CMD 2>/dev/null; then
+                if docker exec "$CANARY_NAME" $HEALTH_CMD; then
                   HEALTHY=true
                   echo "✅ [${SERVICE}] canary 健康检查通过 (${i}x2s)"
                   break
@@ -505,7 +505,7 @@ jobs:
             if [ "$BUILD_BACKEND" = "success" ]; then
               MYSQL_PW=$(grep '^MYSQL_PASSWORD=' .env | cut -d= -f2)
               deploy_with_canary "backend" \
-                "wget -q --spider http://localhost:3001/api/health" \
+                "wget -q -O /dev/null http://localhost:3001/api/health" \
                 "${IMAGE_PREFIX}-backend:latest" \
                 "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:${MYSQL_PW}@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb"
             fi
@@ -513,7 +513,7 @@ jobs:
             # --- Agent 蓝绿部署 ---
             if [ "$BUILD_AGENT" = "success" ]; then
               deploy_with_canary "agent" \
-                "wget -q --spider http://localhost:3002/api/agent/health" \
+                "wget -q -O /dev/null http://localhost:3002/api/agent/health" \
                 "${IMAGE_PREFIX}-agent:latest" \
                 "-e NODE_ENV=production -e PORT=3002"
             fi
@@ -539,7 +539,7 @@ jobs:
             echo "🗄️ 等待 Backend 就绪并同步数据库结构..."
             BACKEND_READY=false
             for i in $(seq 1 30); do
-              if docker compose -f docker-compose.prod.yml exec -T backend wget -q --spider http://localhost:3001/api/health 2>/dev/null; then
+              if docker compose -f docker-compose.prod.yml exec -T backend wget -q -O /dev/null http://localhost:3001/api/health; then
                 BACKEND_READY=true
                 break
               fi
