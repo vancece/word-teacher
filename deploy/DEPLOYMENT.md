@@ -376,20 +376,48 @@ vim .env  # 填写实际的密钥
 
 ## 🔄 GitHub Actions 自动部署（CI/CD）
 
-如果你想通过 GitHub Actions 实现推送代码后自动部署，需要配置以下 Secrets。
+本项目通过 GitHub Actions 实现推送代码后自动部署。镜像通过**腾讯云 TCR（容器镜像服务个人版）**分发，国内服务器从 TCR 内网拉取，速度极快（秒级）。
 
-### 配置步骤
+### 部署流程
 
-1. 进入你的 GitHub 仓库
-2. 点击 **Settings** → **Secrets and variables** → **Actions**
-3. 点击 **New repository secret** 逐个添加以下变量
+```
+push to master → GitHub Actions 构建镜像
+                        ↓
+              同时推到 Docker Hub + 腾讯云 TCR
+                        ↓
+              SSH 到服务器，从 TCR 内网拉取镜像（秒级）
+                        ↓
+              蓝绿部署（canary 验证 → 切换）
+                        ↓
+              数据库同步 + 健康检查 + 钉钉通知
+```
 
-### 必需的 Secrets（敏感密钥）
+### 第一步：开通腾讯云 TCR 个人版（免费）
+
+1. 打开 [腾讯云容器镜像服务控制台](https://console.cloud.tencent.com/tcr/instance?rid=1)
+2. 选择「个人版」，点击开通（免费，秒开）
+3. 设置登录密码（后续配置到 GitHub Secrets）
+4. 创建命名空间：`word-teacher`
+5. 在该命名空间下创建 3 个镜像仓库：
+   - `word-teacher-backend`
+   - `word-teacher-nginx`
+   - `word-teacher-agent`
+
+> 💡 **为什么用 TCR？** 国内服务器直连 Docker Hub 非常慢（10-15 分钟），经常超时失败。腾讯云 TCR 个人版免费，服务器同地域拉取走内网，几秒就完成。
+
+### 第二步：配置 GitHub Secrets
+
+进入 GitHub 仓库 → **Settings** → **Secrets and variables** → **Actions**
+
+#### 必需的 Secrets（敏感密钥）
 
 | Secret 名称 | 说明 | 示例值 | 必须 |
 |------------|------|--------|------|
 | `SERVER_HOST` | 服务器 IP 地址 | `123.45.67.89` | ✅ |
 | `SERVER_SSH_KEY` | SSH 私钥（完整内容） | `-----BEGIN RSA PRIVATE KEY-----...` | ✅ |
+| `DOCKER_PASSWORD` | Docker Hub 密码（备份 registry） | `your-dockerhub-password` | ✅ |
+| `TCR_USERNAME` | 腾讯云 TCR 用户名 | 腾讯云账号 ID（数字，控制台右上角查看） | ✅ |
+| `TCR_PASSWORD` | 腾讯云 TCR 密码 | 开通 TCR 时设置的密码 | ✅ |
 | `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | `YourSecureRootPassword123!` | ✅ |
 | `MYSQL_PASSWORD` | MySQL 应用用户密码 | `YourSecureAppPassword456!` | ✅ |
 | `JWT_SECRET` | JWT 签名密钥（64+ 字符） | `openssl rand -base64 48` 生成 | ✅ |
@@ -402,32 +430,28 @@ vim .env  # 填写实际的密钥
 | `XFYUN_API_SECRET` | 科大讯飞 API Secret | `YTE5OWMxxxxxxxx` | 可选 |
 | `DINGTALK_ACCESS_TOKEN` | 钉钉通知机器人 Token | `xxxxxxxx` | 可选 |
 | `DINGTALK_SECRET` | 钉钉通知机器人签名密钥 | `SECxxxxxxxx` | 可选 |
-| `DINGTALK_BOT_APP_KEY` | 钉钉 AI 客服机器人 AppKey | `dingxxxxxxxx` | 可选 |
-| `DINGTALK_BOT_APP_SECRET` | 钉钉 AI 客服机器人 AppSecret | `xxxxxxxxxxxx` | 可选 |
 
-### 可选的 Secrets
+#### 可选的 Secrets
 
 | Secret 名称 | 说明 | 默认值 |
 |------------|------|--------|
-| `SSL_FULLCHAIN` | SSL 证书（fullchain.pem 内容） | 无（使用 HTTP） |
-| `SSL_PRIVKEY` | SSL 私钥（privkey.pem 内容） | 无（使用 HTTP） |
+| `SSL_FULLCHAIN` | SSL 证书（fullchain.pem 内容） | 无（使用 Let's Encrypt） |
+| `SSL_PRIVKEY` | SSL 私钥（privkey.pem 内容） | 无（使用 Let's Encrypt） |
 
-### 必需的 Variables（非敏感标识符）
+#### 必需的 Variables（非敏感标识符）
 
-除了 Secrets，还需要配置 Repository Variables：
-
-1. 在 **Settings** → **Secrets and variables** → **Actions** 页面
-2. 切换到 **Variables** 标签
-3. 点击 **New repository variable**
+切换到 **Variables** 标签：
 
 | Variable 名称 | 说明 | 示例值 |
 |--------------|------|--------|
+| `DOCKER_USERNAME` | Docker Hub 用户名 | `your-dockerhub-username` |
+| `TCR_NAMESPACE` | 腾讯云 TCR 命名空间 | `word-teacher` |
 | `ALIYUN_STT_APPKEY` | 阿里云语音识别 AppKey | `c3y122r0kCsesm5A` |
 | `XFYUN_APP_ID` | 科大讯飞应用 ID | `022edb08` |
 
 > 💡 **Secrets vs Variables 的区别**：Secrets 存放密码、密钥等敏感信息（配置后不可查看）；Variables 存放 App ID、AppKey 等非敏感标识符（配置后仍可查看和修改）。
 
-### 获取各项密钥的方法
+### 第三步：获取各项密钥
 
 #### 1. SSH 私钥
 ```bash
@@ -441,7 +465,12 @@ ssh-copy-id -i ~/.ssh/github_actions.pub root@YOUR_SERVER_IP
 cat ~/.ssh/github_actions
 ```
 
-#### 2. JWT Secret 和 Agent API Key
+#### 2. 腾讯云 TCR 凭证
+1. 打开 [腾讯云控制台](https://console.cloud.tencent.com/)
+2. 右上角头像 → 查看**账号 ID**（纯数字）→ 这就是 `TCR_USERNAME`
+3. 进入 [容器镜像服务](https://console.cloud.tencent.com/tcr/instance?rid=1) → 个人版 → 访问凭证 → 密码就是 `TCR_PASSWORD`
+
+#### 3. JWT Secret 和 Agent API Key
 ```bash
 # JWT Secret（64 字符）
 openssl rand -base64 48
@@ -450,24 +479,22 @@ openssl rand -base64 48
 openssl rand -hex 32
 ```
 
-#### 3. 阿里云 Dashscope API Key
+#### 4. 阿里云 Dashscope API Key
 1. 登录 [阿里云百炼控制台](https://bailian.console.aliyun.com/)
 2. 点击右上角 **API-KEY 管理**
 3. 创建新的 API Key
 
-#### 4. 阿里云语音识别 (STT)
+#### 5. 阿里云语音识别 (STT)
 1. 登录 [智能语音交互控制台](https://nls-portal.console.aliyun.com/)
 2. 创建项目，获取 **AppKey**（放 Variables）
 3. 在 RAM 访问控制中获取 AccessKey ID/Secret（放 Secrets）
 
-#### 5. 科大讯飞语音评测 (ISE)
+#### 6. 科大讯飞语音评测 (ISE)
 1. 登录 [讯飞开放平台](https://console.xfyun.cn/)
 2. 创建应用，获取 **APPID**（放 Variables）
 3. 在应用详情中获取 **APIKey** 和 **APISecret**（放 Secrets）
 
-### 首次部署前的服务器准备
-
-在 GitHub Actions 能够部署之前，服务器需要做一些初始化：
+### 第四步：首次部署前的服务器准备
 
 ```bash
 # 1. 安装 Docker
@@ -476,25 +503,33 @@ curl -fsSL https://get.docker.com | sh
 # 2. 创建项目目录和数据目录
 mkdir -p /root/word-teacher
 cd /root/word-teacher
-mkdir -p logs/backend logs/agent data/lancedb
-chown -R 1001:1001 logs/ data/
+mkdir -p logs/backend logs/agent data/lancedb tmp/exports
+chown -R 1001:1001 logs/ data/ tmp/
 ```
 
 > 💡 `data/lancedb` 是 AI 助手知识库的向量搜索索引目录，由 Backend 容器自动管理。
 
-> 💡 当前部署方式为**镜像直传**（本地构建 → gzip 压缩 → SCP 传到服务器 → docker load），不需要 Docker Hub。
-
 ### 触发部署
 
-配置完成后，每次推送到 `main` 分支都会自动触发部署：
+配置完成后，每次推送到 `master` 分支都会自动触发部署：
 
 ```bash
 git add .
 git commit -m "feat: 新功能"
-git push origin main
+git push origin master
 ```
 
 可以在 GitHub 仓库的 **Actions** 标签页查看部署进度。
+
+### 部署速度参考
+
+| 阶段 | 耗时 |
+|------|------|
+| 构建镜像（GitHub Actions） | 2-4 分钟 |
+| 推送到 TCR | 1-2 分钟 |
+| 服务器从 TCR 拉取 | 10-30 秒 |
+| 蓝绿部署 + 健康检查 | 1-2 分钟 |
+| **总计** | **~5-8 分钟** |
 
 ---
 
