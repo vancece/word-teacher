@@ -88,7 +88,7 @@ jobs:
             echo "config=false" >> $GITHUB_OUTPUT
           fi
 
-  # 构建并推送 Backend
+  # 构建并推送 Backend（只推 TCR）
   build-backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
@@ -98,12 +98,6 @@ jobs:
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to Tencent TCR
         uses: docker/login-action@v4
@@ -119,14 +113,12 @@ jobs:
           file: ./Dockerfile.backend
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-backend:latest
-            ${{ env.IMAGE_PREFIX }}-backend:${{ env.SHORT_SHA }}
             ${{ env.TCR_PREFIX }}-backend:latest
             ${{ env.TCR_PREFIX }}-backend:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # 构建并推送 Nginx (Frontend + Admin)
+  # 构建并推送 Nginx（只推 TCR）
   build-frontend:
     needs: detect-changes
     if: needs.detect-changes.outputs.frontend == 'true'
@@ -136,12 +128,6 @@ jobs:
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to Tencent TCR
         uses: docker/login-action@v4
@@ -157,14 +143,12 @@ jobs:
           file: ./Dockerfile.nginx
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-nginx:latest
-            ${{ env.IMAGE_PREFIX }}-nginx:${{ env.SHORT_SHA }}
             ${{ env.TCR_PREFIX }}-nginx:latest
             ${{ env.TCR_PREFIX }}-nginx:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # 构建并推送 Agent
+  # 构建并推送 Agent（只推 TCR，不推 Docker Hub）
   build-agent:
     needs: detect-changes
     if: needs.detect-changes.outputs.agent == 'true'
@@ -174,12 +158,6 @@ jobs:
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-      
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Login to Tencent TCR
         uses: docker/login-action@v4
@@ -195,8 +173,6 @@ jobs:
           file: ./Dockerfile.agent
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-agent:latest
-            ${{ env.IMAGE_PREFIX }}-agent:${{ env.SHORT_SHA }}
             ${{ env.TCR_PREFIX }}-agent:latest
             ${{ env.TCR_PREFIX }}-agent:${{ env.SHORT_SHA }}
           cache-from: type=gha
