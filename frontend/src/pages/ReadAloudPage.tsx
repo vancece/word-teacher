@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Loader2, Square } from 'lucide-react'
 import { readAloudApi, type ReadAloudSentence, type SentenceEvaluation } from '../api'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
-import { clientLogger } from '../utils/client-logger'
 import BackButton from '../components/BackButton'
 import SentenceCard from '../components/SentenceCard'
 import './ReadAloudPage.scss'
@@ -19,7 +18,6 @@ export default function ReadAloudPage() {
   const [sentences, setSentences] = useState<ReadAloudSentence[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [results, setResults] = useState<(SentenceEvaluation | null)[]>([])
-  const [audioCache, setAudioCache] = useState<(string | null)[]>([])
   const [isEvaluating, setIsEvaluating] = useState(false)
   const [isScoring, setIsScoring] = useState(false)
 
@@ -38,7 +36,6 @@ export default function ReadAloudPage() {
         setSceneName(response.scene.name)
         setSentences(response.scene.sentences)
         setResults(new Array(response.scene.sentences.length).fill(null))
-        setAudioCache(new Array(response.scene.sentences.length).fill(null))
       } catch (err) {
         console.error('Failed to start read-aloud:', err)
         setError('加载失败，请重试')
@@ -59,130 +56,69 @@ export default function ReadAloudPage() {
   // 处理录音按钮点击
   const handleRecordClick = async () => {
     if (audioRecorder.isRecording) {
-      // 停止录音，缓存音频
+      // 停止录音并评估
       const audioBase64 = await audioRecorder.stopRecording()
       console.log('[ReadAloudPage] Audio base64 length:', audioBase64?.length || 0)
       if (audioBase64 && audioBase64.length > 100) {
-        clientLogger.info('recording_complete', {
-          sentenceIndex: currentIndex,
-          audioLength: audioBase64.length,
-          sceneId,
-        })
-        await handleRecordingComplete(audioBase64)
+        await evaluatePronunciation(audioBase64)
       } else {
-        clientLogger.warn('recording_too_short', {
-          sentenceIndex: currentIndex,
-          audioLength: audioBase64?.length || 0,
-          sceneId,
-        })
         console.error('[ReadAloudPage] Audio too short or empty')
       }
     } else {
       // 开始录音
-      clientLogger.info('recording_start', { sentenceIndex: currentIndex, sceneId })
       await audioRecorder.startRecording()
     }
   }
 
-  // 录音完成：缓存音频，最后一句时触发批量评测
-  const handleRecordingComplete = async (audioBase64: string) => {
-    // 缓存当前句子的录音
-    const newCache = [...audioCache]
-    newCache[currentIndex] = audioBase64
-    setAudioCache(newCache)
-
-    console.log(`[ReadAloudPage] 缓存第${currentIndex + 1}句录音 (${audioBase64.length} chars)`)
-
-    const isLastSentence = currentIndex === sentences.length - 1
-    if (isLastSentence) {
-      // 所有句子录完，批量提交评测
-      await submitBatchEvaluation(newCache)
-    } else {
-      // 自动跳到下一句
-      setCurrentIndex(currentIndex + 1)
-    }
-  }
-
-  // 批量提交评测
-  const submitBatchEvaluation = async (cachedAudios: (string | null)[]) => {
+  // 评估发音
+  const evaluatePronunciation = async (audioBase64: string) => {
     try {
       setIsEvaluating(true)
+      const currentSentence = sentences[currentIndex]
 
-      // 组装批量请求数据
-      const batchSentences = sentences.map((sentence, i) => ({
-        text: sentence.english,
-        audioBase64: cachedAudios[i] || '',
-      }))
-
-      const startTime = Date.now()
-      clientLogger.info('batch_eval_start', {
-        sentenceCount: batchSentences.length,
-        sceneId,
-        recordId,
+      const response = await readAloudApi.evaluate({
+        recordId: recordId || undefined,
+        sentenceIndex: currentIndex,
+        originalSentence: currentSentence.english,
+        audioBase64,
       })
 
-      console.log(`[ReadAloudPage] 批量提交 ${batchSentences.length} 句评测...`)
-
-      const response = await readAloudApi.evaluateBatch({ sentences: batchSentences })
-      const batchResults = response.data.results
-      const elapsed = Date.now() - startTime
-
-      clientLogger.info('batch_eval_success', {
-        sentenceCount: batchResults.length,
-        elapsed,
-        avgAccuracy: Math.round(batchResults.reduce((s, r) => s + (r.accuracy || 0), 0) / batchResults.length),
-        sceneId,
-      })
-
-      // 填充结果
+      // 保存结果
       const newResults = [...results]
-      batchResults.forEach((evalResult, i) => {
-        newResults[i] = evalResult
-        console.log(`[ReadAloudPage] 第${i + 1}句: 准确度=${evalResult.accuracy}%, 流利度=${evalResult.fluency}, 完整度=${evalResult.completeness}`)
-      })
+      newResults[currentIndex] = response.data
       setResults(newResults)
 
-      // 调用整体评分
-      await performFinalScoring(newResults)
-    } catch (err: any) {
-      const errorMsg = err?.message || String(err)
-      clientLogger.error('batch_eval_failed', {
-        error: errorMsg,
-        sentenceCount: sentences.length,
-        sceneId,
-      })
-      console.error('[ReadAloudPage] Batch evaluation failed, falling back to per-sentence:', err)
-      // 降级：逐句评测
-      clientLogger.warn('batch_eval_fallback_start', { sentenceCount: sentences.length })
-      await fallbackPerSentenceEvaluation(cachedAudios)
+      console.log(`[ReadAloudPage] ===== 评测结果 =====`)
+      console.log(`[ReadAloudPage] 原句: "${currentSentence.english}"`)
+      console.log(`[ReadAloudPage] 方式: ${response.data.evaluationMethod || 'unknown'}`)
+      console.log(`[ReadAloudPage] 准确度: ${response.data.accuracy}%`)
+      console.log(`[ReadAloudPage] 流利度: ${response.data.fluency}`)
+      console.log(`[ReadAloudPage] 完整度: ${response.data.completeness}`)
+      console.log(`[ReadAloudPage] 建议评分: ${response.data.suggestedScore}`)
+      console.log(`[ReadAloudPage] 词级详情:`, response.data.words?.map(w => ({
+        word: w.text,
+        accuracy: w.accuracy,
+        fluency: w.fluency,
+        matchTag: w.matchTag,
+        status: w.status,
+        phoneInfos: w.phoneInfos?.map(p => `${p.phone}(${p.accuracy}${p.detectedStress ? '⬆️' : ''})`)
+      })))
+      console.log(`[ReadAloudPage] 反馈: ${response.data.feedback}`)
+
+      // 检查是否完成所有句子
+      const isLastSentence = currentIndex === sentences.length - 1
+      if (isLastSentence) {
+        // 完成所有句子，调用整体评分
+        await performFinalScoring(newResults)
+      } else {
+        // 自动跳到下一句
+        setCurrentIndex(currentIndex + 1)
+      }
+    } catch (err) {
+      console.error('Evaluation failed:', err)
     } finally {
       setIsEvaluating(false)
     }
-  }
-
-  // 降级方案：逐句评测
-  const fallbackPerSentenceEvaluation = async (cachedAudios: (string | null)[]) => {
-    const newResults = [...results]
-
-    for (let i = 0; i < sentences.length; i++) {
-      const audio = cachedAudios[i]
-      if (!audio) continue
-
-      try {
-        const response = await readAloudApi.evaluate({
-          recordId: recordId || undefined,
-          sentenceIndex: i,
-          originalSentence: sentences[i].english,
-          audioBase64: audio,
-        })
-        newResults[i] = response.data
-      } catch (evalErr) {
-        console.error(`[ReadAloudPage] 第${i + 1}句降级评测失败:`, evalErr)
-      }
-    }
-
-    setResults(newResults)
-    await performFinalScoring(newResults)
   }
 
   // 整体评分并跳转
@@ -254,8 +190,8 @@ export default function ReadAloudPage() {
     }
   }
 
-  // 计算已录制数量（用 audioCache 而非 results，因为批量评测前 results 全为 null）
-  const completedCount = audioCache.filter(a => a !== null).length
+  // 计算已完成数量
+  const completedCount = results.filter(r => r !== null).length
 
   if (isLoading) {
     return (
@@ -296,7 +232,6 @@ export default function ReadAloudPage() {
                 index={index}
                 isActive={index === currentIndex}
                 result={results[index]}
-                recorded={audioCache[index] !== null}
               />
             ))}
           </div>
@@ -317,7 +252,7 @@ export default function ReadAloudPage() {
             ) : isEvaluating ? (
               <>
                 <Loader2 className="spin" size={20} />
-                <span className="btn-text">正在评测所有句子...</span>
+                <span className="btn-text">评估中...</span>
               </>
             ) : audioRecorder.isRecording ? (
               <>
@@ -326,11 +261,7 @@ export default function ReadAloudPage() {
               </>
             ) : (
               <>
-                <span className="btn-text">
-                  {currentIndex === sentences.length - 1 && audioCache[currentIndex]
-                    ? '录完了，点击重录本句'
-                    : `请朗读第${currentIndex + 1}句`}
-                </span>
+                <span className="btn-text">请朗读第{currentIndex + 1}句</span>
               </>
             )}
           </button>
@@ -339,4 +270,3 @@ export default function ReadAloudPage() {
     </div>
   )
 }
-

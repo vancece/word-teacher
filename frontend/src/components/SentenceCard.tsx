@@ -7,7 +7,6 @@ interface Props {
   index: number
   isActive: boolean
   result?: SentenceEvaluation | null
-  recorded?: boolean
 }
 
 export default function SentenceCard({
@@ -15,8 +14,22 @@ export default function SentenceCard({
   index,
   isActive,
   result,
-  recorded,
 }: Props) {
+  // 根据 SOE 词级分数确定颜色 class
+  const getWordClass = (word: typeof result extends { words: (infer W)[] } ? W : any) => {
+    // 如果有 SOE accuracy 数据，使用分数区间映射
+    if (word.accuracy !== undefined && word.accuracy !== null) {
+      if (word.matchTag === 'missing') return 'missing'
+      if (word.matchTag === 'extra') return 'extra'
+      if (word.accuracy >= 70) return 'correct'
+      if (word.accuracy >= 40) return 'medium'
+      return 'incorrect'
+    }
+    // fallback: 旧方案的 status 字段
+    return word.status
+  }
+
+  // 渲染单词（带颜色和分数）
   const renderWords = () => {
     if (!result?.words) {
       return <span className="sentence-text">{sentence.english}</span>
@@ -25,11 +38,9 @@ export default function SentenceCard({
     return (
       <span className="sentence-text evaluated">
         {result.words.map((word, idx) => (
-          <span
-            key={idx}
-            className={`word ${word.status}`}
-            title={word.accuracy !== undefined ? `准确度: ${Math.round(word.accuracy)}` : undefined}
-          >
+          <span key={idx} className={`word ${getWordClass(word)}`} title={
+            word.accuracy !== undefined ? `${word.accuracy}分` : undefined
+          }>
             {word.text}{' '}
           </span>
         ))}
@@ -38,10 +49,11 @@ export default function SentenceCard({
   }
 
   return (
-    <div className={`sentence-card ${isActive ? 'active' : ''} ${result ? 'completed' : ''} ${recorded && !result ? 'recorded' : ''}`}>
+    <div className={`sentence-card ${isActive ? 'active' : ''} ${result ? 'completed' : ''}`}>
+      {/* 左侧：序号和句子 */}
       <div className="card-left">
         <div className="index-badge">
-          {result ? <CheckCircle2 size={16} /> : recorded ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+          {result ? <CheckCircle2 size={16} /> : <Circle size={16} />}
         </div>
         <div className="sentence-content">
           <div className="english-section">{renderWords()}</div>
@@ -49,6 +61,7 @@ export default function SentenceCard({
         </div>
       </div>
 
+      {/* 右侧：评分结果 */}
       <div className="card-right">
         {result ? (
           <div className="result-box">
@@ -56,18 +69,10 @@ export default function SentenceCard({
               {result.accuracy}
             </span>
             <span className="feedback">{result.feedback}</span>
-            {result.fluency !== undefined && result.fluency > 0 && (
-              <span className="metrics">
-                流利{Math.round(result.fluency)}
-                {result.completeness !== undefined && result.completeness > 0 && ` · 完整${Math.round(result.completeness)}`}
-              </span>
-            )}
           </div>
-        ) : isActive ? (
-          <span className="waiting">等待朗读</span>
-        ) : recorded ? (
-          <span className="recorded-badge">已录制 ✓</span>
-        ) : null}
+        ) : (
+          isActive && <span className="waiting">等待朗读</span>
+        )}
       </div>
     </div>
   )
