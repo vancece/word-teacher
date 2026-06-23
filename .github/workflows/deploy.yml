@@ -52,6 +52,16 @@ jobs:
           CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "all")
           echo "Changed files: $CHANGED"
 
+          # 如果改了 workflow 或 docker-compose，触发全量构建
+          if echo "$CHANGED" | grep -qE "^\.github/workflows/|^docker-compose.prod.yml"; then
+            echo "CI config changed: force rebuild all"
+            echo "backend=true" >> $GITHUB_OUTPUT
+            echo "frontend=true" >> $GITHUB_OUTPUT
+            echo "agent=true" >> $GITHUB_OUTPUT
+            echo "config=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           # 检测各服务是否有变更
           if echo "$CHANGED" | grep -qE "^backend/|^Dockerfile.backend|^prisma/"; then
             echo "backend=true" >> $GITHUB_OUTPUT
@@ -71,8 +81,8 @@ jobs:
             echo "agent=false" >> $GITHUB_OUTPUT
           fi
 
-          # 检测配置文件是否有变更（docker-compose, workflow, deploy配置等）
-          if echo "$CHANGED" | grep -qE "^docker-compose.prod.yml|^\.github/workflows/|^deploy/"; then
+          # 检测配置文件是否有变更
+          if echo "$CHANGED" | grep -qE "^docker-compose.prod.yml|^deploy/"; then
             echo "config=true" >> $GITHUB_OUTPUT
           else
             echo "config=false" >> $GITHUB_OUTPUT
