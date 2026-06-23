@@ -11,6 +11,7 @@ import { knowledgeVectorService } from '../services/knowledge-vector.service.js'
 import { logger } from '../utils/logger.js'
 import bcrypt from 'bcryptjs'
 import exportRoutes from './internal.export.routes.js'
+import modifyExcelRoutes from './internal.modify-excel.routes.js'
 import queryDbRoutes from './internal.query-db.routes.js'
 
 const router = Router()
@@ -41,6 +42,7 @@ router.use(authenticateAgent)
 
 // 挂载子路由
 router.use('/export', exportRoutes)
+router.use('/export/modify-excel', modifyExcelRoutes)
 router.use('/query-db', queryDbRoutes)
 
 /**

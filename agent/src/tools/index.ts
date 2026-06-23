@@ -18,6 +18,7 @@ import { classAnalysisTool } from './class-analysis.tool.js'
 import { contentManageTool } from './content-manage.tool.js'
 import { createStudentTool, createTeacherTool } from './create-user.tool.js'
 import { queryDatabaseTool } from './query-db.tool.js'
+import { modifyExcelTool } from './modify-excel.tool.js'
 
 toolRegistry.registerAll([
   // 知识问答
@@ -34,6 +35,8 @@ toolRegistry.registerAll([
   createTeacherTool,
   // 数据库查询（含导出 Excel 功能）
   queryDatabaseTool,
+  // Excel 修改
+  modifyExcelTool,
 ])
 
 console.log(`[ToolRegistry] Registered ${toolRegistry.size} tools: ${toolRegistry.listToolNames().join(', ')}`)
