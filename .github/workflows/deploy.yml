@@ -338,9 +338,28 @@ jobs:
               sleep 2
             fi
 
-            [ "$BUILD_BACKEND" = "success" ] && docker pull "${IMAGE_PREFIX}-backend:latest"
-            [ "$BUILD_FRONTEND" = "success" ] && docker pull "${IMAGE_PREFIX}-nginx:latest"
-            [ "$BUILD_AGENT" = "success" ] && docker pull "${IMAGE_PREFIX}-agent:latest"
+            # 带重试的 pull 函数（国内直连 Docker Hub 不稳定）
+            pull_with_retry() {
+              local image="$1"
+              local max_retries=3
+              local attempt=1
+              while [ $attempt -le $max_retries ]; do
+                echo "  📥 拉取 $image (第 ${attempt}/${max_retries} 次)..."
+                if docker pull "$image"; then
+                  echo "  ✅ $image 拉取成功"
+                  return 0
+                fi
+                echo "  ⚠️ 第 $attempt 次拉取失败，等待 10 秒后重试..."
+                sleep 10
+                attempt=$((attempt + 1))
+              done
+              echo "  ❌ $image 拉取失败（已重试 $max_retries 次）"
+              return 1
+            }
+
+            [ "$BUILD_BACKEND" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-backend:latest"
+            [ "$BUILD_FRONTEND" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-nginx:latest"
+            [ "$BUILD_AGENT" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-agent:latest"
 
             # 恢复镜像加速器配置（供其他非 CI 场景使用）
             if [ -f /etc/docker/daemon.json.bak ]; then
