@@ -164,7 +164,7 @@ jobs:
   # 部署到服务器
   deploy:
     needs: [detect-changes, build-backend, build-frontend, build-agent]
-    if: always() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-agent.result == 'success' || needs.detect-changes.outputs.config == 'true')
+    if: "!cancelled() && (needs.build-backend.result == 'success' || needs.build-frontend.result == 'success' || needs.build-agent.result == 'success' || needs.detect-changes.outputs.config == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
