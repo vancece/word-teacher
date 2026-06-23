@@ -16,7 +16,7 @@ const router = Router()
 const EXPORT_DIR = path.resolve(process.cwd(), 'tmp/exports')
 
 interface ModifyOperation {
-  type: 'renameColumns' | 'deleteColumns' | 'reorderColumns' | 'sortRows' | 'filterRows'
+  type: 'renameColumns' | 'deleteColumns' | 'reorderColumns' | 'sortRows' | 'filterRows' | 'addColumn' | 'replaceValues' | 'deleteSheet' | 'renameSheet' | 'mergeSheets' | 'addSummaryRow'
   renameMap?: Record<string, string>
   columns?: string[]
   sortBy?: string
@@ -24,6 +24,15 @@ interface ModifyOperation {
   column?: string
   operator?: 'equals' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte'
   value?: string | number
+  headerName?: string
+  formula?: { sourceColumn: string; rules: Array<{ gte?: number; gt?: number; lte?: number; lt?: number; equals?: string | number; contains?: string; label: string }>; default?: string }
+  searchValue?: string
+  replaceWith?: string
+  targetSheet?: string
+  newName?: string
+  sourceSheets?: string[]
+  summaryType?: 'avg' | 'sum' | 'count' | 'max' | 'min'
+  summaryColumns?: string[]
 }
 
 /**
@@ -65,9 +74,14 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   // 对每个 Sheet 执行操作
-  for (const ws of sheetsToModify) {
-    for (const op of operations as ModifyOperation[]) {
-      applyOperation(ws, op)
+  for (const op of operations as ModifyOperation[]) {
+    // workbook 级别的操作
+    if (op.type === 'deleteSheet' || op.type === 'renameSheet' || op.type === 'mergeSheets') {
+      applyWorkbookOperation(workbook, op)
+    } else {
+      for (const ws of sheetsToModify) {
+        applyOperation(ws, op)
+      }
     }
   }
 
@@ -102,6 +116,20 @@ function extractFilename(url: string): string | null {
   return filename
 }
 
+function applyWorkbookOperation(workbook: ExcelJS.Workbook, op: ModifyOperation) {
+  switch (op.type) {
+    case 'deleteSheet':
+      applyDeleteSheet(workbook, op.targetSheet || '')
+      break
+    case 'renameSheet':
+      applyRenameSheet(workbook, op.targetSheet || '', op.newName || '')
+      break
+    case 'mergeSheets':
+      applyMergeSheets(workbook, op.sourceSheets || [])
+      break
+  }
+}
+
 function applyOperation(ws: ExcelJS.Worksheet, op: ModifyOperation) {
   switch (op.type) {
     case 'renameColumns':
@@ -118,6 +146,15 @@ function applyOperation(ws: ExcelJS.Worksheet, op: ModifyOperation) {
       break
     case 'filterRows':
       applyFilterRows(ws, op.column || '', op.operator || 'equals', op.value)
+      break
+    case 'addColumn':
+      applyAddColumn(ws, op.headerName || op.column || '新列', op.value, op.formula)
+      break
+    case 'replaceValues':
+      applyReplaceValues(ws, op.column, op.searchValue || '', op.replaceWith || '')
+      break
+    case 'addSummaryRow':
+      applyAddSummaryRow(ws, op.summaryType || 'avg', op.summaryColumns)
       break
   }
 }
@@ -308,6 +345,225 @@ function matchFilter(cellValue: any, operator: string, value: any): boolean {
       return numVal <= targetNum
     default:
       return true
+  }
+}
+
+function applyAddColumn(ws: ExcelJS.Worksheet, headerName: string, fixedValue: any, formula?: ModifyOperation['formula']) {
+  const totalRows = ws.rowCount
+  const newColIdx = ws.columnCount + 1
+
+  // 设置表头
+  ws.getRow(1).getCell(newColIdx).value = headerName
+
+  if (formula && formula.sourceColumn && formula.rules) {
+    // 条件公式模式：根据源列值匹配规则
+    const headerRow = ws.getRow(1)
+    let sourceColIdx = -1
+    for (let col = 1; col < newColIdx; col++) {
+      if (String(headerRow.getCell(col).value || '') === formula.sourceColumn) {
+        sourceColIdx = col
+        break
+      }
+    }
+
+    for (let row = 2; row <= totalRows; row++) {
+      const sourceValue = sourceColIdx > 0 ? ws.getRow(row).getCell(sourceColIdx).value : null
+      const numSource = typeof sourceValue === 'number' ? sourceValue : parseFloat(String(sourceValue)) || 0
+      const strSource = String(sourceValue || '')
+
+      let matched = false
+      for (const rule of formula.rules) {
+        if (rule.gte !== undefined && numSource >= rule.gte) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+        if (rule.gt !== undefined && numSource > rule.gt) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+        if (rule.lte !== undefined && numSource <= rule.lte) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+        if (rule.lt !== undefined && numSource < rule.lt) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+        if (rule.equals !== undefined && strSource === String(rule.equals)) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+        if (rule.contains !== undefined && strSource.includes(rule.contains)) { ws.getRow(row).getCell(newColIdx).value = rule.label; matched = true; break }
+      }
+      if (!matched) {
+        ws.getRow(row).getCell(newColIdx).value = formula.default || ''
+      }
+    }
+  } else {
+    // 固定值模式
+    for (let row = 2; row <= totalRows; row++) {
+      ws.getRow(row).getCell(newColIdx).value = fixedValue ?? ''
+    }
+  }
+}
+
+function applyReplaceValues(ws: ExcelJS.Worksheet, column: string | undefined, searchValue: string, replaceWith: string) {
+  const totalRows = ws.rowCount
+  const totalCols = ws.columnCount
+
+  if (column) {
+    // 指定列替换
+    const headerRow = ws.getRow(1)
+    let colIdx = -1
+    for (let col = 1; col <= totalCols; col++) {
+      if (String(headerRow.getCell(col).value || '') === column) {
+        colIdx = col
+        break
+      }
+    }
+    if (colIdx === -1) return
+
+    for (let row = 2; row <= totalRows; row++) {
+      const cell = ws.getRow(row).getCell(colIdx)
+      const val = String(cell.value || '')
+      if (val.includes(searchValue)) {
+        cell.value = val.replaceAll(searchValue, replaceWith)
+      }
+    }
+  } else {
+    // 全表替换
+    for (let row = 2; row <= totalRows; row++) {
+      for (let col = 1; col <= totalCols; col++) {
+        const cell = ws.getRow(row).getCell(col)
+        const val = String(cell.value || '')
+        if (val.includes(searchValue)) {
+          cell.value = val.replaceAll(searchValue, replaceWith)
+        }
+      }
+    }
+  }
+}
+
+function applyDeleteSheet(workbook: ExcelJS.Workbook, sheetName: string) {
+  if (!sheetName) return
+  const ws = workbook.getWorksheet(sheetName)
+  if (ws) {
+    workbook.removeWorksheet(ws.id)
+  }
+}
+
+function applyRenameSheet(workbook: ExcelJS.Workbook, oldName: string, newName: string) {
+  if (!oldName || !newName) return
+  const ws = workbook.getWorksheet(oldName)
+  if (ws) {
+    ws.name = newName
+  }
+}
+
+function applyMergeSheets(workbook: ExcelJS.Workbook, sheetNames: string[]) {
+  if (sheetNames.length < 2) return
+
+  // 第一个 Sheet 作为目标
+  const targetWs = workbook.getWorksheet(sheetNames[0])
+  if (!targetWs) return
+
+  for (let i = 1; i < sheetNames.length; i++) {
+    const sourceWs = workbook.getWorksheet(sheetNames[i])
+    if (!sourceWs) continue
+
+    const targetCols = targetWs.columnCount
+    const sourceCols = sourceWs.columnCount
+
+    // 检查表头是否一致
+    const targetHeaders: string[] = []
+    const sourceHeaders: string[] = []
+    for (let col = 1; col <= targetCols; col++) {
+      targetHeaders.push(String(targetWs.getRow(1).getCell(col).value || ''))
+    }
+    for (let col = 1; col <= sourceCols; col++) {
+      sourceHeaders.push(String(sourceWs.getRow(1).getCell(col).value || ''))
+    }
+
+    // 建立列映射（源列 → 目标列）
+    const colMapping: number[] = [] // colMapping[sourceColIdx] = targetColIdx
+    for (let sCol = 0; sCol < sourceHeaders.length; sCol++) {
+      const tCol = targetHeaders.indexOf(sourceHeaders[sCol])
+      colMapping.push(tCol >= 0 ? tCol + 1 : -1)
+    }
+
+    // 追加数据行（跳过源 Sheet 的表头）
+    const sourceRows = sourceWs.rowCount
+    for (let row = 2; row <= sourceRows; row++) {
+      const newRowIdx = targetWs.rowCount + 1
+      for (let sCol = 0; sCol < sourceCols; sCol++) {
+        const tColIdx = colMapping[sCol]
+        if (tColIdx > 0) {
+          targetWs.getRow(newRowIdx).getCell(tColIdx).value = sourceWs.getRow(row).getCell(sCol + 1).value
+        }
+      }
+    }
+
+    // 删除源 Sheet
+    workbook.removeWorksheet(sourceWs.id)
+  }
+}
+
+function applyAddSummaryRow(ws: ExcelJS.Worksheet, summaryType: string, summaryColumns?: string[]) {
+  const headerRow = ws.getRow(1)
+  const totalCols = ws.columnCount
+  const totalRows = ws.rowCount
+
+  // 确定需要汇总的列
+  const colsToSummarize: { idx: number; name: string }[] = []
+  for (let col = 1; col <= totalCols; col++) {
+    const name = String(headerRow.getCell(col).value || '')
+    if (summaryColumns && summaryColumns.length > 0) {
+      if (summaryColumns.includes(name)) colsToSummarize.push({ idx: col, name })
+    } else {
+      // 自动检测数字列（检查前几行）
+      let isNumeric = false
+      for (let row = 2; row <= Math.min(totalRows, 5); row++) {
+        const val = ws.getRow(row).getCell(col).value
+        if (typeof val === 'number') { isNumeric = true; break }
+      }
+      if (isNumeric) colsToSummarize.push({ idx: col, name })
+    }
+  }
+
+  if (colsToSummarize.length === 0) return
+
+  // 收集各列的数值
+  const colValues: Map<number, number[]> = new Map()
+  for (const col of colsToSummarize) {
+    colValues.set(col.idx, [])
+  }
+
+  for (let row = 2; row <= totalRows; row++) {
+    for (const col of colsToSummarize) {
+      const val = ws.getRow(row).getCell(col.idx).value
+      if (typeof val === 'number') {
+        colValues.get(col.idx)!.push(val)
+      } else {
+        const num = parseFloat(String(val))
+        if (!isNaN(num)) colValues.get(col.idx)!.push(num)
+      }
+    }
+  }
+
+  // 添加空行 + 汇总行
+  const summaryRowIdx = totalRows + 2
+  ws.getRow(summaryRowIdx).getCell(1).value = '汇总'
+  ws.getRow(summaryRowIdx).font = { bold: true }
+
+  for (const col of colsToSummarize) {
+    const values = colValues.get(col.idx) || []
+    if (values.length === 0) continue
+
+    let result: number
+    switch (summaryType) {
+      case 'sum':
+        result = values.reduce((a, b) => a + b, 0)
+        break
+      case 'count':
+        result = values.length
+        break
+      case 'max':
+        result = Math.max(...values)
+        break
+      case 'min':
+        result = Math.min(...values)
+        break
+      case 'avg':
+      default:
+        result = Math.round(values.reduce((a, b) => a + b, 0) / values.length * 10) / 10
+        break
+    }
+    ws.getRow(summaryRowIdx).getCell(col.idx).value = result
   }
 }
 
