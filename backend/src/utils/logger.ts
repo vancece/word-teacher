@@ -24,20 +24,18 @@ const pinoRollPath = require.resolve('pino-roll')
 // 构建 transport targets
 const targets: pino.TransportTargetOptions[] = []
 
-// 文件输出（按天切割）- 仅生产环境或显式启用
-if (!env.isDev) {
-  targets.push({
-    target: pinoRollPath,
-    options: {
-      file: join(LOG_DIR, 'backend'),
-      frequency: 'daily',
-      dateFormat: 'yyyy-MM-dd',
-      extension: '.log',
-      mkdir: true,
-    },
-    level: 'debug',
-  })
-}
+// 文件输出（按天切割）- 所有环境都写文件，供日志查询页面使用
+targets.push({
+  target: pinoRollPath,
+  options: {
+    file: join(LOG_DIR, 'backend'),
+    frequency: 'daily',
+    dateFormat: 'yyyy-MM-dd',
+    extension: '.log',
+    mkdir: true,
+  },
+  level: env.isDev ? 'debug' : 'info',
+})
 
 // 开发环境加 console 美化
 if (env.isDev) {

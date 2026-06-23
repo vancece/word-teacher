@@ -1,0 +1,144 @@
+.logs-page {
+  padding: 24px;
+
+  .page-header {
+    margin-bottom: 16px;
+
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  .tab-content {
+    margin-top: 16px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .auto-refresh {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .log-count {
+    font-size: 13px;
+    color: #999;
+  }
+
+  .log-msg {
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 12px;
+  }
+
+  // 表格行高亮
+  .log-row-error {
+    background-color: #fff2f0 !important;
+
+    &:hover > td {
+      background-color: #ffebe8 !important;
+    }
+  }
+
+  .log-row-warn {
+    background-color: #fffbe6 !important;
+
+    &:hover > td {
+      background-color: #fff7cc !important;
+    }
+  }
+
+  // Antd Table 覆盖
+  .ant-table {
+    font-size: 12px;
+
+    .ant-table-cell {
+      padding: 6px 8px !important;
+    }
+  }
+
+  .module-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
+// 日志详情弹窗
+.log-detail {
+  .detail-row {
+    display: flex;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      flex-shrink: 0;
+      width: 60px;
+      font-weight: 500;
+      color: #666;
+    }
+  }
+
+  .error-detail {
+    flex-direction: column;
+
+    .error-content {
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .error-message {
+      color: #ff4d4f;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .error-stack {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 300px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+  }
+
+  .raw-row {
+    flex-direction: column;
+
+    .raw-content {
+      margin-top: 8px;
+      background: #f6f8fa;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      line-height: 1.5;
+      overflow-x: auto;
+      max-height: 200px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      width: 100%;
+    }
+  }
+}

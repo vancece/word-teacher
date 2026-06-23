@@ -5,7 +5,7 @@ import { Card, Spin, Tag, Tooltip } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
 import { adminApi } from '../api'
-import type { SystemStatus } from '../api/admin'
+
 import './DashboardPage.scss'
 
 export default function DashboardPage() {

@@ -12,6 +12,7 @@ import crypto from 'crypto'
 const ACCESS_TOKEN = process.env.DINGTALK_ACCESS_TOKEN || ''
 const SECRET = process.env.DINGTALK_SECRET || ''
 const CHECK_INTERVAL = 5 * 60 * 1000 // 5 分钟
+const IS_DEV = process.env.NODE_ENV === 'development'
 
 export interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy'
@@ -70,7 +71,7 @@ async function checkHealth(): Promise<HealthStatus> {
 }
 
 async function sendDingtalkAlert(title: string, text: string) {
-  if (!ACCESS_TOKEN || !SECRET) return
+  if (!ACCESS_TOKEN || !SECRET || IS_DEV) return
 
   try {
     const timestamp = Date.now().toString()

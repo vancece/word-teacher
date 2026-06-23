@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Card, Select, Input, Button, Table, Tag, Space, message, Descriptions, DatePicker, InputNumber, Switch, Typography } from 'antd'
+import { Card, Select, Input, Button, Table, Tag, Space, message, Descriptions, Typography } from 'antd'
 import { PlayCircleOutlined, CopyOutlined, ClearOutlined } from '@ant-design/icons'
 import { apiClient } from '../api/client'
-import dayjs from 'dayjs'
+
 import './McpTestPage.scss'
 
 const { TextArea } = Input
-const { RangePicker } = DatePicker
 const { Text, Title } = Typography
 
 interface ToolDef {

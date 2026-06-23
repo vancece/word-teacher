@@ -424,6 +424,40 @@ export const adminApi = {
       error?: string
     }
   },
+
+  // 日志查询
+  getLogsFiles: async (): Promise<any[]> => {
+    return apiClient.get('/admin/logs/files') as unknown as any[]
+  },
+
+  getLogsQuery: async (params: {
+    date?: string
+    level?: string
+    module?: string
+    keyword?: string
+    page?: number
+    limit?: number
+    order?: string
+  }): Promise<{ logs: any[]; total: number; page: number; limit: number; date: string; filename?: string }> => {
+    return apiClient.get('/admin/logs/query', { params }) as unknown as any
+  },
+
+  getLogsTail: async (params: {
+    lines?: number
+    level?: string
+  }): Promise<{ logs: any[]; total: number; filename?: string }> => {
+    return apiClient.get('/admin/logs/tail', { params }) as unknown as any
+  },
+
+  getLogsStats: async (params: { date?: string }): Promise<{
+    levelCounts: Record<string, number>
+    moduleCounts: Record<string, number>
+    hourlyErrors: number[]
+    totalLines: number
+    date: string
+  }> => {
+    return apiClient.get('/admin/logs/stats', { params }) as unknown as any
+  },
 }
 
 // 学生统计数据
@@ -612,4 +646,6 @@ export const learningRecordsApi = {
     return apiClient.delete(`/admin/learning-records/${type}/${id}`) as unknown as void
   },
 }
+
+
 

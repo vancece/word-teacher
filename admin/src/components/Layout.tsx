@@ -13,6 +13,7 @@ import {
   Trophy,
   Sparkles,
   Wrench,
+  ScrollText,
 } from 'lucide-react'
 import './Layout.scss'
 
@@ -56,6 +57,7 @@ export default function Layout() {
 
   // 管理员底部菜单
   const adminBottomItems: NavItem[] = [
+    { path: '/logs', icon: ScrollText, label: '系统日志', adminOnly: true },
     { path: '/devtools', icon: Wrench, label: '开发调试', adminOnly: true },
   ]
 
