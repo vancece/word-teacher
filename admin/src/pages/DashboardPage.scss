@@ -24,6 +24,80 @@
     }
   }
 
+  .system-status-bar {
+    margin-bottom: 20px;
+
+    .system-status-card {
+      .ant-card-body {
+        padding: 14px 20px;
+      }
+    }
+
+    .status-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .status-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .status-icon {
+        color: #64748b;
+      }
+
+      .status-title {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 14px;
+      }
+    }
+
+    .status-details {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .status-check {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-divider {
+      width: 1px;
+      height: 16px;
+      background: #e2e8f0;
+    }
+
+    .status-online {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .status-uptime {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+  }
+
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

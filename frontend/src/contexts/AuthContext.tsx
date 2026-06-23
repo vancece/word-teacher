@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { authApi, type Student, type User, type LoginRequest, type RegisterRequest } from '../api'
 
 interface AuthContextType {
@@ -33,12 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const autoLoginAttempted = useRef(false)
+
   const tryDevAutoLogin = async () => {
+    // 防止 StrictMode 双重调用
+    if (autoLoginAttempted.current) return
+    autoLoginAttempted.current = true
+
     if (import.meta.env.DEV) {
       try {
         await login({ studentNo: '2026050101', password: '123456' })
       } catch {
-        // dev 自动登录失败（如后端没启动），静默忽略
+        // dev 自动登录失败（如后端没启动、学生不存在），静默忽略，显示登录页
       }
     }
     setIsLoading(false)

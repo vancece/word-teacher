@@ -209,15 +209,16 @@ setup_prisma() {
   log_info "数据库 Schema 已同步"
 }
 
-# 检查是否有测试数据
+# 检查是否有测试数据（同时检查 teachers 和 students）
 check_seed() {
-  local count
-  count=$(docker exec word-teacher-mysql-dev mysql -u root -p${DB_PASS} ${DB_NAME} -N -e "SELECT COUNT(*) FROM teachers;" 2>/dev/null || echo "0")
-  if [ "$count" = "0" ] || [ -z "$count" ]; then
-    log_step "检测到空数据库，自动填充测试数据..."
+  local teacher_count student_count
+  teacher_count=$(docker exec word-teacher-mysql-dev mysql -u root -p${DB_PASS} ${DB_NAME} -N -e "SELECT COUNT(*) FROM teachers;" 2>/dev/null || echo "0")
+  student_count=$(docker exec word-teacher-mysql-dev mysql -u root -p${DB_PASS} ${DB_NAME} -N -e "SELECT COUNT(*) FROM students;" 2>/dev/null || echo "0")
+  if [ "$teacher_count" = "0" ] || [ -z "$teacher_count" ] || [ "$student_count" = "0" ] || [ -z "$student_count" ]; then
+    log_step "检测到缺少测试数据，自动填充..."
     bash "$SCRIPT_DIR/seed-dev.sh"
   else
-    log_info "数据库已有数据 (teachers: $count)"
+    log_info "数据库已有数据 (teachers: $teacher_count, students: $student_count)"
   fi
 }
 

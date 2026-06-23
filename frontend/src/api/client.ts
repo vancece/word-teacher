@@ -26,16 +26,26 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// 不触发 401 跳转的请求路径（登录/注册本身返回 401 是业务错误，不是 token 过期）
+const AUTH_PATHS = ['/student/auth/login', '/student/auth/register']
+
 // 响应拦截器 - 处理错误和 token 过期
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      // Token 过期或无效，清除登录状态
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      // 跳转到登录页（使用基础路径）
-      window.location.href = `${BASE_PATH}/login`
+      const requestUrl = error.config?.url || ''
+      const isSilent = error.config?.headers?.['X-Silent']
+      const isAuthRequest = AUTH_PATHS.some(p => requestUrl.includes(p))
+
+      if (!isSilent && !isAuthRequest) {
+        // Token 过期或无效，清除登录状态
+        localStorage.removeItem('token')
+        localStorage.removeItem('student')
+        localStorage.removeItem('user')
+        // 跳转到登录页（使用基础路径）
+        window.location.href = `${BASE_PATH}/login`
+      }
     }
     return Promise.reject(error.response?.data || error)
   }

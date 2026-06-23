@@ -94,9 +94,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- 教师 (密码: 123456)
 INSERT INTO teachers (id, username, password, name, is_admin, created_at, updated_at) VALUES
-(1, 'admin', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '管理员', true, NOW(), NOW()),
-(2, 'xiaomei', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '小美老师', false, NOW(), NOW()),
-(3, 'zhangsan', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '张三老师', false, NOW(), NOW());
+(1, 'admin', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '管理员', true, NOW(), NOW()),
+(2, 'xiaomei', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '小美老师', false, NOW(), NOW()),
+(3, 'zhangsan', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '张三老师', false, NOW(), NOW());
 
 -- 班级
 INSERT INTO classes (id, name, grade, description, created_at, updated_at) VALUES
@@ -113,12 +113,12 @@ INSERT INTO class_teachers (class_id, teacher_id, created_at) VALUES
 -- 学生 (密码: 123456)
 -- 注意: studentNo 列名与 Prisma schema 中 @map 映射可能不一致，此处使用实际数据库列名
 INSERT INTO students (id, studentNo, password, name, class_id, seat_no, created_at, updated_at) VALUES
-(1, '2026050101', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '张小明', 1, 1, NOW(), NOW()),
-(2, '2026050102', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '李小红', 1, 2, NOW(), NOW()),
-(3, '2026050103', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '王小华', 1, 3, NOW(), NOW()),
-(4, '2026050201', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '赵小刚', 2, 1, NOW(), NOW()),
-(5, '2026050202', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '孙小丽', 2, 2, NOW(), NOW()),
-(6, '2026050301', '$2b$10$EpRnTzVlqHNP0.fUbXUwSOyuiXe/QLSUG6xNekdHgTGmrpHEfIoxm', '周小军', 3, 1, NOW(), NOW());
+(1, '2026050101', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '张小明', 1, 1, NOW(), NOW()),
+(2, '2026050102', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '李小红', 1, 2, NOW(), NOW()),
+(3, '2026050103', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '王小华', 1, 3, NOW(), NOW()),
+(4, '2026050201', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '赵小刚', 2, 1, NOW(), NOW()),
+(5, '2026050202', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '孙小丽', 2, 2, NOW(), NOW()),
+(6, '2026050301', '$2b$10$v1dYGOM8i9ljYxZaVSV.5uJjGqa714/sqFNxWy7B5KLXp3.JYtjdm', '周小军', 3, 1, NOW(), NOW());
 
 -- 对话场景
 INSERT INTO scenes (id, name, description, rounds, grade, visible, vocabulary, dialogue_config, creator_id, created_at) VALUES

@@ -3,6 +3,8 @@ import { env } from './config/env.js'
 import { connectDatabase, disconnectDatabase } from './config/database.js'
 import { initMinio } from './services/minio.service.js'
 import { knowledgeVectorService } from './services/knowledge-vector.service.js'
+import { startHealthMonitor, stopHealthMonitor } from './services/health-monitor.service.js'
+import { startPresenceCleanup } from './services/presence.service.js'
 import { logger } from './utils/logger.js'
 
 async function main() {
@@ -22,6 +24,12 @@ async function main() {
     logger.warn({ error: err }, '[VectorDB] Init failed, will retry on first search')
   })
 
+  // 启动健康监控（5 分钟探测一次，unhealthy 时钉钉告警）
+  startHealthMonitor()
+
+  // 启动心跳清理（定期清除过期的在线状态记录）
+  startPresenceCleanup()
+
   // 启动服务器
   const server = app.listen(env.port, () => {
     logger.info({
@@ -37,6 +45,7 @@ async function main() {
     logger.info({ signal }, 'Received shutdown signal, closing gracefully...')
 
     server.close(async () => {
+      stopHealthMonitor()
       await disconnectDatabase()
       logger.info('Server closed')
       process.exit(0)

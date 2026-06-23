@@ -3,6 +3,7 @@ import './App.scss'
 import Header from './components/Header'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { useHeartbeat } from './hooks/useHeartbeat'
 import DialoguePage from './pages/DialoguePage'
 import EvaluationPage from './pages/EvaluationPage'
 import LoginPage from './pages/LoginPage'
@@ -33,6 +34,9 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const { isAuthenticated } = useAuth()
+  useHeartbeat(isAuthenticated)
+
   return (
     <>
       <Header />

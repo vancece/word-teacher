@@ -191,7 +191,25 @@ export interface DashboardStats {
   averageScore: number
 }
 
+export interface SystemStatus {
+  health: {
+    status: 'healthy' | 'degraded' | 'unhealthy'
+    timestamp: string
+    uptime: number
+    checks: {
+      database: { status: string; latency?: number; error?: string }
+      agent: { status: string; latency?: number; error?: string }
+    }
+  }
+  activeStudents: number
+}
+
 export const adminApi = {
+  // 系统状态（健康 + 在线人数）
+  getSystemStatus: async (): Promise<SystemStatus> => {
+    return apiClient.get('/system/status') as unknown as SystemStatus
+  },
+
   // 仪表盘统计
   getDashboardStats: async (): Promise<DashboardStats> => {
     return apiClient.get('/admin/stats') as unknown as DashboardStats

@@ -1,16 +1,23 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, School, Bot } from 'lucide-react'
-import { Card, Spin } from 'antd'
+import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, School, Bot, Activity, CheckCircle, AlertTriangle, XCircle, UserCheck } from 'lucide-react'
+import { Card, Spin, Tag, Tooltip } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
 import { adminApi } from '../api'
+import type { SystemStatus } from '../api/admin'
 import './DashboardPage.scss'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { data: stats, loading: isLoading } = useRequest(
     () => adminApi.getDashboardStats()
+  )
+
+  // 系统状态 30 秒自动刷新
+  const { data: systemStatus, loading: statusLoading } = useRequest(
+    () => adminApi.getSystemStatus(),
+    { pollingInterval: 30000 }
   )
 
   // 饼图配置
@@ -72,12 +79,73 @@ export default function DashboardPage() {
     { icon: Award, label: '完成跟读', value: stats?.completedReadAlouds || 0, color: '#06b6d4' },
   ]
 
+  // 系统健康状态渲染辅助
+  const getStatusInfo = (status?: string) => {
+    switch (status) {
+      case 'healthy': return { color: '#10b981', icon: CheckCircle, text: '正常', tagColor: 'success' }
+      case 'degraded': return { color: '#f59e0b', icon: AlertTriangle, text: '降级', tagColor: 'warning' }
+      default: return { color: '#ef4444', icon: XCircle, text: '异常', tagColor: 'error' }
+    }
+  }
+
+  const getCheckStatus = (check?: { status: string; latency?: number; error?: string }) => {
+    if (!check) return { color: '#94a3b8', text: '未知' }
+    if (check.status === 'ok') return { color: '#10b981', text: `正常${check.latency ? ` (${check.latency}ms)` : ''}` }
+    if (check.status === 'degraded') return { color: '#f59e0b', text: '降级' }
+    return { color: '#ef4444', text: check.error || '不可用' }
+  }
+
   return (
     <Spin spinning={isLoading}>
       <div className="dashboard-page">
         <div className="page-header">
           <h1>仪表盘</h1>
           <p>欢迎使用 Echo Kid 管理后台</p>
+        </div>
+
+        {/* 系统状态栏 */}
+        <div className="system-status-bar">
+          <Card className="system-status-card" loading={statusLoading && !systemStatus}>
+            <div className="status-content">
+              <div className="status-main">
+                <Activity size={18} className="status-icon" />
+                <span className="status-title">系统状态</span>
+                {systemStatus && (
+                  <Tag color={getStatusInfo(systemStatus.health?.status).tagColor as any}>
+                    {getStatusInfo(systemStatus.health?.status).text}
+                  </Tag>
+                )}
+              </div>
+              <div className="status-details">
+                {systemStatus?.health?.checks && (
+                  <>
+                    <Tooltip title={getCheckStatus(systemStatus.health.checks.database).text}>
+                      <span className="status-check" style={{ color: getCheckStatus(systemStatus.health.checks.database).color }}>
+                        <span className="status-dot" style={{ background: getCheckStatus(systemStatus.health.checks.database).color }} />
+                        数据库
+                      </span>
+                    </Tooltip>
+                    <Tooltip title={getCheckStatus(systemStatus.health.checks.agent).text}>
+                      <span className="status-check" style={{ color: getCheckStatus(systemStatus.health.checks.agent).color }}>
+                        <span className="status-dot" style={{ background: getCheckStatus(systemStatus.health.checks.agent).color }} />
+                        AI 助手
+                      </span>
+                    </Tooltip>
+                  </>
+                )}
+                <span className="status-divider" />
+                <span className="status-online">
+                  <UserCheck size={14} />
+                  <span>{systemStatus?.activeStudents ?? '-'} 人在线</span>
+                </span>
+                {systemStatus?.health?.uptime != null && (
+                  <span className="status-uptime">
+                    运行 {formatUptime(systemStatus.health.uptime)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
 
         <div className="stats-grid">
@@ -144,5 +212,14 @@ export default function DashboardPage() {
       </div>
     </Spin>
   )
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (days > 0) return `${days}天${hours}小时`
+  if (hours > 0) return `${hours}小时${minutes}分钟`
+  return `${minutes}分钟`
 }
 

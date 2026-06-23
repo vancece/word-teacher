@@ -16,6 +16,10 @@ import wordPacksRoutes from './word-packs.routes.js'
 import wordGameRoutes from './word-game.routes.js'
 import dingtalkBotRoutes from './dingtalk-bot.routes.js'
 import internalRoutes from './internal.routes.js'
+import { authenticateStudent } from '../middleware/auth.js'
+import { recordHeartbeat, getActiveStudentCount } from '../services/presence.service.js'
+import { getHealthStatus } from '../services/health-monitor.service.js'
+import type { StudentRequest } from '../types/index.js'
 import path from 'path'
 import fs from 'fs'
 
@@ -84,6 +88,22 @@ router.get('/health/detail', async (_req, res) => {
     uptime: Math.floor(process.uptime()),
     version: process.env.npm_package_version || '1.0.0',
     checks,
+  })
+})
+
+// 学生心跳上报（轻量接口，用于统计在线人数）
+router.post('/heartbeat', authenticateStudent, (req: StudentRequest, res) => {
+  recordHeartbeat(req.student!.studentId)
+  res.json({ status: 'ok' })
+})
+
+// 系统状态 API（供 Admin 仪表盘使用，无需额外认证，数据不敏感）
+router.get('/system/status', (_req, res) => {
+  const health = getHealthStatus()
+  const activeStudents = getActiveStudentCount()
+  res.json({
+    success: true,
+    data: { health, activeStudents },
   })
 })
 
