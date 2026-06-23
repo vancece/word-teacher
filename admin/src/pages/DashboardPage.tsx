@@ -5,7 +5,6 @@ import { Card, Spin, Tag, Tooltip } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
 import { adminApi, dashboardApi } from '../api'
-import type { AiConnectivityResponse, ServerMetrics, RecentError, TrendDay } from '../api/admin'
 
 import './DashboardPage.scss'
 
@@ -36,7 +35,7 @@ export default function DashboardPage() {
 
 
   // AI 连通性 — 30 秒自动轮询（不消耗 token，只是健康检查）
-  const { data: aiTestResult, loading: aiTesting, run: handleAiTest } = useRequest(
+  const { data: aiTestResult } = useRequest(
     () => dashboardApi.testAiConnectivity(),
     { pollingInterval: 30000 }
   )

@@ -157,7 +157,7 @@ router.get('/storage', asyncHandler(async (_req: TeacherRequest, res) => {
       prisma.readAloudRecord.count(),
       prisma.practiceRecord.count(),
       prisma.wordGameRecord.count(),
-      prisma.dialogueScene.count(),
+      prisma.scene.count(),
       prisma.readAloudScene.count(),
     ])
     storageInfo.database = {
