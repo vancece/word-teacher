@@ -353,6 +353,146 @@ router.get('/changelog', asyncHandler(async (req: TeacherRequest, res) => {
   }
 }))
 
+/**
+ * GET /api/admin/dashboard/ise-quota
+ * 讯飞 ISE 账号池额度汇总
+ */
+router.get('/ise-quota', asyncHandler(async (_req: TeacherRequest, res) => {
+  const accounts = await prisma.iseAccount.findMany({
+    select: {
+      id: true,
+      label: true,
+      enabled: true,
+      dailyQuota: true,
+      usedToday: true,
+      totalUsed: true,
+      exhaustedAt: true,
+      lastUsedAt: true,
+    },
+  })
+
+  const enabledAccounts = accounts.filter(a => a.enabled)
+  const totalDailyQuota = enabledAccounts.reduce((sum, a) => sum + a.dailyQuota, 0)
+  const totalUsedToday = enabledAccounts.reduce((sum, a) => sum + a.usedToday, 0)
+  const remainingToday = totalDailyQuota - totalUsedToday
+  const totalUsedAll = accounts.reduce((sum, a) => sum + a.totalUsed, 0)
+  const exhaustedCount = enabledAccounts.filter(a => a.exhaustedAt !== null).length
+
+  return success(res, {
+    totalAccounts: accounts.length,
+    enabledAccounts: enabledAccounts.length,
+    exhaustedCount,
+    totalDailyQuota,
+    totalUsedToday,
+    remainingToday,
+    usagePercent: totalDailyQuota > 0 ? Math.round((totalUsedToday / totalDailyQuota) * 1000) / 10 : 0,
+    totalUsedAll,
+    accounts: enabledAccounts.map(a => ({
+      id: a.id,
+      label: a.label,
+      dailyQuota: a.dailyQuota,
+      usedToday: a.usedToday,
+      exhausted: a.exhaustedAt !== null,
+      lastUsedAt: a.lastUsedAt,
+    })),
+  })
+}))
+
+/**
+ * GET /api/admin/dashboard/cloud-balance
+ * 查询阿里云账户余额（需要 AK/SK 有 AliyunBSSReadOnlyAccess 权限）
+ */
+router.get('/cloud-balance', asyncHandler(async (_req: TeacherRequest, res) => {
+  const akId = process.env.ALIYUN_AK_ID || ''
+  const akSecret = process.env.ALIYUN_AK_SECRET || ''
+
+  if (!akId || !akSecret) {
+    return success(res, { available: false, error: '阿里云 AK/SK 未配置' })
+  }
+
+  try {
+    const balance = await queryAliyunBalance(akId, akSecret)
+    return success(res, balance)
+  } catch (err: any) {
+    return success(res, { available: false, error: err.message || '查询失败' })
+  }
+}))
+
+/**
+ * 调用阿里云 BssOpenApi QueryAccountBalance
+ * 文档: https://help.aliyun.com/zh/user-center/developer-reference/api-bssopenapi-2017-12-14-queryaccountbalance
+ */
+async function queryAliyunBalance(accessKeyId: string, accessKeySecret: string): Promise<{
+  available: true
+  availableAmount: string
+  availableCashAmount: string
+  creditAmount: string
+  currency: string
+}> {
+  const crypto = await import('crypto')
+
+  // 阿里云 OpenAPI 签名参数
+  const params: Record<string, string> = {
+    Action: 'QueryAccountBalance',
+    Version: '2017-12-14',
+    Format: 'JSON',
+    AccessKeyId: accessKeyId,
+    SignatureMethod: 'HMAC-SHA1',
+    Timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    SignatureVersion: '1.0',
+    SignatureNonce: crypto.randomUUID(),
+  }
+
+  // 生成签名
+  const sortedKeys = Object.keys(params).sort()
+  const canonicalQuery = sortedKeys
+    .map(k => `${percentEncode(k)}=${percentEncode(params[k])}`)
+    .join('&')
+
+  const stringToSign = `GET&${percentEncode('/')}&${percentEncode(canonicalQuery)}`
+  const signature = crypto.createHmac('sha1', accessKeySecret + '&')
+    .update(stringToSign)
+    .digest('base64')
+
+  params.Signature = signature
+
+  const queryString = Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&')
+
+  const resp = await fetchWithTimeout(
+    `https://business.aliyuncs.com/?${queryString}`,
+    {},
+    10000
+  )
+
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}: ${resp.statusText}`)
+  }
+
+  const data = await resp.json() as any
+
+  if (data.Code && data.Code !== '200' && data.Code !== 'Success') {
+    throw new Error(`${data.Code}: ${data.Message || '未知错误'}`)
+  }
+
+  const balanceData = data.Data || data
+  return {
+    available: true,
+    availableAmount: balanceData.AvailableAmount || '0',
+    availableCashAmount: balanceData.AvailableCashAmount || '0',
+    creditAmount: balanceData.CreditAmount || '0',
+    currency: balanceData.Currency || 'CNY',
+  }
+}
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str)
+    .replace(/\+/g, '%20')
+    .replace(/\*/g, '%2A')
+    .replace(/%7E/g, '~')
+}
+
 // 辅助函数
 async function testService(name: string, testFn: () => Promise<void>): Promise<ServiceTestResult> {
   const start = Date.now()

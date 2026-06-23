@@ -457,7 +457,11 @@ pm2 start agent/dist/index.js --name agent
 
 ### 🔄 GitHub Actions 自动部署（CI/CD）
 
-本项目支持通过 GitHub Actions 实现**推送即部署**：
+本项目支持通过 GitHub Actions 实现**推送即部署**，镜像通过腾讯云 TCR（容器镜像服务）分发，国内服务器拉取秒级完成：
+
+```
+GitHub Actions 构建镜像 → 推送到腾讯云 TCR → 服务器内网拉取（秒级） → 蓝绿部署
+```
 
 1. Fork 本仓库
 2. 在 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
@@ -466,6 +470,8 @@ pm2 start agent/dist/index.js --name agent
 |--------|------|------|
 | `SERVER_HOST` | 服务器 IP | ✅ |
 | `SERVER_SSH_KEY` | SSH 私钥 | ✅ |
+| `TCR_USERNAME` | 腾讯云 TCR 用户名（腾讯云账号 ID） | ✅ |
+| `TCR_PASSWORD` | 腾讯云 TCR 密码 | ✅ |
 | `MYSQL_ROOT_PASSWORD` | MySQL root 密码 | ✅ |
 | `MYSQL_PASSWORD` | MySQL 应用密码 | ✅ |
 | `JWT_SECRET` | JWT 签名密钥 | ✅ |
@@ -478,14 +484,13 @@ pm2 start agent/dist/index.js --name agent
 | `XFYUN_API_SECRET` | 科大讯飞 API Secret | 可选 |
 | `DINGTALK_ACCESS_TOKEN` | 钉钉通知机器人 Token | 可选 |
 | `DINGTALK_SECRET` | 钉钉通知机器人签名密钥 | 可选 |
-| `DINGTALK_BOT_APP_KEY` | 钉钉 AI 客服机器人 AppKey | 可选 |
-| `DINGTALK_BOT_APP_SECRET` | 钉钉 AI 客服机器人 AppSecret | 可选 |
 
 3. 在 **Variables** 中添加：
 
 | Variable | 说明 |
 |----------|------|
 | `DOCKER_USERNAME` | Docker Hub 用户名 |
+| `TCR_NAMESPACE` | 腾讯云 TCR 命名空间（默认 `word-teacher`） |
 | `ALIYUN_STT_APPKEY` | 阿里云语音识别 AppKey |
 | `XFYUN_APP_ID` | 科大讯飞应用 ID |
 

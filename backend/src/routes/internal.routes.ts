@@ -1326,6 +1326,33 @@ router.post('/students/create', asyncHandler(async (req: Request, res: Response)
 }))
 
 /**
+ * POST /api/internal/ise-usage - ISE 用量上报（Agent 每次成功评测后调用）
+ */
+router.post('/ise-usage', asyncHandler(async (req, res) => {
+  const { appId } = req.body
+  if (!appId) {
+    return res.status(400).json({ success: false, message: 'appId required' })
+  }
+
+  // 找到对应账号，增加用量
+  const account = await prisma.iseAccount.findFirst({ where: { appId } })
+  if (!account) {
+    return res.json({ success: true, message: 'account not in db, skipped' })
+  }
+
+  await prisma.iseAccount.update({
+    where: { id: account.id },
+    data: {
+      usedToday: { increment: 1 },
+      totalUsed: { increment: 1 },
+      lastUsedAt: new Date(),
+    },
+  })
+
+  res.json({ success: true })
+}))
+
+/**
  * POST /api/internal/teachers/create - 创建教师
  * 强制账号格式：小写字母/数字/下划线，3-20位，字母开头
  */

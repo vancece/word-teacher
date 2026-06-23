@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Avatar, Button, Tooltip } from 'antd'
 import {
   UserOutlined,
@@ -103,12 +104,27 @@ function saveHistory(msgs: ChatMessage[]) {
 }
 
 export default function AssistantPage() {
+  const location = useLocation()
   const [messages, setMessages] = useState<ChatMessage[]>(loadHistory)
   const [inputValue, setInputValue] = useState('')
   const [loading, setLoading] = useState(false)
   const msgIdRef = useRef(0)
   const senderRef = useRef<HTMLDivElement>(null)
+  const prefillHandled = useRef(false)
   const genMsgId = () => `msg-${++msgIdRef.current}`
+
+  // 从仪表盘跳转过来时，预填问题到输入框
+  useEffect(() => {
+    const state = location.state as { prefillPrompt?: string } | null
+    if (state?.prefillPrompt && !prefillHandled.current) {
+      prefillHandled.current = true
+      setInputValue(state.prefillPrompt)
+      // 清除 state 避免刷新页面后重复填入
+      window.history.replaceState({}, '')
+      // 聚焦输入框
+      setTimeout(() => senderRef.current?.querySelector('textarea')?.focus(), 100)
+    }
+  }, [location.state])
 
   // 消息变化时持久化到 localStorage
   useEffect(() => {

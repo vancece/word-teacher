@@ -8,44 +8,43 @@ WORKDIR /app
 # 安装 pnpm
 RUN npm install -g pnpm
 
-# 复制依赖文件
-COPY agent/package.json agent/pnpm-lock.yaml* ./
+# 先复制依赖文件（利用 Docker 层缓存，依赖不变就不重装）
+COPY agent/package.json ./
+COPY pnpm-lock.yaml ./
 
-# 安装依赖
-RUN pnpm install --frozen-lockfile || pnpm install
+# 安装依赖（monorepo 共用根目录 lockfile，用 --no-frozen-lockfile 兼容子包单独安装）
+RUN pnpm install --no-frozen-lockfile
 
-# 复制源码
+# 再复制源码（源码变了只重新 build，不重装依赖）
 COPY agent/src ./src/
 COPY agent/tsconfig.json ./
 
 # 构建 TypeScript
 RUN pnpm build
 
+# 生产阶段只装 production 依赖，去掉 devDependencies
+RUN pnpm prune --prod
+
 # ============ 生产镜像 ============
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# 安装 pnpm
-RUN npm install -g pnpm
-
-# 只复制必要的文件
+# 只复制必要的文件（不需要 pnpm，用 node 直接跑）
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
-# 创建日志目录（容器内，会被宿主机 volume 挂载覆盖）
-RUN mkdir -p /app/logs
-
-# 创建非 root 用户，并赋予日志目录权限
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 agent
-RUN chown -R agent:nodejs /app/logs
+# 创建日志目录 + 非 root 用户
+RUN mkdir -p /app/logs \
+    && addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 agent \
+    && chown -R agent:nodejs /app/logs
 USER agent
 
 # 健康检查（访问根路径，不需要认证）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 -q -O /dev/null http://localhost:3002/ || exit 1
+  CMD wget --no-verbose --tries=1 -q -O /dev/null http://127.0.0.1:3002/ || exit 1
 
 EXPOSE 3002
 

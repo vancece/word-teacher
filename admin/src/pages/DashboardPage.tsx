@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, Activity, CheckCircle, AlertTriangle, XCircle, UserCheck, Wifi, Bell } from 'lucide-react'
+import { Users, Mic2, MessageSquare, TrendingUp, Calendar, Award, Activity, CheckCircle, AlertTriangle, XCircle, UserCheck, Wifi, Bell, Wallet, AudioLines } from 'lucide-react'
 import { Card, Spin, Tag, Tooltip } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { useRequest } from 'ahooks'
@@ -38,6 +38,18 @@ export default function DashboardPage() {
   const { data: aiTestResult } = useRequest(
     () => dashboardApi.testAiConnectivity(),
     { pollingInterval: 30000 }
+  )
+
+  // 阿里云账户余额 — 每 5 分钟刷新
+  const { data: cloudBalance } = useRequest(
+    () => dashboardApi.getCloudBalance(),
+    { pollingInterval: 5 * 60 * 1000 }
+  )
+
+  // 讯飞 ISE 额度 — 每 1 分钟刷新
+  const { data: iseQuota } = useRequest(
+    () => dashboardApi.getIseQuota(),
+    { pollingInterval: 60 * 1000 }
   )
 
   // 饼图配置
@@ -115,12 +127,12 @@ export default function DashboardPage() {
   }, [trendsData])
 
   const statCards = [
-    { icon: Users, label: '学生总数', value: stats?.totalStudents || 0, color: '#3b82f6' },
-    { icon: Mic2, label: '跟读练习', value: stats?.totalReadAlouds || 0, color: '#10b981' },
-    { icon: MessageSquare, label: '对话练习', value: stats?.totalPractices || 0, color: '#8b5cf6' },
-    { icon: TrendingUp, label: '平均分', value: stats?.averageScore?.toFixed(1) || '0', color: '#f59e0b' },
-    { icon: Calendar, label: '今日跟读', value: stats?.todayReadAlouds || 0, color: '#ec4899' },
-    { icon: Award, label: '完成跟读', value: stats?.completedReadAlouds || 0, color: '#06b6d4' },
+    { icon: Users, label: '学生总数', value: stats?.totalStudents || 0, color: '#3b82f6', prompt: '请帮我总结一下当前的学生总数情况，包括各班级人数分布' },
+    { icon: Mic2, label: '跟读练习', value: stats?.totalReadAlouds || 0, color: '#10b981', prompt: '请帮我分析一下跟读练习的总体情况，包括完成率和平均分' },
+    { icon: MessageSquare, label: '对话练习', value: stats?.totalPractices || 0, color: '#8b5cf6', prompt: '请帮我分析一下对话练习的总体情况' },
+    { icon: TrendingUp, label: '平均分', value: stats?.averageScore?.toFixed(1) || '0', color: '#f59e0b', prompt: '请帮我分析当前学生的平均分情况，哪些学生成绩较低需要关注？' },
+    { icon: Calendar, label: '今日跟读', value: stats?.todayReadAlouds || 0, color: '#ec4899', prompt: '今天有多少学生完成了跟读练习？哪些学生还没有完成？' },
+    { icon: Award, label: '完成跟读', value: stats?.completedReadAlouds || 0, color: '#06b6d4', prompt: '请帮我统计跟读完成情况，哪些学生完成得比较好？' },
   ]
 
   // 系统健康状态渲染辅助
@@ -207,7 +219,12 @@ export default function DashboardPage() {
 
         <div className="stats-grid">
           {statCards.map((card, index) => (
-            <Card key={index} className="stat-card" hoverable>
+            <Card
+              key={index}
+              className="stat-card"
+              hoverable
+              onClick={() => navigate('/assistant', { state: { prefillPrompt: card.prompt } })}
+            >
               <div className="stat-icon" style={{ background: `${card.color}15`, color: card.color }}>
                 <card.icon size={24} />
               </div>
@@ -227,32 +244,6 @@ export default function DashboardPage() {
               <ReactECharts option={trendChartOption} style={{ height: 220 }} />
             ) : (
               <div className="empty-hint">暂无数据</div>
-            )}
-          </Card>
-
-          {/* AI 连通性测试 */}
-          <Card className="section-card">
-            <h3><Wifi size={18} style={{ marginRight: 8 }} />AI 服务连通性</h3>
-            {aiTestResult?.services ? (
-              <div className="ai-services-list">
-                {aiTestResult.services.map((svc, i) => (
-                  <div key={i} className="ai-service-item">
-                    <span className="ai-service-dot" style={{ background: svc.status === 'ok' ? '#10b981' : '#ef4444' }} />
-                    <span className="ai-service-name">{svc.name}</span>
-                    <span className="ai-service-status">
-                      {svc.status === 'ok' ? (
-                        <Tag color="success">{svc.latency}ms</Tag>
-                      ) : (
-                        <Tooltip title={svc.message}>
-                          <Tag color="error">异常</Tag>
-                        </Tooltip>
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-hint">检测中...</div>
             )}
           </Card>
 
@@ -304,6 +295,125 @@ export default function DashboardPage() {
                 <CheckCircle size={16} />
                 暂无异常，系统运行正常
               </div>
+            )}
+          </Card>
+
+          {/* AI 连通性测试 */}
+          <Card className="section-card">
+            <h3><Wifi size={18} style={{ marginRight: 8 }} />AI 服务连通性</h3>
+            {aiTestResult?.services ? (
+              <div className="ai-services-list">
+                {aiTestResult.services.map((svc, i) => (
+                  <div key={i} className="ai-service-item">
+                    <span className="ai-service-dot" style={{ background: svc.status === 'ok' ? '#10b981' : '#ef4444' }} />
+                    <span className="ai-service-name">{svc.name}</span>
+                    <span className="ai-service-status">
+                      {svc.status === 'ok' ? (
+                        <Tag color="success">{svc.latency}ms</Tag>
+                      ) : (
+                        <Tooltip title={svc.message}>
+                          <Tag color="error">异常</Tag>
+                        </Tooltip>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-hint">检测中...</div>
+            )}
+          </Card>
+
+          {/* 阿里云账户余额 */}
+          <Card className="section-card">
+            <h3><Wallet size={18} style={{ marginRight: 8 }} />阿里云账户</h3>
+            {cloudBalance ? (
+              cloudBalance.available ? (
+                <div className="cloud-balance">
+                  <div className="balance-main">
+                    <span className="balance-label">可用余额</span>
+                    <span className="balance-amount">
+                      ¥ {parseFloat(cloudBalance.availableAmount || '0').toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="balance-details">
+                    <div className="balance-item">
+                      <span className="balance-item-label">现金余额</span>
+                      <span className="balance-item-value">¥ {parseFloat(cloudBalance.availableCashAmount || '0').toFixed(2)}</span>
+                    </div>
+                    <div className="balance-item">
+                      <span className="balance-item-label">代金券</span>
+                      <span className="balance-item-value">¥ {parseFloat(cloudBalance.creditAmount || '0').toFixed(2)}</span>
+                    </div>
+                  </div>
+                  {parseFloat(cloudBalance.availableAmount || '0') < 50 && (
+                    <Tag color="warning" style={{ marginTop: 8 }}>余额不足，请及时充值</Tag>
+                  )}
+                </div>
+              ) : (
+                <div className="empty-hint">
+                  <AlertTriangle size={16} style={{ color: '#f59e0b' }} />
+                  <span style={{ marginLeft: 4 }}>{cloudBalance.error || '查询失败'}</span>
+                </div>
+              )
+            ) : (
+              <div className="empty-hint">加载中...</div>
+            )}
+          </Card>
+
+          {/* 讯飞 ISE 额度 */}
+          <Card className="section-card">
+            <h3><AudioLines size={18} style={{ marginRight: 8 }} />讯飞语音评测额度</h3>
+            {iseQuota ? (
+              <div className="ise-quota">
+                <div className="ise-quota-summary">
+                  <div className="ise-quota-main">
+                    <span className="ise-quota-remaining">{iseQuota.remainingToday}</span>
+                    <span className="ise-quota-total">/ {iseQuota.totalDailyQuota}</span>
+                  </div>
+                  <span className="ise-quota-label">今日剩余 / 每日总额度</span>
+                  <div className="ise-quota-bar">
+                    <div
+                      className="ise-quota-bar-fill"
+                      style={{
+                        width: `${iseQuota.usagePercent}%`,
+                        background: iseQuota.usagePercent > 80 ? '#ef4444' : iseQuota.usagePercent > 50 ? '#f59e0b' : '#10b981',
+                      }}
+                    />
+                  </div>
+                  <span className="ise-quota-percent">已用 {iseQuota.usagePercent}%</span>
+                </div>
+                <div className="ise-quota-details">
+                  <div className="ise-quota-detail-item">
+                    <span className="ise-quota-detail-label">启用账号</span>
+                    <span className="ise-quota-detail-value">{iseQuota.enabledAccounts} / {iseQuota.totalAccounts}</span>
+                  </div>
+                  <div className="ise-quota-detail-item">
+                    <span className="ise-quota-detail-label">已耗尽账号</span>
+                    <span className="ise-quota-detail-value" style={{ color: iseQuota.exhaustedCount > 0 ? '#ef4444' : undefined }}>
+                      {iseQuota.exhaustedCount}
+                    </span>
+                  </div>
+                  <div className="ise-quota-detail-item">
+                    <span className="ise-quota-detail-label">今日已用</span>
+                    <span className="ise-quota-detail-value">{iseQuota.totalUsedToday}</span>
+                  </div>
+                  <div className="ise-quota-detail-item">
+                    <span className="ise-quota-detail-label">累计总用量</span>
+                    <span className="ise-quota-detail-value">{iseQuota.totalUsedAll.toLocaleString()}</span>
+                  </div>
+                </div>
+                {iseQuota.exhaustedCount > 0 && (
+                  <Tag color="error" style={{ marginTop: 8 }}>
+                    {iseQuota.exhaustedCount} 个账号今日额度已耗尽
+                  </Tag>
+                )}
+                {iseQuota.usagePercent > 80 && iseQuota.exhaustedCount === 0 && (
+                  <Tag color="warning" style={{ marginTop: 8 }}>今日额度使用已超 80%</Tag>
+                )}
+              </div>
+            ) : (
+              <div className="empty-hint">加载中...</div>
             )}
           </Card>
 

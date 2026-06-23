@@ -16,6 +16,7 @@ import wordPacksRoutes from './word-packs.routes.js'
 import assistantRoutes from './assistant.routes.js'
 import logsRoutes from './logs.routes.js'
 import dashboardRoutes from './dashboard.routes.js'
+import iseAccountsRoutes from './ise-accounts.routes.js'
 
 const router = Router()
 
@@ -33,6 +34,7 @@ router.use('/word-packs', wordPacksRoutes)    // 单词包 CRUD
 router.use('/assistant', assistantRoutes)    // AI 助手 + 知识库管理
 router.use('/logs', logsRoutes)              // 日志查询（管理员）
 router.use('/dashboard', dashboardRoutes)    // 仪表盘增强（AI连通性、趋势、存储、异常）
+router.use('/ise-accounts', iseAccountsRoutes)  // 讯飞 ISE 账号池管理（管理员）
 
 // 导出文件下载已移到 routes/index.ts 作为公开路由（浏览器直接打开链接无法携带 JWT）
 

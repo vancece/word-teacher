@@ -22,6 +22,11 @@ const app = express()
 app.use(cors({ origin: env.cors.origins }))
 app.use(express.json({ limit: '50mb' }))  // 增加限制以支持音频数据
 
+// Health check（不需要认证，放在 auth 中间件之前）
+app.get('/api/agent/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'word-teacher-agent' })
+})
+
 // Agent API Key 认证（生产环境必须携带 X-Agent-Api-Key 头）
 app.use('/api/agent', agentAuth)
 

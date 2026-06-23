@@ -4,6 +4,33 @@ config()
 
 const isDev = process.env.NODE_ENV !== 'production'
 
+export interface IseAccount {
+  appId: string
+  apiKey: string
+  apiSecret: string
+  label: string
+}
+
+function parseIseAccounts(): IseAccount[] {
+  const raw = process.env.XFYUN_ISE_ACCOUNTS
+  if (!raw) return []
+  try {
+    const arr = JSON.parse(raw)
+    if (!Array.isArray(arr)) return []
+    return arr.filter(
+      (a: any) => a.appId && a.apiKey && a.apiSecret
+    ).map((a: any, i: number) => ({
+      appId: a.appId,
+      apiKey: a.apiKey,
+      apiSecret: a.apiSecret,
+      label: a.label || `账号${i + 1}`,
+    }))
+  } catch {
+    console.warn('⚠️  XFYUN_ISE_ACCOUNTS JSON parse failed, ignoring')
+    return []
+  }
+}
+
 export const env = {
   openai: {
     // 优先使用 OPENAI_API_KEY，如果没有则回退到 DASHSCOPE_API_KEY
@@ -32,12 +59,15 @@ export const env = {
     accessKeyId: process.env.ALIYUN_AK_ID || '',
     accessKeySecret: process.env.ALIYUN_AK_SECRET || '',
   },
-  // 科大讯飞语音评测 (ISE)
+  // 科大讯飞语音评测 (ISE) - 支持多账号池
   xfyunIse: {
     appId: process.env.XFYUN_APP_ID || '',
     apiKey: process.env.XFYUN_API_KEY || '',
     apiSecret: process.env.XFYUN_API_SECRET || '',
   },
+  // 讯飞 ISE 账号池（JSON 数组格式，优先使用；为空则 fallback 到上面单账号）
+  // 格式: [{"appId":"xxx","apiKey":"xxx","apiSecret":"xxx","label":"账号A"}, ...]
+  xfyunIseAccounts: parseIseAccounts(),
   server: {
     port: parseInt(process.env.PORT || '8000', 10),
     nodeEnv: process.env.NODE_ENV || 'development',
