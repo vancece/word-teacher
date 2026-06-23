@@ -10,11 +10,17 @@
 |------|------|
 | **查看 Backend 实时日志** | 终端里直接看 `pnpm dev` 输出（开发环境 pino-pretty） |
 | **查看 Agent 实时日志** | 同上，`[agent]` 前缀的输出 |
+| **查看 Backend 日志文件** | `cat backend/logs/backend.$(date +%Y-%m-%d).1.log \| jq .` |
+| **查看 Backend 最近错误** | `cat backend/logs/backend.$(date +%Y-%m-%d).1.log \| jq 'select(.level >= 50)'` |
+| **查看 Backend 请求日志** | `cat backend/logs/backend.$(date +%Y-%m-%d).1.log \| jq 'select(.module == "api")'` |
 | **查看 Agent 日志文件** | `cat agent/logs/agent.$(date +%Y-%m-%d).1.log \| jq .` |
+| **查看跟读评测日志** | `cat agent/logs/agent.$(date +%Y-%m-%d).1.log \| jq 'select(.module == "read-aloud" or .module == "xfyun-ise")'` |
 | **查看 AI 助手日志** | `cat agent/logs/agent.$(date +%Y-%m-%d).1.log \| jq 'select(.module == "assistant")'` |
 | **查看 AI 助手工具调用** | `cat agent/logs/agent.$(date +%Y-%m-%d).1.log \| jq 'select(.module == "assistant" and .tool)'` |
 | **查看生产 Backend 日志** | `ssh root@服务器 "docker logs word-teacher-backend --tail 200"` |
 | **查看生产 Agent 日志** | `ssh root@服务器 "docker logs word-teacher-agent --tail 200"` |
+| **tail 实时跟踪 Backend** | `tail -f backend/logs/backend.$(date +%Y-%m-%d).1.log \| jq .` |
+| **tail 实时跟踪 Agent** | `tail -f agent/logs/agent.$(date +%Y-%m-%d).1.log \| jq .` |
 | **查看 MySQL 日志** | `docker logs word-teacher-mysql-dev --tail 50` |
 | **查看 Docker 全部状态** | `docker compose -f docker-compose.dev.yml ps` |
 | **查看端口占用** | `lsof -i:3001 -i:8000 -i:5173 -i:5174 -i:3306` |
@@ -33,10 +39,14 @@ pnpm dev 终端输出
 ├── [agent]    ← pino-pretty 彩色输出（debug 级别）
 ├── [frontend] ← Vite HMR 日志
 └── [admin]    ← Vite HMR 日志
+
+日志文件（JSON 格式，pino-roll 按天切割）
+├── backend/logs/backend.YYYY-MM-DD.1.log  ← Backend 结构化日志（debug 级别）
+└── agent/logs/agent.YYYY-MM-DD.1.log      ← Agent 结构化日志（debug 级别）
 ```
 
-- Backend 开发环境**不写日志文件**，仅输出到 console
-- Agent 开发环境**同时写文件**到 `agent/logs/agent.YYYY-MM-DD.1.log`（JSON 格式，pino-roll 按天切割）
+- Backend 和 Agent 开发环境**同时写终端 + 文件**
+- 日志文件为 JSON 格式，可用 `jq` 过滤分析
 - 日志级别：`debug` > `info` > `warn` > `error` > `fatal`
 - AI 助手模块（`assistant`）的日志包含：工具调用详情（tool、resultLen、preview）、最终流式调用的 messages 构成（msgCount、roles）
 

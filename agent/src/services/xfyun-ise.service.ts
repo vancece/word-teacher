@@ -250,17 +250,22 @@ class XfyunIseService {
   private reportUsage(appId: string): void {
     const backendUrl = env.backend?.apiUrl
     const agentApiKey = env.auth?.apiKey
-    if (!backendUrl || !agentApiKey) return
+    if (!backendUrl) return
+
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (agentApiKey) {
+      headers['x-agent-api-key'] = agentApiKey
+    } else {
+      // dev 环境没有 key，用 x-internal-call 标记让 Backend 放行
+      headers['x-internal-call'] = 'true'
+    }
 
     fetch(`${backendUrl}/internal/ise-usage`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-agent-api-key': agentApiKey,
-      },
+      headers,
       body: JSON.stringify({ appId }),
-    }).catch(() => {
-      // 静默失败，不影响评测
+    }).catch((err) => {
+      log.warn({ err: err.message, appId }, 'reportUsage failed')
     })
   }
 

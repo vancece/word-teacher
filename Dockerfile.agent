@@ -44,7 +44,7 @@ USER agent
 
 # 健康检查（访问根路径，不需要认证）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 -q -O /dev/null http://localhost:3002/ || exit 1
+  CMD wget --no-verbose --tries=1 -q -O /dev/null http://127.0.0.1:3002/ || exit 1
 
 EXPOSE 3002
 

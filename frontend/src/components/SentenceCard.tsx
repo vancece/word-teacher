@@ -7,6 +7,7 @@ interface Props {
   index: number
   isActive: boolean
   result?: SentenceEvaluation | null
+  recorded?: boolean
 }
 
 export default function SentenceCard({
@@ -14,6 +15,7 @@ export default function SentenceCard({
   index,
   isActive,
   result,
+  recorded,
 }: Props) {
   const renderWords = () => {
     if (!result?.words) {
@@ -36,10 +38,10 @@ export default function SentenceCard({
   }
 
   return (
-    <div className={`sentence-card ${isActive ? 'active' : ''} ${result ? 'completed' : ''}`}>
+    <div className={`sentence-card ${isActive ? 'active' : ''} ${result ? 'completed' : ''} ${recorded && !result ? 'recorded' : ''}`}>
       <div className="card-left">
         <div className="index-badge">
-          {result ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+          {result ? <CheckCircle2 size={16} /> : recorded ? <CheckCircle2 size={16} /> : <Circle size={16} />}
         </div>
         <div className="sentence-content">
           <div className="english-section">{renderWords()}</div>
@@ -61,9 +63,11 @@ export default function SentenceCard({
               </span>
             )}
           </div>
-        ) : (
-          isActive && <span className="waiting">等待朗读</span>
-        )}
+        ) : isActive ? (
+          <span className="waiting">等待朗读</span>
+        ) : recorded ? (
+          <span className="recorded-badge">已录制 ✓</span>
+        ) : null}
       </div>
     </div>
   )

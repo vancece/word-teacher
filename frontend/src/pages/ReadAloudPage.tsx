@@ -296,6 +296,7 @@ export default function ReadAloudPage() {
                 index={index}
                 isActive={index === currentIndex}
                 result={results[index]}
+                recorded={audioCache[index] !== null}
               />
             ))}
           </div>

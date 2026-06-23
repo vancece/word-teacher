@@ -37,8 +37,8 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# 安装运行时依赖（wget 用于健康检查）
-RUN apt-get update && apt-get install -y --no-install-recommends wget \
+# 安装运行时依赖（wget 用于健康检查，openssl 用于 Prisma 连接 MySQL）
+RUN apt-get update && apt-get install -y --no-install-recommends wget openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # 只复制必要的文件
@@ -47,13 +47,13 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
 
-# 创建日志和数据目录（容器内，会被宿主机 volume 挂载覆盖）
-RUN mkdir -p /app/logs /app/data/lancedb
+# 创建日志、数据和临时目录（容器内，会被宿主机 volume 挂载覆盖）
+RUN mkdir -p /app/logs /app/data/lancedb /app/tmp/exports
 
 # 创建非 root 用户，并赋予目录权限
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 --gid nodejs backend
-RUN chown -R backend:nodejs /app/logs /app/data
+RUN chown -R backend:nodejs /app/logs /app/data /app/tmp
 USER backend
 
 # 健康检查

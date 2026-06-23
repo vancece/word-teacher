@@ -185,7 +185,7 @@ router.put('/:id', asyncHandler(async (req: TeacherRequest, res) => {
     return res.status(403).json({ success: false, message: '仅管理员可操作' })
   }
 
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   const { appId, apiKey, apiSecret, label, enabled, dailyQuota, skipVerify } = req.body
 
   const data: any = {}
@@ -236,7 +236,7 @@ router.post('/:id/verify', asyncHandler(async (req: TeacherRequest, res) => {
     return res.status(403).json({ success: false, message: '仅管理员可操作' })
   }
 
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   const account = await prisma.iseAccount.findUnique({ where: { id } })
   if (!account) {
     return res.status(404).json({ success: false, message: '账号不存在' })
@@ -255,7 +255,7 @@ router.delete('/:id', asyncHandler(async (req: TeacherRequest, res) => {
     return res.status(403).json({ success: false, message: '仅管理员可操作' })
   }
 
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   await prisma.iseAccount.delete({ where: { id } })
   res.status(204).send()
 }))
@@ -269,7 +269,7 @@ router.post('/:id/toggle', asyncHandler(async (req: TeacherRequest, res) => {
     return res.status(403).json({ success: false, message: '仅管理员可操作' })
   }
 
-  const id = parseInt(req.params.id)
+  const id = parseInt(req.params.id as string)
   const account = await prisma.iseAccount.findUnique({ where: { id } })
   if (!account) {
     return res.status(404).json({ success: false, message: '账号不存在' })
