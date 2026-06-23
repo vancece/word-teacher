@@ -14,9 +14,12 @@
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint",
     "db:studio": "pnpm --filter backend db:studio",
-    "db:seed": "pnpm --filter backend db:seed"
+    "db:seed": "pnpm --filter backend db:seed",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
   }
 }

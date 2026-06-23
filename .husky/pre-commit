@@ -1,0 +1,2 @@
+pnpm --filter admin exec tsc --noEmit
+pnpm --filter backend exec tsc --noEmit
