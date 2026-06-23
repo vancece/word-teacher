@@ -11,9 +11,13 @@ on:
         default: 'latest'
 
 env:
-  # 修改为你的 Docker Hub 用户名
+  # Docker Hub（保留作为备份 registry）
   DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}
   IMAGE_PREFIX: ${{ vars.DOCKER_USERNAME || 'your-dockerhub-username' }}/word-teacher
+  # 腾讯云 TCR 个人版（服务器拉取用，内网速度飞快）
+  TCR_REGISTRY: ccr.ccs.tencentyun.com
+  TCR_NAMESPACE: ${{ vars.TCR_NAMESPACE || 'word-teacher' }}
+  TCR_PREFIX: ccr.ccs.tencentyun.com/${{ vars.TCR_NAMESPACE || 'word-teacher' }}/word-teacher
   SHORT_SHA: sha-${{ github.sha }}
   DEPLOY_TAG: ${{ inputs.image_tag || 'latest' }}
 
@@ -91,6 +95,13 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Login to Tencent TCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.TCR_REGISTRY }}
+          username: ${{ secrets.TCR_USERNAME }}
+          password: ${{ secrets.TCR_PASSWORD }}
+
       - name: Build and push Backend
         uses: docker/build-push-action@v7
         with:
@@ -100,6 +111,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-backend:latest
             ${{ env.IMAGE_PREFIX }}-backend:${{ env.SHORT_SHA }}
+            ${{ env.TCR_PREFIX }}-backend:latest
+            ${{ env.TCR_PREFIX }}-backend:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -120,6 +133,13 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Login to Tencent TCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.TCR_REGISTRY }}
+          username: ${{ secrets.TCR_USERNAME }}
+          password: ${{ secrets.TCR_PASSWORD }}
+
       - name: Build and push Nginx
         uses: docker/build-push-action@v7
         with:
@@ -129,6 +149,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-nginx:latest
             ${{ env.IMAGE_PREFIX }}-nginx:${{ env.SHORT_SHA }}
+            ${{ env.TCR_PREFIX }}-nginx:latest
+            ${{ env.TCR_PREFIX }}-nginx:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -149,6 +171,13 @@ jobs:
           username: ${{ env.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Login to Tencent TCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.TCR_REGISTRY }}
+          username: ${{ secrets.TCR_USERNAME }}
+          password: ${{ secrets.TCR_PASSWORD }}
+
       - name: Build and push Agent
         uses: docker/build-push-action@v7
         with:
@@ -158,6 +187,8 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-agent:latest
             ${{ env.IMAGE_PREFIX }}-agent:${{ env.SHORT_SHA }}
+            ${{ env.TCR_PREFIX }}-agent:latest
+            ${{ env.TCR_PREFIX }}-agent:${{ env.SHORT_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -184,6 +215,10 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           DOCKER_USERNAME: ${{ vars.DOCKER_USERNAME }}
+          TCR_REGISTRY: ${{ env.TCR_REGISTRY }}
+          TCR_NAMESPACE: ${{ env.TCR_NAMESPACE }}
+          TCR_USERNAME: ${{ secrets.TCR_USERNAME }}
+          TCR_PASSWORD: ${{ secrets.TCR_PASSWORD }}
           DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
           ALIYUN_STT_APPKEY: ${{ secrets.ALIYUN_STT_APPKEY }}
           ALIYUN_AK_ID: ${{ secrets.ALIYUN_AK_ID }}
@@ -200,7 +235,6 @@ jobs:
           DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
           SSL_FULLCHAIN: ${{ secrets.SSL_FULLCHAIN }}
           SSL_PRIVKEY: ${{ secrets.SSL_PRIVKEY }}
-          # 直接传递构建结果，更可靠
           BUILD_BACKEND: ${{ needs.build-backend.result }}
           BUILD_FRONTEND: ${{ needs.build-frontend.result }}
           BUILD_AGENT: ${{ needs.build-agent.result }}
@@ -209,8 +243,8 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: root
           key: ${{ secrets.SERVER_SSH_KEY }}
-          command_timeout: 20m
-          envs: DOCKER_USERNAME,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,XFYUN_APP_ID,XFYUN_API_KEY,XFYUN_API_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT,DEPLOY_TAG
+          command_timeout: 10m
+          envs: DOCKER_USERNAME,TCR_REGISTRY,TCR_NAMESPACE,TCR_USERNAME,TCR_PASSWORD,DASHSCOPE_API_KEY,ALIYUN_STT_APPKEY,ALIYUN_AK_ID,ALIYUN_AK_SECRET,XFYUN_APP_ID,XFYUN_API_KEY,XFYUN_API_SECRET,MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD,JWT_SECRET,AGENT_API_KEY,MINIO_ROOT_PASSWORD,DINGTALK_ACCESS_TOKEN,DINGTALK_SECRET,SSL_FULLCHAIN,SSL_PRIVKEY,BUILD_BACKEND,BUILD_FRONTEND,BUILD_AGENT,DEPLOY_TAG
           script: |
             set -e
 
@@ -317,7 +351,7 @@ jobs:
             unset CORS_ORIGINS IMAGE_TAG
 
             # ============================================================
-            # 4. 确保 docker compose 可用 + 镜像加速
+            # 4. 确保 docker compose 可用
             # ============================================================
             if ! docker compose version >/dev/null 2>&1; then
               echo "📦 安装 docker compose plugin..."
@@ -325,48 +359,41 @@ jobs:
             fi
 
             # ============================================================
-            # 5. 拉取最新镜像（直连 Docker Hub，不走镜像加速器）
+            # 5. 从腾讯云 TCR 拉取镜像（同地域内网，速度飞快）
             # ============================================================
-            echo "📥 拉取最新镜像..."
+            echo "📥 从腾讯云 TCR 拉取最新镜像..."
 
-            # 临时移除镜像加速器，避免加速器 429 限流导致 pull 失败
-            if grep -q "registry-mirrors" /etc/docker/daemon.json 2>/dev/null; then
-              echo "⚠️ 检测到镜像加速器配置，临时移除以直连 Docker Hub..."
-              cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
-              echo '{}' > /etc/docker/daemon.json
-              systemctl reload docker
-              sleep 2
-            fi
+            # 登录 TCR
+            echo "$TCR_PASSWORD" | docker login "$TCR_REGISTRY" -u "$TCR_USERNAME" --password-stdin
 
-            # 带重试的 pull 函数（国内直连 Docker Hub 不稳定）
+            TCR_IMAGE_PREFIX="${TCR_REGISTRY}/${TCR_NAMESPACE}/word-teacher"
+
             pull_with_retry() {
               local image="$1"
+              local tag_as="$2"
               local max_retries=3
               local attempt=1
               while [ $attempt -le $max_retries ]; do
                 echo "  📥 拉取 $image (第 ${attempt}/${max_retries} 次)..."
                 if docker pull "$image"; then
                   echo "  ✅ $image 拉取成功"
+                  # 打上 docker-compose 里用的 tag（兼容现有 compose 配置）
+                  if [ -n "$tag_as" ]; then
+                    docker tag "$image" "$tag_as"
+                  fi
                   return 0
                 fi
-                echo "  ⚠️ 第 $attempt 次拉取失败，等待 10 秒后重试..."
-                sleep 10
+                echo "  ⚠️ 第 $attempt 次拉取失败，等待 5 秒后重试..."
+                sleep 5
                 attempt=$((attempt + 1))
               done
               echo "  ❌ $image 拉取失败（已重试 $max_retries 次）"
               return 1
             }
 
-            [ "$BUILD_BACKEND" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-backend:latest"
-            [ "$BUILD_FRONTEND" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-nginx:latest"
-            [ "$BUILD_AGENT" = "success" ] && pull_with_retry "${IMAGE_PREFIX}-agent:latest"
-
-            # 恢复镜像加速器配置（供其他非 CI 场景使用）
-            if [ -f /etc/docker/daemon.json.bak ]; then
-              mv /etc/docker/daemon.json.bak /etc/docker/daemon.json
-              systemctl reload docker
-              sleep 2
-            fi
+            [ "$BUILD_BACKEND" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-backend:latest" "${IMAGE_PREFIX}-backend:latest"
+            [ "$BUILD_FRONTEND" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-nginx:latest" "${IMAGE_PREFIX}-nginx:latest"
+            [ "$BUILD_AGENT" = "success" ] && pull_with_retry "${TCR_IMAGE_PREFIX}-agent:latest" "${IMAGE_PREFIX}-agent:latest"
 
             # ============================================================
             # 6. 启动基础设施服务（mysql、minio）并等待就绪
