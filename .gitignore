@@ -41,3 +41,6 @@ julian.pem
 *.sln
 *.sw?
 agent/.env
+
+# CI 生成的 git log 数据（供更新日志功能，构建时生成）
+.git-data/*.txt

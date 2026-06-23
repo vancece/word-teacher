@@ -95,7 +95,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      
+        with:
+          fetch-depth: 200
+
+      - name: Export git log for changelog
+        run: |
+          mkdir -p .git-data
+          git log --format="%H||%h||%s||%an||%ai||%D" -n 200 > .git-data/git-log.txt
+          git rev-list --count HEAD > .git-data/git-count.txt
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 

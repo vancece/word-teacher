@@ -32,6 +32,10 @@ RUN pnpm db:generate
 # 构建 TypeScript
 RUN pnpm build
 
+# 准备 git log 数据（CI 构建前生成到 .git-data/，本地构建时创建空文件兜底）
+RUN mkdir -p /app/git-data && touch /app/git-data/git-log.txt /app/git-data/git-count.txt
+COPY .git-data/git-log.tx[t] .git-data/git-count.tx[t] /app/git-data/
+
 # ============ 生产镜像 ============
 FROM node:20-slim AS runner
 
@@ -47,8 +51,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
 
-# 创建日志、数据和临时目录（容器内，会被宿主机 volume 挂载覆盖）
+# 创建日志、数据和临时目录
 RUN mkdir -p /app/logs /app/data/lancedb /app/tmp/exports
+
+# 复制 git log 数据（供更新日志功能使用）
+COPY --from=builder /app/git-data/git-log.txt /app/git-data/git-count.txt ./data/
 
 # 创建非 root 用户，并赋予目录权限
 RUN groupadd --system --gid 1001 nodejs

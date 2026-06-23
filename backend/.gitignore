@@ -30,6 +30,8 @@ prisma/migrations/*_migration_lock.toml
 # LanceDB local data
 data/lancedb/
 
+
+
 # 但保留 src/data 源码目录
 !src/data/
 
