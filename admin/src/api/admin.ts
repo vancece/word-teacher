@@ -647,6 +647,53 @@ export const learningRecordsApi = {
   },
 }
 
+// 讯飞 ISE 账号池
+export interface IseAccount {
+  id: number
+  appId: string
+  apiKey: string
+  apiSecret: string  // 脱敏后的
+  label: string
+  enabled: boolean
+  dailyQuota: number
+  usedToday: number
+  totalUsed: number
+  lastUsedAt: string | null
+  exhaustedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export const iseAccountsApi = {
+  getAll: async (): Promise<IseAccount[]> => {
+    return apiClient.get('/admin/ise-accounts') as unknown as IseAccount[]
+  },
+
+  create: async (data: { appId: string; apiKey: string; apiSecret: string; label?: string; dailyQuota?: number }): Promise<IseAccount> => {
+    return apiClient.post('/admin/ise-accounts', data) as unknown as IseAccount
+  },
+
+  update: async (id: number, data: Partial<{ appId: string; apiKey: string; apiSecret: string; label: string; enabled: boolean; dailyQuota: number }>): Promise<IseAccount> => {
+    return apiClient.put(`/admin/ise-accounts/${id}`, data) as unknown as IseAccount
+  },
+
+  delete: async (id: number): Promise<void> => {
+    return apiClient.delete(`/admin/ise-accounts/${id}`) as unknown as void
+  },
+
+  toggle: async (id: number): Promise<IseAccount> => {
+    return apiClient.post(`/admin/ise-accounts/${id}/toggle`) as unknown as IseAccount
+  },
+
+  resetDaily: async (): Promise<void> => {
+    return apiClient.post('/admin/ise-accounts/reset-daily') as unknown as void
+  },
+
+  verify: async (id: number): Promise<{ valid: boolean; error: string | null }> => {
+    return apiClient.post(`/admin/ise-accounts/${id}/verify`) as unknown as { valid: boolean; error: string | null }
+  },
+}
+
 // 仪表盘增强 API
 export interface AiServiceResult {
   name: string
@@ -690,6 +737,34 @@ export interface RecentError {
   message: string
 }
 
+export interface CloudBalance {
+  available: boolean
+  availableAmount?: string
+  availableCashAmount?: string
+  creditAmount?: string
+  currency?: string
+  error?: string
+}
+
+export interface IseQuotaSummary {
+  totalAccounts: number
+  enabledAccounts: number
+  exhaustedCount: number
+  totalDailyQuota: number
+  totalUsedToday: number
+  remainingToday: number
+  usagePercent: number
+  totalUsedAll: number
+  accounts: Array<{
+    id: number
+    label: string
+    dailyQuota: number
+    usedToday: number
+    exhausted: boolean
+    lastUsedAt: string | null
+  }>
+}
+
 export const dashboardApi = {
   testAiConnectivity: async (): Promise<AiConnectivityResponse> => {
     return apiClient.post('/admin/dashboard/ai-connectivity') as unknown as AiConnectivityResponse
@@ -709,6 +784,14 @@ export const dashboardApi = {
 
   getChangelog: async (page = 1, limit = 30): Promise<{ commits: GitCommit[]; total: number; page: number; limit: number }> => {
     return apiClient.get(`/admin/dashboard/changelog?page=${page}&limit=${limit}`) as unknown as { commits: GitCommit[]; total: number; page: number; limit: number }
+  },
+
+  getCloudBalance: async (): Promise<CloudBalance> => {
+    return apiClient.get('/admin/dashboard/cloud-balance') as unknown as CloudBalance
+  },
+
+  getIseQuota: async (): Promise<IseQuotaSummary> => {
+    return apiClient.get('/admin/dashboard/ise-quota') as unknown as IseQuotaSummary
   },
 }
 

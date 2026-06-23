@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from 'express'
 import { readAloudAgent, readAloudScoringAgent } from '../agents/index.js'
 import { readAloudLogger as log } from '../utils/logger.js'
+import { xfyunIseService } from '../services/xfyun-ise.service.js'
 
 const router: RouterType = Router()
 
@@ -80,6 +81,50 @@ router.post('/evaluate', async (req, res) => {
 })
 
 /**
+ * POST /api/agent/read-aloud/evaluate-batch
+ * 批量评测 - 多句录音合并为一次篇章评测（省额度）
+ *
+ * Request body:
+ * - sentences: Array<{ text: string, audioBase64: string }>
+ *
+ * Response:
+ * - results: Array<SentenceEvaluation>
+ */
+router.post('/evaluate-batch', async (req, res) => {
+  try {
+    const { sentences } = req.body
+
+    if (!sentences || !Array.isArray(sentences) || sentences.length === 0) {
+      return res.status(400).json({ error: 'sentences array is required and must not be empty' })
+    }
+
+    // 验证每句都有 text 和 audioBase64
+    for (let i = 0; i < sentences.length; i++) {
+      if (!sentences[i].text || !sentences[i].audioBase64) {
+        return res.status(400).json({ error: `sentences[${i}] must have text and audioBase64` })
+      }
+    }
+
+    log.info({ count: sentences.length, texts: sentences.map((s: { text: string }) => s.text) }, 'Batch evaluate request')
+
+    const results = await readAloudAgent.evaluateBatch(sentences)
+
+    log.info({ count: results.length, accuracies: results.map(r => r.accuracy) }, 'Batch evaluate complete')
+
+    res.json({
+      success: true,
+      data: { results },
+    })
+  } catch (error) {
+    log.error({ err: error }, 'Batch evaluation error')
+    res.status(500).json({
+      error: 'Failed to batch evaluate pronunciation',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    })
+  }
+})
+
+/**
  * POST /api/agent/read-aloud/score
  * 整体评分 - 完成所有句子后调用
  */
@@ -108,6 +153,15 @@ router.post('/score', async (req, res) => {
       message: error instanceof Error ? error.message : 'Unknown error'
     })
   }
+})
+
+/**
+ * GET /api/agent/read-aloud/ise-status
+ * 查看讯飞 ISE 账号池状态（调试用）
+ */
+router.get('/ise-status', (req, res) => {
+  const status = xfyunIseService.getPoolStatus()
+  res.json(status)
 })
 
 export default router

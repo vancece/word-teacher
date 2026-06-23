@@ -256,6 +256,25 @@ model WordGameRecord {
   @@map("word_game_records")
 }
 
+// 讯飞 ISE 账号池
+model IseAccount {
+  id          Int      @id @default(autoincrement())
+  appId       String   @map("app_id") @db.VarChar(32)
+  apiKey      String   @map("api_key") @db.VarChar(64)
+  apiSecret   String   @map("api_secret") @db.VarChar(128)
+  label       String   @default("未命名") @db.VarChar(50)
+  enabled     Boolean  @default(true)
+  dailyQuota  Int      @default(500) @map("daily_quota")
+  usedToday   Int      @default(0) @map("used_today")
+  totalUsed   Int      @default(0) @map("total_used")
+  lastUsedAt  DateTime? @map("last_used_at")
+  exhaustedAt DateTime? @map("exhausted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("ise_accounts")
+}
+
 // AI 助手对话记录
 model AssistantConversation {
   id         Int      @id @default(autoincrement())

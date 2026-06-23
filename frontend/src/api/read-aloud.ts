@@ -107,6 +107,17 @@ export const readAloudApi = {
     return data as unknown as { success: boolean; data: SentenceEvaluation }
   },
 
+  // 批量评测（多句合并为一次篇章评测，省额度）
+  evaluateBatch: async (params: {
+    sentences: Array<{ text: string; audioBase64: string }>
+  }): Promise<{ success: boolean; data: { results: SentenceEvaluation[] } }> => {
+    const data = await apiClient.post<{ success: boolean; data: { results: SentenceEvaluation[] } }>(
+      '/read-aloud/evaluate-batch',
+      params
+    )
+    return data as unknown as { success: boolean; data: { results: SentenceEvaluation[] } }
+  },
+
   // 整体评分（完成所有句子后调用）
   score: async (params: {
     recordId?: number

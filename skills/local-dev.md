@@ -1,6 +1,6 @@
 # Echo Kid 本地开发指南
 
-> 📅 更新时间: 2026-03-05
+> 📅 更新时间: 2026-06-23
 
 ## 🚀 核心原则
 
@@ -186,6 +186,36 @@ pnpm dev-docker
 2. ✅ 初始化数据库表
 3. ✅ 复制环境变量
 4. ✅ 启动 Backend + Agent + Frontend + Admin
+
+---
+
+## 📝 日志文件
+
+开发环境日志同时输出到**终端**（pino-pretty 彩色）和**文件**（JSON 格式，按天切割）：
+
+| 服务 | 日志文件路径 | 级别 |
+|------|------------|------|
+| Backend | `backend/logs/backend.YYYY-MM-DD.1.log` | debug |
+| Agent | `agent/logs/agent.YYYY-MM-DD.1.log` | debug |
+
+```bash
+# 查看 Backend 今天的日志
+cat backend/logs/backend.$(date +%Y-%m-%d).1.log | jq .
+
+# 查看 Agent 今天的日志
+cat agent/logs/agent.$(date +%Y-%m-%d).1.log | jq .
+
+# 实时跟踪（类似 docker logs -f）
+tail -f backend/logs/backend.$(date +%Y-%m-%d).1.log | jq .
+
+# 只看错误
+cat backend/logs/backend.$(date +%Y-%m-%d).1.log | jq 'select(.level >= 50)'
+
+# 按模块过滤（如跟读评测）
+cat agent/logs/agent.$(date +%Y-%m-%d).1.log | jq 'select(.module == "read-aloud" or .module == "xfyun-ise")'
+```
+
+> 💡 日志是 JSON 格式（pino），用 `jq` 可以灵活过滤。`.level` 对应：10=trace 20=debug 30=info 40=warn 50=error 60=fatal
 
 ---
 
