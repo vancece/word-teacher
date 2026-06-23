@@ -466,7 +466,7 @@ jobs:
                 --network "$DOCKER_NETWORK" \
                 --env-file .env \
                 $ENV_ARGS \
-                "$IMAGE" >/dev/null 2>&1
+                "$IMAGE"
 
               # 健康检查（最多等 40 秒）
               local HEALTHY=false
@@ -503,10 +503,11 @@ jobs:
 
             # --- Backend 蓝绿部署 ---
             if [ "$BUILD_BACKEND" = "success" ]; then
+              MYSQL_PW=$(grep '^MYSQL_PASSWORD=' .env | cut -d= -f2)
               deploy_with_canary "backend" \
                 "wget -q --spider http://localhost:3001/api/health" \
                 "${IMAGE_PREFIX}-backend:latest" \
-                "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:\$(grep MYSQL_PASSWORD .env | cut -d= -f2)@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb"
+                "-e NODE_ENV=production -e PORT=3001 -e DATABASE_URL=mysql://wordteacher:${MYSQL_PW}@mysql:3306/word_teacher -e LANCEDB_PATH=/app/data/lancedb"
             fi
 
             # --- Agent 蓝绿部署 ---
